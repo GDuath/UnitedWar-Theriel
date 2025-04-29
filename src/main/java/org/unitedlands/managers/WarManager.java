@@ -1,8 +1,9 @@
 package org.unitedlands.managers;
 
+import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 
-public class WarManager {
+public class WarManager implements Listener {
 
     private final UnitedWar plugin;
 
