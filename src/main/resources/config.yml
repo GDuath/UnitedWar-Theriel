@@ -1,0 +1,21 @@
+# ------------------------------------------
+# Database connection settings
+# ------------------------------------------
+
+# CAUTION! Developer mode will drop all database tables on startup. DO NOT USE IN PRODUCTION.  
+developer-mode: true
+
+# Database connection settings
+mysql:
+  host: localhost
+  port: 3306
+  username: unitedwar
+  password: unitedwar
+  database: unitedwar
+
+# ------------------------------------------
+# War scheduler settings
+# ------------------------------------------
+
+warscheduler:
+  check-interval: 15 # in seconds
