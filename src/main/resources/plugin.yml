@@ -1,0 +1,6 @@
+name: UnitedWar
+version: 0.1
+main: org.unitedlands.UnitedWar
+api-version: 1.18
+description: A custom war plugn for UnitedLands.
+author: Theriel_
