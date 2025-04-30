@@ -15,7 +15,6 @@ public class ServerEventListener implements Listener {
     
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
-        
         var warScheduler = plugin.getWarScheduler();
         warScheduler.initialize();
         

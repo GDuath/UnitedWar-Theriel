@@ -1,6 +1,7 @@
 package org.unitedlands;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.DatabaseManager;
 import org.unitedlands.managers.WarDeclarationManager;
@@ -24,6 +25,7 @@ public class UnitedWar extends JavaPlugin {
         createSchedulers();
 
         registerListeners();
+        registerCommands();
 
         databaseManager.initialize();
 
@@ -44,6 +46,12 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ServerEventListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
+    }
+
+    private void registerCommands() {
+        var debugCommands = new WarDebugCommands(this);
+        getCommand("wardebug").setExecutor(debugCommands);
+        getCommand("wardebug").setTabCompleter(debugCommands);
     }
 
     public DatabaseManager getDatabaseManager() {

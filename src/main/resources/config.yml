@@ -19,3 +19,24 @@ mysql:
 
 warscheduler:
   check-interval: 15 # in seconds
+
+# ------------------------------------------
+# War settings
+# ------------------------------------------
+
+wars-settings:
+  default:
+    warmup-time: 60 # in seconds
+    duration: 3600 # in seconds
+  town-town:
+    warmup-time: 60 # in seconds
+    duration: 3600 # in seconds
+  town-nation:
+    warmup-time: 60 # in seconds
+    duration: 3600 # in seconds
+  nation-nation:
+    warmup-time: 60 # in seconds
+    duration: 3600 # in seconds
+  nation-town:
+    warmup-time: 60 # in seconds
+    duration: 3600 # in seconds
