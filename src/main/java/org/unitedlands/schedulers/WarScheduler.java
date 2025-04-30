@@ -23,7 +23,7 @@ public class WarScheduler {
     }
 
     public void run() {
-        plugin.getLogger().info("War scheduler tick...");
+        plugin.getWarManager().handleWars();
     }
 
     public void shutdown() {

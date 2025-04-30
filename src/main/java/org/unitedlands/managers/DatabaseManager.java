@@ -10,12 +10,16 @@ import java.sql.SQLException;
 
 import org.unitedlands.UnitedWar;
 import org.unitedlands.models.SchemaVersion;
+import org.unitedlands.models.War;
+import org.unitedlands.services.WarDbService;
 
 public class DatabaseManager {
 
     private final UnitedWar plugin;
 
     private ConnectionSource connectionSource;
+
+    private WarDbService warDbService;
 
     public DatabaseManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -31,8 +35,14 @@ public class DatabaseManager {
         String username = fileConfig.getString("mysql.username");
         String password = fileConfig.getString("mysql.password");
 
-        String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true",
-                host, port, database);
+        String url = "";
+        if (plugin.getConfig().getBoolean("developer-mode")) {
+            url = String.format("jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true",
+                    host, port, database);
+        } else {
+            url = String.format("jdbc:mysql://%s:%d/%s?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true",
+                    host, port, database);
+        }
 
         try {
             this.connectionSource = new JdbcConnectionSource(url, username, password);
@@ -50,7 +60,7 @@ public class DatabaseManager {
     }
 
     private void registerServices() throws SQLException {
-        
+        this.warDbService = new WarDbService(getDao(War.class));
     }
 
     private void verifySchemaVersion() throws SQLException {
@@ -100,9 +110,12 @@ public class DatabaseManager {
         }
     }
 
+    public WarDbService getWarDbService() {
+        return warDbService;
+    }
+
     public ConnectionSource getConnectionSource() {
         return connectionSource;
     }
-
 
 }
