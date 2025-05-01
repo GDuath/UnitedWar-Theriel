@@ -1,6 +1,10 @@
 package org.unitedlands.services;
 
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.unitedlands.models.War;
 
@@ -12,6 +16,18 @@ public class WarDbService extends BaseDbService<War> {
         super(dao);
     }
 
-    // Additional methods specific to War can be added here
+    public CompletableFuture<List<War>> getIncompleteAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return dao.queryBuilder()
+                        .where()
+                        .eq("is_ended", false)
+                        .query();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return Collections.emptyList();
+            }
+        });
+    }
 
 }
