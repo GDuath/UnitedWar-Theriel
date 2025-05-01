@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
 
@@ -61,10 +62,13 @@ public class War implements Identifiable {
     private transient List<String> attacking_mercenaries;
     private transient List<String> defending_mercenaries;
 
+    private transient List<String> attacking_player;
+    private transient List<String> defending_players;
+
     @DatabaseField(canBeNull = false, defaultValue = "0")
-    private Integer attacker_score;
+    private Integer attacker_score = 0;
     @DatabaseField(canBeNull = false, defaultValue = "0")
-    private Integer defender_score;
+    private Integer defender_score = 0;
 
     public War() {
     }
@@ -214,7 +218,7 @@ public class War implements Identifiable {
     }
 
     public List<String> getAttacking_towns() {
-        if (attacking_towns == null && attacking_mercenaries_serialized != null) {
+        if (attacking_towns == null && attacking_towns_serialized != null) {
             attacking_towns = Arrays.asList(attacking_towns_serialized.split("#"));
         }
         return attacking_towns;
@@ -277,4 +281,19 @@ public class War implements Identifiable {
         this.defender_score = defender_score;
     }
 
+    public List<String> getAttacking_player() {
+        return attacking_player;
+    }
+
+    public void setAttacking_player(List<String> attacking_player) {
+        this.attacking_player = attacking_player;
+    }
+
+    public List<String> getDefending_players() {
+        return defending_players;
+    }
+
+    public void setDefending_players(List<String> defending_players) {
+        this.defending_players = defending_players;
+    }
 }
