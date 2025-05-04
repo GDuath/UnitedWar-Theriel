@@ -20,6 +20,24 @@ mysql:
 warscheduler:
   check-interval: 15 # in seconds
 
+###################################################
+# +---------------------------------------------+ #
+# |                 Mobilisation                | #
+# +---------------------------------------------+ #
+###################################################
+
+# Town and Nation mobilisation settings
+
+mobilisation:
+  # How much mobilisation grows per Towny day if not peaceful.
+  daily-growth: 1
+  # How much mobilisation decays per Towny day if peaceful.
+  daily-decay: 1
+  # Minimum amount of mobilisation needed to declare a war.
+  min-to-declare: 60
+  # How much mobilisation decreases when a war is declared.
+  cost-to-declare: 20
+
 # ------------------------------------------
 # War settings
 # ------------------------------------------
@@ -40,3 +58,25 @@ wars-settings:
   nation-town:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
+
+###################################################
+# +---------------------------------------------+ #
+# |                  Messages                   | #
+# +---------------------------------------------+ #
+###################################################
+
+messages:
+  prefix: "§c§lU§f§lL §7§lWar §8§l» "
+  reload: "§2Plugin reloaded."
+  invalid-command: "§cInvalid command usage."
+  no-permission: '§2You don''t have permission to perform this command.'
+  usage-mobilisation: "§2Usage: §7/wa mobilisation [Town | Nation] set [0-100]"
+  # {0} is the relevant town or nation name.
+  town-nation-not-found: "§2No town or nation found named §e§l{0}"
+  # {0} is the attempted input.
+  not-a-number: "§e§l{0} §2is not a number."
+  invalid-mobilisation-number: "§2Mobilisation must be set between 0-100."
+  # {0} is the town or nation name.
+  # {1} is the mobilisation amount.
+  mobilisation-set:  "§e§l{0} §2mobilisation set to §e§l{1}"
+
