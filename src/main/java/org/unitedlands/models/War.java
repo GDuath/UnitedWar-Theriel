@@ -65,6 +65,8 @@ public class War implements Identifiable {
     private transient List<String> attacking_player;
     private transient List<String> defending_players;
 
+    private transient Boolean state_changed = false;
+
     @DatabaseField(canBeNull = false, defaultValue = "0")
     private Integer attacker_score = 0;
     @DatabaseField(canBeNull = false, defaultValue = "0")
@@ -295,5 +297,13 @@ public class War implements Identifiable {
 
     public void setDefending_players(List<String> defending_players) {
         this.defending_players = defending_players;
+    }
+
+    public Boolean getState_changed() {
+        return state_changed;
+    }
+    
+    public void setState_changed(Boolean state_changed) {
+        this.state_changed = state_changed;
     }
 }

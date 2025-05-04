@@ -11,7 +11,9 @@ import java.sql.SQLException;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.models.SchemaVersion;
 import org.unitedlands.models.War;
+import org.unitedlands.models.WarEventRecord;
 import org.unitedlands.services.WarDbService;
+import org.unitedlands.services.WarEventRecordDbService;
 
 public class DatabaseManager {
 
@@ -20,6 +22,7 @@ public class DatabaseManager {
     private ConnectionSource connectionSource;
 
     private WarDbService warDbService;
+    private WarEventRecordDbService warEventRecordDbService;
 
     public DatabaseManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -61,6 +64,7 @@ public class DatabaseManager {
 
     private void registerServices() throws SQLException {
         this.warDbService = new WarDbService(getDao(War.class));
+        this.warEventRecordDbService = new WarEventRecordDbService(getDao(WarEventRecord.class));
     }
 
     private void verifySchemaVersion() throws SQLException {
@@ -112,6 +116,10 @@ public class DatabaseManager {
 
     public WarDbService getWarDbService() {
         return warDbService;
+    }
+
+    public WarEventRecordDbService getWarEventRecordDbService() {
+        return warEventRecordDbService;
     }
 
     public ConnectionSource getConnectionSource() {

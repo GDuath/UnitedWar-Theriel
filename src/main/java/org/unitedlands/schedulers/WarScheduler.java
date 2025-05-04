@@ -27,6 +27,7 @@ public class WarScheduler {
 
     public void run() {
         plugin.getWarManager().handleWars();
+        plugin.getWarEventManager().handleEvents();
         awardActivityScores();
     }
 
