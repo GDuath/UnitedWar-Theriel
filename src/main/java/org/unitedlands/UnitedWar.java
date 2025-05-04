@@ -5,6 +5,7 @@ import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.DatabaseManager;
 import org.unitedlands.managers.WarDeclarationManager;
+import org.unitedlands.managers.WarEventManager;
 import org.unitedlands.managers.WarManager;
 import org.unitedlands.schedulers.WarScheduler;
 
@@ -12,6 +13,7 @@ public class UnitedWar extends JavaPlugin {
 
     private DatabaseManager databaseManager;
     private WarManager warManager;
+    private WarEventManager warEventManager;
     private WarDeclarationManager warDeclarationManager;
 
     private WarScheduler warScheduler;
@@ -35,6 +37,7 @@ public class UnitedWar extends JavaPlugin {
     private void createManagers() {
         databaseManager = new DatabaseManager(this);
         warManager = new WarManager(this);
+        warEventManager = new WarEventManager(this);
         warDeclarationManager = new WarDeclarationManager(this);
     }
 
@@ -64,6 +67,10 @@ public class UnitedWar extends JavaPlugin {
 
     public WarScheduler getWarScheduler() {
         return warScheduler;
+    }
+
+    public WarEventManager getWarEventManager() {
+        return warEventManager;
     }
 
     @Override

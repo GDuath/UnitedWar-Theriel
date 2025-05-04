@@ -56,7 +56,7 @@ public class WarManager implements Listener {
 
     public void handleWars() {
 
-        plugin.getLogger().info("Handling " + pendingWars.size() + " pending, " + activeWars.size()  + " active war(s)");
+        plugin.getLogger().info("Handling " + pendingWars.size() + " pending, " + activeWars.size() + " active war(s)");
 
         List<War> startedWars = new ArrayList<>();
         for (War war : pendingWars) {
@@ -64,6 +64,9 @@ public class WarManager implements Listener {
                 startWar(war);
                 startedWars.add(war);
             }
+
+            if (war.getState_changed())
+                saveWarToDatabase(war);
         }
         pendingWars.removeAll(startedWars);
         activeWars.addAll(startedWars);
@@ -74,6 +77,8 @@ public class WarManager implements Listener {
                 endWar(war);
                 endedWars.add(war);
             }
+            if (war.getState_changed())
+                saveWarToDatabase(war);
         }
         activeWars.removeAll(endedWars);
     }
@@ -89,20 +94,11 @@ public class WarManager implements Listener {
 
     private void startWar(War war) {
         war.setIs_active(true);
-
+        war.setState_changed(true);
         (new WarStartEvent(war)).callEvent();
 
         Bukkit.broadcast(Component.text("War started: " + war.getTitle()));
 
-        // Update war in the database asynchronously
-        var warDbService = plugin.getDatabaseManager().getWarDbService();
-        warDbService.createOrUpdateAsync(war).thenAccept(success -> {
-            if (success) {
-                plugin.getLogger().info("War updated in database.");
-            } else {
-                plugin.getLogger().severe("Failed to update war in database.");
-            }
-        });
     }
 
     private boolean warCanBeEnded(War war) {
@@ -117,20 +113,11 @@ public class WarManager implements Listener {
         war.setIs_active(false);
         war.setIs_ended(true);
         war.setEffective_end_time(System.currentTimeMillis());
+        war.setState_changed(true);
 
         (new WarEndEvent(war)).callEvent();
 
         Bukkit.broadcast(Component.text("War ended: " + war.getTitle()));
-
-        // Update war in the database asynchronously
-        var warDbService = plugin.getDatabaseManager().getWarDbService();
-        warDbService.createOrUpdateAsync(war).thenAccept(success -> {
-            if (success) {
-                plugin.getLogger().info("War updated in database.");
-            } else {
-                plugin.getLogger().severe("Failed to update war in database.");
-            }
-        });
 
     }
 
@@ -172,15 +159,7 @@ public class WarManager implements Listener {
 
         buildPlayerLists(war);
 
-        // Save the war to the database asynchronously
-        var warDbService = plugin.getDatabaseManager().getWarDbService();
-        warDbService.createOrUpdateAsync(war).thenAccept(success -> {
-            if (success) {
-                plugin.getLogger().info("War saved to database.");
-            } else {
-                plugin.getLogger().severe("Failed to save war to database.");
-            }
-        });
+        saveWarToDatabase(war);
 
         pendingWars.add(war);
         Bukkit.broadcast(Component
@@ -243,7 +222,19 @@ public class WarManager implements Listener {
         war.setAttacking_player(attackerResidentIds);
     }
 
-    // Public utility functions 
+    private void saveWarToDatabase(War war) {
+        var warDbService = plugin.getDatabaseManager().getWarDbService();
+        warDbService.createOrUpdateAsync(war).thenAccept(success -> {
+            if (success) {
+                plugin.getLogger().info("War saved to database.");
+            } else {
+                plugin.getLogger().severe("Failed to save war to database.");
+            }
+        });
+        war.setState_changed(false);
+    }
+
+    // Public utility functions
 
     public Map<War, WarSide> getPlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
@@ -264,11 +255,12 @@ public class WarManager implements Listener {
         War war = event.getWar();
 
         plugin.getLogger().info("Score event triggered for war: " + war.getTitle() + " | Player: " + event.getPlayer()
-                + " | Side: " + event.getSide().toString() + " | Type: " + event.getScoreType().toString() + " | Score: " + event.getFinalScore());
+                + " | Side: " + event.getSide().toString() + " | Type: " + event.getScoreType().toString()
+                + " | Score: " + event.getFinalScore());
 
         if (event.getSide() == WarSide.ATTACKER || event.getSide() == WarSide.BOTH) {
             war.setAttacker_score(war.getAttacker_score() + event.getFinalScore());
-        } 
+        }
         if (event.getSide() == WarSide.DEFENDER || event.getSide() == WarSide.BOTH) {
             war.setDefender_score(war.getDefender_score() + event.getFinalScore());
         }
@@ -278,8 +270,7 @@ public class WarManager implements Listener {
 
         // TODO: Save record to database
 
-        plugin.getDatabaseManager().getWarDbService().createOrUpdateAsync(war);
-
+        war.setState_changed(true);
     }
 
 }
