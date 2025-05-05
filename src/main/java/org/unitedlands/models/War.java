@@ -61,7 +61,7 @@ public class War implements Identifiable {
     private transient List<String> attacking_mercenaries;
     private transient List<String> defending_mercenaries;
 
-    private transient List<String> attacking_player;
+    private transient List<String> attacking_players;
     private transient List<String> defending_players;
 
     private transient Boolean state_changed = false;
@@ -286,12 +286,12 @@ public class War implements Identifiable {
         this.defender_score = defender_score;
     }
 
-    public List<String> getAttacking_player() {
-        return attacking_player;
+    public List<String> getAttacking_players() {
+        return attacking_players;
     }
 
-    public void setAttacking_player(List<String> attacking_player) {
-        this.attacking_player = attacking_player;
+    public void setAttacking_players(List<String> attacking_player) {
+        this.attacking_players = attacking_player;
     }
 
     public List<String> getDefending_players() {

@@ -1,15 +1,10 @@
 package org.unitedlands.managers;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
@@ -39,10 +34,7 @@ public class WarEventManager {
     }
 
     private void buildEventRegister() {
-        eventRegister.put("SAMPLE1", new SampleEvent("SAMPLE1", "Sample event 1", "Lorem ipsum dolor sit amet.", 120L));
-        eventRegister.put("SAMPLE2", new SampleEvent("SAMPLE2", "Sample event 2", "Lorem ipsum dolor sit amet.", 120L));
-        eventRegister.put("SAMPLE3", new SampleEvent("SAMPLE3", "Sample event 3", "Lorem ipsum dolor sit amet.", 120L));
-        eventRegister.put("SAMPLE4", new SampleEvent("SAMPLE4", "Sample event 4", "Lorem ipsum dolor sit amet.", 120L));
+        eventRegister.put("SAMPLE", new SampleEvent("SAMPLE", "Defenders’ Fury", "§oValiant strikes burn twice as bright — each foe felled counts double in the name of home and honor! §r(All defender pvp kills give double points)", 120L));
 
         var pickTable = plugin.getConfig().getConfigurationSection("war-events.pick-table");
         for (String key : pickTable.getKeys(false)) {
