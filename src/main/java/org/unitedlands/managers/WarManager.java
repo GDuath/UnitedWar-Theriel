@@ -1,6 +1,7 @@
 package org.unitedlands.managers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -163,9 +164,8 @@ public class WarManager implements Listener {
         war.setScheduled_begin_time(System.currentTimeMillis() + (warmupTime * 1000L));
         war.setScheduled_end_time(System.currentTimeMillis() + (warmupTime * 1000L) + (warDuration * 1000L));
 
-        // TODO: ally selection based on war goal etc.
-        war.setAttacking_towns(getFactionTownIds(war, attackingTown, false));
-        war.setDefending_towns(getFactionTownIds(war, defendingTown, false));
+        war.setAttacking_towns(getFactionTownIds(war, attackingTown, warGoal.callAttackerNation(), warGoal.callAttackerAllies()));
+        war.setDefending_towns(getFactionTownIds(war, defendingTown, warGoal.callDefenderNation(), warGoal.callDefenderAllies()));
 
         buildPlayerLists(war);
 
@@ -178,35 +178,33 @@ public class WarManager implements Listener {
 
 
 
-    private List<String> getFactionTownIds(War war, Town town, Boolean includeAllies) {
-        List<String> townIds = new ArrayList<>();
-        Nation nation = town.getNationOrNull();
-        if (nation != null) {
-            var nationTowns = nation.getTowns();
-            for (Town nationTown : nationTowns) {
-                townIds.add(nationTown.getUUID().toString());
-            }
-            if (includeAllies) {
-                var allies = nation.getAllies();
-                for (Nation ally : allies) {
-                    var allyTowns = ally.getTowns();
-                    for (Town allyTown : allyTowns) {
-                        townIds.add(allyTown.getUUID().toString());
+    private List<String> getFactionTownIds(War war, Town town, Boolean includeNation, Boolean includeAllies) {
+        List<String> townIds = Arrays.asList(town.getUUID().toString());
+        if (includeNation) {
+            Nation nation = town.getNationOrNull();
+            if (nation != null) {
+                var nationTowns = nation.getTowns();
+                for (Town nationTown : nationTowns) {
+                    if (nationTown.getUUID() != town.getUUID()) {
+                        townIds.add(nationTown.getUUID().toString());
                     }
                 }
-            }
-
-        } else {
-            townIds.add(town.getUUID().toString());
+                if (includeAllies) {
+                    var allies = nation.getAllies();
+                    for (Nation ally : allies) {
+                        var allyTowns = ally.getTowns();
+                        for (Town allyTown : allyTowns) {
+                            townIds.add(allyTown.getUUID().toString());
+                        }
+                    }
+                }
+    
+            } 
         }
         return townIds;
     }
 
     private void buildPlayerLists(War war) {
-
-        plugin.getLogger().info("Building player lists for war: " + war.getTitle());
-        plugin.getLogger().info("Attacking towns: " + war.getAttacking_towns());
-        plugin.getLogger().info("Defending towns: " + war.getDefending_towns());
 
         List<String> defenderResidentIds = new ArrayList<>();
         for (String townId : war.getDefending_towns()) {
@@ -230,7 +228,7 @@ public class WarManager implements Listener {
                 }
             }
         }
-        war.setAttacking_player(attackerResidentIds);
+        war.setAttacking_players(attackerResidentIds);
     }
 
     private void saveWarToDatabase(War war) {
@@ -289,7 +287,7 @@ public class WarManager implements Listener {
     public Map<War, WarSide> getActivePlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
         for (War war : activeWars) {
-            if (war.getAttacking_player().contains(playerId.toString())) {
+            if (war.getAttacking_players().contains(playerId.toString())) {
                 playerWars.put(war, WarSide.ATTACKER);
             } else if (war.getDefending_players().contains(playerId.toString())) {
                 playerWars.put(war, WarSide.DEFENDER);
@@ -301,7 +299,7 @@ public class WarManager implements Listener {
     public Map<War, WarSide> getPendingPlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
         for (War war : pendingWars) {
-            if (war.getAttacking_player().contains(playerId.toString())) {
+            if (war.getAttacking_players().contains(playerId.toString())) {
                 playerWars.put(war, WarSide.ATTACKER);
             } else if (war.getDefending_players().contains(playerId.toString())) {
                 playerWars.put(war, WarSide.DEFENDER);
@@ -316,10 +314,6 @@ public class WarManager implements Listener {
     private void onScoreEvent(WarScoreEvent event) {
         War war = event.getWar();
 
-        plugin.getLogger().info("Score event triggered for war: " + war.getTitle() + " | Player: " + event.getPlayer()
-                + " | Side: " + event.getSide().toString() + " | Type: " + event.getScoreType().toString()
-                + " | Score: " + event.getFinalScore());
-
         if (event.getSide() == WarSide.ATTACKER || event.getSide() == WarSide.BOTH) {
             war.setAttacker_score(war.getAttacker_score() + event.getFinalScore());
         }
@@ -327,8 +321,15 @@ public class WarManager implements Listener {
             war.setDefender_score(war.getDefender_score() + event.getFinalScore());
         }
 
-        plugin.getLogger().info("Score updated for war: " + war.getTitle() + " | Attacker: " + war.getAttacker_score()
-                + " | Defender: " + war.getDefender_score());
+        if (!event.getScoreType().isSilent()) {
+            var player = Bukkit.getPlayer(event.getPlayer());
+
+            Map<String, String> replacements = new HashMap<>();
+            replacements.put("score", event.getFinalScore().toString());
+            replacements.put("action", event.getScoreType().getDisplayName());
+
+            Messenger.sendMessageTemplate(player, "score-message", replacements, true);
+        }
 
         // TODO: Save record to database
 
