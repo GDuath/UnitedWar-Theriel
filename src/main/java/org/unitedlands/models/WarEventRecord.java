@@ -15,7 +15,7 @@ public class WarEventRecord implements Identifiable {
     @DatabaseField(canBeNull = false)
     private Long timestamp;
     @DatabaseField(canBeNull = false)
-    private Long start_time;
+    private Long scheduled_start_time;
     @DatabaseField(canBeNull = false)
     private Long scheduled_end_time;
     @DatabaseField(canBeNull = true)
@@ -40,12 +40,12 @@ public class WarEventRecord implements Identifiable {
         this.timestamp = timestamp;
     }
 
-    public Long getStart_time() {
-        return start_time;
+    public Long getScheduled_start_time() {
+        return scheduled_start_time;
     }
 
-    public void setStart_time(Long start_time) {
-        this.start_time = start_time;
+    public void setScheduled_start_time(Long scheduled_start_time) {
+        this.scheduled_start_time = scheduled_start_time;
     }
 
     public Long getScheduled_end_time() {

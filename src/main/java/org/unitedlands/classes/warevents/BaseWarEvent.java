@@ -1,16 +1,19 @@
 package org.unitedlands.classes.warevents;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.event.Listener;
 import org.unitedlands.events.WarScoreEvent;
 
 public abstract class BaseWarEvent implements Listener {
 
     private String internalName;
-
-
     private String displayname;
     private String description;
     private Long duration;
+    private @Nullable Long scheduledStartTime = null;
+    private @Nullable Long scheduledEndTime = null;
+    private boolean isActive = false;
 
     public BaseWarEvent(String internalName, String displayname, String description, Long duration) {
         this.internalName = internalName;
@@ -53,5 +56,28 @@ public abstract class BaseWarEvent implements Listener {
         this.duration = duration;
     }
 
+    public Long getScheduledStartTime() {
+        return scheduledStartTime;
+    }
+
+    public void setScheduledStartTime(Long scheduledStartTime) {
+        this.scheduledStartTime = scheduledStartTime;
+    }
+
+    public Long getScheduledEndTime() {
+        return scheduledEndTime;
+    }
+
+    public void setScheduledEndTime(Long scheduledEndTime) {
+        this.scheduledEndTime = scheduledEndTime;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 
 }

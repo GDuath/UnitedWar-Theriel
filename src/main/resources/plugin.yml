@@ -7,4 +7,10 @@ author: Theriel_
 commands:
   wardebug:
      description: Debugging commands.
+     permission: united.war.admin
      aliases: [wd]
+  waradmin:
+     description: War admin commands.
+     permission: united.war.admin
+     aliases: [wa]
+  

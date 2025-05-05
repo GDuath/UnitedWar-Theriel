@@ -1,6 +1,7 @@
 package org.unitedlands;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.unitedlands.commands.TownWarCommands;
 import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.DatabaseManager;
@@ -55,6 +56,7 @@ public class UnitedWar extends JavaPlugin {
         var debugCommands = new WarDebugCommands(this);
         getCommand("wardebug").setExecutor(debugCommands);
         getCommand("wardebug").setTabCompleter(debugCommands);
+        new TownWarCommands(this);
     }
 
     public DatabaseManager getDatabaseManager() {

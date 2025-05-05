@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,6 +20,7 @@ import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.models.War;
+import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
@@ -56,7 +59,7 @@ public class WarManager implements Listener {
 
     public void handleWars() {
 
-        plugin.getLogger().info("Handling " + pendingWars.size() + " pending, " + activeWars.size() + " active war(s)");
+        // plugin.getLogger().info("Handling " + pendingWars.size() + " pending, " + activeWars.size() + " active war(s)");
 
         List<War> startedWars = new ArrayList<>();
         for (War war : pendingWars) {
@@ -83,6 +86,13 @@ public class WarManager implements Listener {
         activeWars.removeAll(endedWars);
     }
 
+    public List<War> getWars() {
+        List<War> allWars = new ArrayList<>();
+        allWars.addAll(pendingWars);
+        allWars.addAll(activeWars);
+        return allWars;
+    }
+
     private boolean warCanBeStarted(War war) {
         var currentTime = System.currentTimeMillis();
         if (war.getScheduled_begin_time() <= currentTime && war.getScheduled_end_time() >= currentTime
@@ -97,9 +107,10 @@ public class WarManager implements Listener {
         war.setState_changed(true);
         (new WarStartEvent(war)).callEvent();
 
-        Bukkit.broadcast(Component.text("War started: " + war.getTitle()));
-
+        sendWarStartNotification(war);
     }
+
+
 
     private boolean warCanBeEnded(War war) {
         var currentTime = System.currentTimeMillis();
@@ -118,7 +129,6 @@ public class WarManager implements Listener {
         (new WarEndEvent(war)).callEvent();
 
         Bukkit.broadcast(Component.text("War ended: " + war.getTitle()));
-
     }
 
     public void createWar(String title, String description, String attackingTownId, String defendingTownId,
@@ -162,10 +172,11 @@ public class WarManager implements Listener {
         saveWarToDatabase(war);
 
         pendingWars.add(war);
-        Bukkit.broadcast(Component
-                .text("War created between " + attackingTown.getName() + " and " + defendingTown.getName() + "."));
 
+        sendWarDeclatedNotification(attackingTown, defendingTown, war);
     }
+
+
 
     private List<String> getFactionTownIds(War war, Town town, Boolean includeAllies) {
         List<String> townIds = new ArrayList<>();
@@ -234,11 +245,62 @@ public class WarManager implements Listener {
         war.setState_changed(false);
     }
 
+    // Notification methods
+
+    private void sendWarDeclatedNotification(Town attackingTown, Town defendingTown, War war) {
+        Map<String, String> replacements = new HashMap<>();
+        replacements.put("war-name", war.getCleanTitle());
+        replacements.put("attacker", war.getDeclaring_town_name());
+        replacements.put("defender", war.getTarget_town_name());
+
+        if (attackingTown.getNationOrNull() != null) {
+            replacements.put("attacker-nation", " (" + attackingTown.getNationOrNull().getName() + ")");
+        } else {
+            replacements.put("attacker-nation", "");
+        }
+        if (defendingTown.getNationOrNull() != null) {
+            replacements.put("defender-nation", " (" + defendingTown.getNationOrNull().getName() + ")");
+        } else {
+            replacements.put("defender-nation", "");
+        }
+        replacements.put("ally-info", "");
+        replacements.put("war-goal-info", "");
+
+        Messenger.broadcastMessageTemplate("war-declared", replacements, false);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_6, 1.0f, 1.0f);
+        }
+    }
+
+    private void sendWarStartNotification(War war) {
+        Map<String, String> replacements = new HashMap<>();
+        replacements.put("war-name", war.getCleanTitle());
+
+        Messenger.broadcastMessageTemplate("war-started", replacements, false);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_7, 1.0f, 1.0f);
+        }
+    }
+
     // Public utility functions
 
-    public Map<War, WarSide> getPlayerWars(UUID playerId) {
+    public Map<War, WarSide> getActivePlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
         for (War war : activeWars) {
+            if (war.getAttacking_player().contains(playerId.toString())) {
+                playerWars.put(war, WarSide.ATTACKER);
+            } else if (war.getDefending_players().contains(playerId.toString())) {
+                playerWars.put(war, WarSide.DEFENDER);
+            }
+        }
+        return playerWars;
+    }
+
+    public Map<War, WarSide> getPendingPlayerWars(UUID playerId) {
+        Map<War, WarSide> playerWars = new HashMap<>();
+        for (War war : pendingWars) {
             if (war.getAttacking_player().contains(playerId.toString())) {
                 playerWars.put(war, WarSide.ATTACKER);
             } else if (war.getDefending_players().contains(playerId.toString())) {
