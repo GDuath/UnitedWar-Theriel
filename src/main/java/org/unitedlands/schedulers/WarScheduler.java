@@ -34,7 +34,7 @@ public class WarScheduler {
     private void awardActivityScores() {
         var onlinePlayers = Bukkit.getOnlinePlayers();
         for (var player : onlinePlayers) {
-            var playerWars = plugin.getWarManager().getPlayerWars(player.getUniqueId());
+            var playerWars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
             if (!playerWars.isEmpty()) {
                 for (var war : playerWars.keySet()) 
                 {

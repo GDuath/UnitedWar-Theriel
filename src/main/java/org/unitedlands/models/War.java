@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
 
@@ -93,6 +92,10 @@ public class War implements Identifiable {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getCleanTitle() {
+        return title.replace("_", " ");
     }
 
     public void setTitle(String title) {
