@@ -56,7 +56,7 @@ public class PlayerDeathListener implements Listener {
         // If so, prepare a higher reward.
         var victimRes = TownyAPI.getInstance().getResident(victim);
         if (victimRes != null) {
-            if (victimRes.getTownRanks().contains("mayor") || victimRes.getTownRanks().contains("general")) {
+            if (victimRes.isMayor() || victimRes.getTownRanks().contains("co-mayor") || victimRes.getTownRanks().contains("general")) {
                 reward = plugin.getConfig().getInt("default-rewards.pvp-leader-kill", 50);
                 warScoreType = WarScoreType.PVP_LEADER_KILL;
             }
@@ -114,6 +114,7 @@ public class PlayerDeathListener implements Listener {
         }
 
         // Fireball launched by player
+        // TODO: Fix this, it doesn't work with fireballs launched by players
         else if (damager instanceof Fireball) {
             Fireball fireball = (Fireball) damager;
             if (fireball.getShooter() instanceof Player) {
@@ -136,6 +137,8 @@ public class PlayerDeathListener implements Listener {
                 killer = (Player) wolf.getOwner();
             }
         }
+
+        // TODO: Anchor and crystal kills
 
         return killer;
     }

@@ -40,13 +40,14 @@ public class Messenger {
         player.sendMessage(component);
     }
 
-    public static void sendMessageTemplate(Player player, String messageId, Map<String, String> replacements, boolean includePrefix) {
+    public static void sendMessageTemplate(Player player, String messageId, Map<String, String> replacements,
+            boolean includePrefix) {
 
         var message = plugin.getConfig().getString("messages." + messageId);
 
         if (replacements != null) {
             for (var entry : replacements.entrySet()) {
-                message = message.replace("{" + entry.getKey() + "}", entry.getValue());
+                message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
             }
         }
 
@@ -58,7 +59,8 @@ public class Messenger {
         sendMessage(player, message, includePrefix);
     }
 
-    public static void sendMessageListTemplate(Player player, String messageListId, Map<String, String> replacements, boolean includePrefix) {
+    public static void sendMessageListTemplate(Player player, String messageListId, Map<String, String> replacements,
+            boolean includePrefix) {
 
         var messageList = plugin.getConfig().getStringList("messages." + messageListId);
 
@@ -70,20 +72,21 @@ public class Messenger {
         for (String message : messageList) {
             if (replacements != null) {
                 for (var entry : replacements.entrySet()) {
-                    message = message.replace("{" + entry.getKey() + "}", entry.getValue());
+                    message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
                 }
             }
             sendMessage(player, message, includePrefix);
         }
     }
 
-    public static void broadcastMessageTemplate(String messageId, Map<String, String> replacements, boolean includePrefix) {
+    public static void broadcastMessageTemplate(String messageId, Map<String, String> replacements,
+            boolean includePrefix) {
 
         var message = plugin.getConfig().getString("messages." + messageId);
 
         if (replacements != null) {
             for (var entry : replacements.entrySet()) {
-                message = message.replace("{" + entry.getKey() + "}", entry.getValue());
+                message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
             }
         }
 
@@ -95,7 +98,8 @@ public class Messenger {
         broadCastMessage(message, includePrefix);
     }
 
-    public static void broadcastMessageListTemplate(String messageListId, Map<String, String> replacements, boolean includePrefix) {
+    public static void broadcastMessageListTemplate(String messageListId, Map<String, String> replacements,
+            boolean includePrefix) {
 
         var messageList = plugin.getConfig().getStringList("messages." + messageListId);
 
@@ -107,7 +111,7 @@ public class Messenger {
         for (String message : messageList) {
             if (replacements != null) {
                 for (var entry : replacements.entrySet()) {
-                    message = message.replace("{" + entry.getKey() + "}", entry.getValue());
+                    message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
                 }
             }
             broadCastMessage(message, includePrefix);

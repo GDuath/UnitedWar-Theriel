@@ -1,11 +1,15 @@
 package org.unitedlands.models;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
+import org.unitedlands.classes.WarResult;
+import org.unitedlands.util.Formatter;
 
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -24,7 +28,9 @@ public class War implements Identifiable {
     private String description;
 
     @DatabaseField(canBeNull = true, dataType = DataType.ENUM_NAME)
-    private WarGoal wargoal;
+    private WarGoal war_goal;
+    @DatabaseField(canBeNull = true, dataType = DataType.ENUM_NAME)
+    private WarResult war_result;
 
     @DatabaseField(canBeNull = false, width = 36)
     private String declaring_town_id;
@@ -34,6 +40,15 @@ public class War implements Identifiable {
     private String target_town_id;
     @DatabaseField(canBeNull = false)
     private String target_town_name;
+
+    @DatabaseField(canBeNull = true, width = 36)
+    private String declaring_nation_id;
+    @DatabaseField(canBeNull = true)
+    private String declaring_nation_name;
+    @DatabaseField(canBeNull = true, width = 36)
+    private String target_nation_id;
+    @DatabaseField(canBeNull = true)
+    private String target_nation_name;
 
     @DatabaseField(canBeNull = false)
     private Long scheduled_begin_time;
@@ -56,6 +71,11 @@ public class War implements Identifiable {
     @DatabaseField(canBeNull = true, dataType = DataType.LONG_STRING)
     private String defending_mercenaries_serialized;
 
+    @DatabaseField(canBeNull = false, defaultValue = "0")
+    private Double attacker_warchest;
+    @DatabaseField(canBeNull = false, defaultValue = "0")
+    private Double defender_warchest;
+
     private transient List<String> attacking_towns;
     private transient List<String> defending_towns;
     private transient List<String> attacking_mercenaries;
@@ -70,6 +90,11 @@ public class War implements Identifiable {
     private Integer attacker_score = 0;
     @DatabaseField(canBeNull = false, defaultValue = "0")
     private Integer defender_score = 0;
+
+    @DatabaseField(canBeNull = false, defaultValue = "0")
+    private Integer attacker_score_cap = 0;
+    @DatabaseField(canBeNull = false, defaultValue = "0")
+    private Integer defender_score_cap = 0;
 
     public War() {
     }
@@ -110,12 +135,20 @@ public class War implements Identifiable {
         this.description = description;
     }
 
-    public WarGoal getWargoal() {
-        return wargoal;
+    public WarGoal getWar_goal() {
+        return war_goal;
     }
 
-    public void setWargoal(WarGoal wargoal) {
-        this.wargoal = wargoal;
+    public void setWar_goal(WarGoal wargoal) {
+        this.war_goal = wargoal;
+    }
+
+    public WarResult getWar_result() {
+        return war_result;
+    }
+
+    public void setWar_result(WarResult war_result) {
+        this.war_result = war_result;
     }
 
     public String getDeclaring_town_id() {
@@ -148,6 +181,38 @@ public class War implements Identifiable {
 
     public void setTarget_town_name(String target_town_name) {
         this.target_town_name = target_town_name;
+    }
+
+    public String getDeclaring_nation_id() {
+        return declaring_nation_id;
+    }
+
+    public void setDeclaring_nation_id(String declaring_nation_id) {
+        this.declaring_nation_id = declaring_nation_id;
+    }
+
+    public String getDeclaring_nation_name() {
+        return declaring_nation_name;
+    }
+
+    public void setDeclaring_nation_name(String declaring_nation_name) {
+        this.declaring_nation_name = declaring_nation_name;
+    }
+
+    public String getTarget_nation_id() {
+        return target_nation_id;
+    }
+
+    public void setTarget_nation_id(String target_nation_id) {
+        this.target_nation_id = target_nation_id;
+    }
+
+    public String getTarget_nation_name() {
+        return target_nation_name;
+    }
+
+    public void setTarget_nation_name(String target_nation_name) {
+        this.target_nation_name = target_nation_name;
     }
 
     public Long getScheduled_begin_time() {
@@ -222,6 +287,26 @@ public class War implements Identifiable {
         this.defending_mercenaries_serialized = defending_mercenaries_serialized;
     }
 
+    public Double getAttacker_warchest() {
+        return attacker_warchest;
+    }
+
+    public void setAttacker_warchest(Double attacker_warchest) {
+        this.attacker_warchest = attacker_warchest;
+    }
+
+    public Double getDefender_warchest() {
+        return defender_warchest;
+    }
+
+    public Double getTotal_warchest() {
+        return getAttacker_warchest() + getDefender_warchest();
+    }
+
+    public void setDefender_warchest(Double defender_warchest) {
+        this.defender_warchest = defender_warchest;
+    }
+
     public List<String> getAttacking_towns() {
         if (attacking_towns == null && attacking_towns_serialized != null) {
             attacking_towns = Arrays.asList(attacking_towns_serialized.split("#"));
@@ -286,6 +371,22 @@ public class War implements Identifiable {
         this.defender_score = defender_score;
     }
 
+    public Integer getAttacker_score_cap() {
+        return attacker_score_cap;
+    }
+
+    public void setAttacker_score_cap(Integer attacker_score_cap) {
+        this.attacker_score_cap = attacker_score_cap;
+    }
+
+    public Integer getDefender_score_cap() {
+        return defender_score_cap;
+    }
+
+    public void setDefender_score_cap(Integer defender_score_cap) {
+        this.defender_score_cap = defender_score_cap;
+    }
+
     public List<String> getAttacking_players() {
         return attacking_players;
     }
@@ -305,8 +406,38 @@ public class War implements Identifiable {
     public Boolean getState_changed() {
         return state_changed;
     }
-    
+
     public void setState_changed(Boolean state_changed) {
         this.state_changed = state_changed;
     }
+
+    public Map<String, String> getMessagePlaceholders() {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("war-name", getCleanTitle());
+        replacements.put("war-description", getDescription());
+        replacements.put("war-active", getIs_active() ? "§cACTIVE" : getIs_ended() ? "§8ENDED" : "§eWARMUP");
+        replacements.put("attacker", getDeclaring_town_name());
+        replacements.put("defender", getTarget_town_name());
+        replacements.put("attacker-nation", "(" + getDeclaring_nation_name() + ")");
+        replacements.put("defender-nation", "(" + getTarget_nation_name() + ")");
+        replacements.put("attacker-ally-info", war_goal.callAttackerAllies() ? "The attacker has called allies into the war." : "The attacker has not called allies into the war.");
+        replacements.put("defender-ally-info", war_goal.callAttackerAllies() ? "The defender has called allies into the war." : "The defender has not called allies into the war.");
+        replacements.put("war-goal", war_goal.getDisplayName());
+        replacements.put("attacker-score", getAttacker_score().toString());
+        replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
+        replacements.put("defender-score", getDefender_score().toString());
+        replacements.put("defender-score-cap", getDefender_score_cap().toString());
+        replacements.put("war-result", getWar_result().getDisplayName());
+        if (!getIs_active() && !getIs_ended()) {
+            replacements.put("timer-info", "War will start in §e" + Formatter.formatDuration(scheduled_begin_time - System.currentTimeMillis()));
+        } else if (getIs_active()) {
+            replacements.put("timer-info", "War will end in §e" + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
+        } else {
+            replacements.put("timer-info", "War has ended.");
+        }
+        replacements.put("war-chest", getTotal_warchest().toString());
+
+        return replacements;
+    }
+
 }

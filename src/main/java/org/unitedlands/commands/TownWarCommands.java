@@ -125,16 +125,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
             return;
         } else {
             for (var war : allWars.keySet()) {
-                var replacements = new HashMap<String, String>();
-                replacements.put("war-name", war.getCleanTitle());
-                replacements.put("war-active", war.getIs_active() ? "§cActive§f" : "§eWarming Up§f");
-                replacements.put("war-description", war.getDescription());
-                replacements.put("attacker", war.getDeclaring_town_name());
-                replacements.put("defender", war.getTarget_town_name());
-                replacements.put("attacker-score", String.valueOf(war.getAttacker_score()));    
-                replacements.put("defender-score", String.valueOf(war.getDefender_score()));
-
-                Messenger.sendMessageListTemplate(((Player)sender), "war-info", replacements, false);
+                Messenger.sendMessageListTemplate(((Player)sender), "war-info", war.getMessagePlaceholders(), false);
             }
         }
     }
