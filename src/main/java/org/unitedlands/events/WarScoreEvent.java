@@ -18,8 +18,8 @@ public class WarScoreEvent extends Event {
     private @Nullable UUID player;
     private WarSide side;
     private WarScoreType scoreType;
-    private int rawScore;
-    private int finalScore;
+    private Integer rawScore;
+    private Integer finalScore;
 
     @Override
     public HandlerList getHandlers() {
@@ -58,11 +58,11 @@ public class WarScoreEvent extends Event {
         return scoreType;
     }
 
-    public int getRawScore() {
+    public Integer getRawScore() {
         return rawScore;
     }
 
-    public int getFinalScore() {
+    public Integer getFinalScore() {
         return finalScore;
     }
 

@@ -1,10 +1,16 @@
 name: UnitedWar
-version: 0.1
+version: '${project.version}'
 main: org.unitedlands.UnitedWar
-api-version: 1.18
-description: A custom war plugn for UnitedLands.
-author: Theriel_
+api-version: 1.21
+description: A custom war plugin for United Lands.
+authors: [ Litning11, Theriel_]
+depend: [ Towny ]
 commands:
   wardebug:
      description: Debugging commands.
+     permission: united.war.admin
      aliases: [wd]
+  waradmin:
+     description: War Admin commands.
+     permission: united.war.admin
+     aliases: [wa]
