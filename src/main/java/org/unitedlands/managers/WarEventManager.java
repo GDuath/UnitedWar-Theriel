@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.warevents.BaseWarEvent;
@@ -46,6 +47,10 @@ public class WarEventManager {
             plugin.getLogger().warning("No event schedule found in the config. No events will be scheduled.");
             eventSchedule = List.of();
         }
+    }
+
+    public Map<String, BaseWarEvent> getEventRegister() {
+        return eventRegister;
     }
 
     public void loadEventRecord() {
@@ -149,20 +154,46 @@ public class WarEventManager {
 
             Bukkit.getPluginManager().registerEvents((Listener) currentEvent, plugin);
 
-            currentEventRecord = new WarEventRecord() {
-                {
-                    setTimestamp(System.currentTimeMillis());
-                    setScheduled_start_time(currentEvent.getScheduledStartTime());
-                    setScheduled_end_time(currentEvent.getScheduledEndTime());
-                    setEvent_type(currentEvent.getInternalName());
-                }
-            };
-            plugin.getDatabaseManager().getWarEventRecordDbService().createOrUpdateAsync(currentEventRecord);
+            saveCurrentEventToDatabase();
 
             sendEventPickNotification();
         } else {
             plugin.getLogger().warning("No event was picked. Please check the event register.");
         }
+    }
+
+    public void forceEvent(Player sender, String eventName)
+    {
+        if (!eventRegister.containsKey(eventName)) {
+            Messenger.sendMessage(sender, "This internal event name is not registered", true);
+            return;
+        }
+
+        if (currentEvent != null)
+            removeCurrentEvent();
+
+        currentEvent = eventRegister.get(eventName);
+        currentEvent.setScheduledStartTime(System.currentTimeMillis());
+        currentEvent.setScheduledEndTime(currentEvent.getScheduledStartTime() + (currentEvent.getDuration() * 1000L));
+        currentEvent.setActive(false);
+
+        Bukkit.getPluginManager().registerEvents((Listener) currentEvent, plugin);
+
+        saveCurrentEventToDatabase();
+
+        Messenger.broadCastMessage("An admin forced the start of a new war event.", true);
+    }
+
+    private void saveCurrentEventToDatabase() {
+        currentEventRecord = new WarEventRecord() {
+            {
+                setTimestamp(System.currentTimeMillis());
+                setScheduled_start_time(currentEvent.getScheduledStartTime());
+                setScheduled_end_time(currentEvent.getScheduledEndTime());
+                setEvent_type(currentEvent.getInternalName());
+            }
+        };
+        plugin.getDatabaseManager().getWarEventRecordDbService().createOrUpdateAsync(currentEventRecord);
     }
 
     private void sendEventPickNotification() {
@@ -186,7 +217,6 @@ public class WarEventManager {
     private void sendEventEndNotification() {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("event-name", currentEvent.getDisplayname());
-        placeholders.put("event-description", currentEvent.getDescription());
         Messenger.broadcastMessageListTemplate("event-info-ended", placeholders, false);
     }
 

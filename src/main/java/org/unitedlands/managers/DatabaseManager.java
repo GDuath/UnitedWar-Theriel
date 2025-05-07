@@ -12,8 +12,10 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.models.SchemaVersion;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarEventRecord;
+import org.unitedlands.models.WarScoreRecord;
 import org.unitedlands.services.WarDbService;
 import org.unitedlands.services.WarEventRecordDbService;
+import org.unitedlands.services.WarScoreRecordDbService;
 
 public class DatabaseManager {
 
@@ -23,6 +25,7 @@ public class DatabaseManager {
 
     private WarDbService warDbService;
     private WarEventRecordDbService warEventRecordDbService;
+    private WarScoreRecordDbService warScoreRecordDbService;
 
     public DatabaseManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -65,6 +68,7 @@ public class DatabaseManager {
     private void registerServices() throws SQLException {
         this.warDbService = new WarDbService(getDao(War.class));
         this.warEventRecordDbService = new WarEventRecordDbService(getDao(WarEventRecord.class));
+        this.warScoreRecordDbService = new WarScoreRecordDbService(getDao(WarScoreRecord.class));
     }
 
     private void verifySchemaVersion() throws SQLException {
@@ -120,6 +124,10 @@ public class DatabaseManager {
 
     public WarEventRecordDbService getWarEventRecordDbService() {
         return warEventRecordDbService;
+    }
+
+    public WarScoreRecordDbService getWarScoreRecordDbService() {
+        return warScoreRecordDbService;
     }
 
     public ConnectionSource getConnectionSource() {

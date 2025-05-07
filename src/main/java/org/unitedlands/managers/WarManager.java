@@ -16,18 +16,19 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarGoal;
+import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.models.War;
+import org.unitedlands.models.WarScoreRecord;
+import org.unitedlands.services.WarScoreRecordDbService;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
-
-import net.kyori.adventure.text.Component;
 
 public class WarManager implements Listener {
 
@@ -59,8 +60,6 @@ public class WarManager implements Listener {
     }
 
     public void handleWars() {
-
-        // plugin.getLogger().info("Handling " + pendingWars.size() + " pending, " + activeWars.size() + " active war(s)");
 
         List<War> startedWars = new ArrayList<>();
         for (War war : pendingWars) {
@@ -111,17 +110,23 @@ public class WarManager implements Listener {
         sendWarStartNotification(war);
     }
 
-
-
     private boolean warCanBeEnded(War war) {
+
+        if (!war.getIs_active())
+            return false;
         var currentTime = System.currentTimeMillis();
-        if (war.getScheduled_end_time() <= currentTime && war.getIs_active()) {
+        if (war.getScheduled_end_time() <= currentTime) {
+            return true;
+        }
+        if (war.getAttacker_score() >= war.getAttacker_score_cap() ||
+                war.getDefender_score() >= war.getDefender_score_cap()) {
             return true;
         }
         return false;
     }
 
     private void endWar(War war) {
+        calculateWarResult(war);
         war.setIs_active(false);
         war.setIs_ended(true);
         war.setEffective_end_time(System.currentTimeMillis());
@@ -129,7 +134,48 @@ public class WarManager implements Listener {
 
         (new WarEndEvent(war)).callEvent();
 
-        Bukkit.broadcast(Component.text("War ended: " + war.getTitle()));
+        sendWarEndNotification(war);
+    }
+
+    public void forceEndWar(War war) {
+        endWar(war);
+        if (pendingWars.contains(war))
+            pendingWars.remove(war);
+        else if (activeWars.contains(war))
+            activeWars.remove(war);
+
+        saveWarToDatabase(war);
+    }
+
+    private void calculateWarResult(War war) {
+        float attackerScore = (float) war.getAttacker_score();
+        float defenderScore = (float) war.getDefender_score();
+
+        if (defenderScore == 0)
+            defenderScore = 0.01f;
+        if (attackerScore == 0)
+            attackerScore = 0.01f;
+
+        double ratio = attackerScore / defenderScore;
+
+        WarResult warResult = WarResult.UNDECIDED;
+        if (ratio < 0.25f) {
+            warResult = WarResult.STRONG_DEFENDER_WIN;
+        } else if (ratio >= 0.25f && ratio < 0.75f) {
+            warResult = WarResult.NORMAL_DEFENDER_WIN;
+        } else if (ratio >= 0.75f && ratio < 0.95f) {
+            warResult = WarResult.NARROW_DEFENDER_WIN;
+        } else if (ratio >= 0.95 && ratio < 1.05f) {
+            warResult = WarResult.DRAW;
+        } else if (ratio >= 1.05f && ratio < 1.333f) {
+            warResult = WarResult.NARROW_ATTACKER_WIN;
+        } else if (ratio >= 1.333f && ratio < 4) {
+            warResult = WarResult.NORMAL_ATTACKER_WIN;
+        } else if (ratio > 4) {
+            warResult = WarResult.STRONG_ATTACKER_WIN;
+        }
+
+        war.setWar_result(warResult);
     }
 
     public void createWar(String title, String description, String attackingTownId, String defendingTownId,
@@ -140,23 +186,32 @@ public class WarManager implements Listener {
         Town attackingTown = TownyAPI.getInstance().getTown(UUID.fromString(attackingTownId));
         Town defendingTown = TownyAPI.getInstance().getTown(UUID.fromString(defendingTownId));
 
-        if (attackingTown == null || defendingTown == null) {
-            plugin.getLogger().severe("One of the towns does not exist. Cancelling war creation.");
-            return;
-        }
-
         War war = new War();
         war.setTimestamp(System.currentTimeMillis());
 
         war.setTitle(title.replace(" ", "_"));
         war.setDescription(description);
-        war.setWargoal(warGoal);
+        war.setWar_goal(warGoal);
 
         war.setDeclaring_town_id(attackingTownId);
         war.setDeclaring_town_name(attackingTown.getName());
-
         war.setTarget_town_id(defendingTownId);
         war.setTarget_town_name(defendingTown.getName());
+
+        if (warGoal.callAttackerNation()) {
+            Nation nation = attackingTown.getNationOrNull();
+            if (nation != null) {
+                war.setDeclaring_nation_id(nation.getUUID().toString());
+                war.setDeclaring_nation_name(nation.getName());
+            }
+        }
+        if (warGoal.callDefenderNation()) {
+            Nation nation = defendingTown.getNationOrNull();
+            if (nation != null) {
+                war.setTarget_nation_id(nation.getUUID().toString());
+                war.setTarget_nation_name(nation.getName());
+            }
+        }
 
         Long warmupTime = fileConfig.getLong("wars-settings.default.warmup-time", 60L);
         Long warDuration = fileConfig.getLong("wars-settings.default.duration", 60L);
@@ -164,9 +219,20 @@ public class WarManager implements Listener {
         war.setScheduled_begin_time(System.currentTimeMillis() + (warmupTime * 1000L));
         war.setScheduled_end_time(System.currentTimeMillis() + (warmupTime * 1000L) + (warDuration * 1000L));
 
-        war.setAttacking_towns(getFactionTownIds(war, attackingTown, warGoal.callAttackerNation(), warGoal.callAttackerAllies()));
-        war.setDefending_towns(getFactionTownIds(war, defendingTown, warGoal.callDefenderNation(), warGoal.callDefenderAllies()));
+        Integer attackerCap = fileConfig.getInt("wars-settings.default.attacker-score-cap", 500);
+        Integer defenderCap = fileConfig.getInt("wars-settings.default.defender-score-cap", 500);
 
+        war.setAttacker_score_cap(attackerCap);
+        war.setDefender_score_cap(defenderCap);
+
+        war.setAttacking_towns(
+                getFactionTownIds(war, attackingTown, warGoal.callAttackerNation(), warGoal.callAttackerAllies()));
+        war.setDefending_towns(
+                getFactionTownIds(war, defendingTown, warGoal.callDefenderNation(), warGoal.callDefenderAllies()));
+
+        war.setWar_result(WarResult.UNDECIDED);
+
+        buildWarChests(war);
         buildPlayerLists(war);
 
         saveWarToDatabase(war);
@@ -176,10 +242,10 @@ public class WarManager implements Listener {
         sendWarDeclatedNotification(attackingTown, defendingTown, war);
     }
 
-
-
     private List<String> getFactionTownIds(War war, Town town, Boolean includeNation, Boolean includeAllies) {
-        List<String> townIds = Arrays.asList(town.getUUID().toString());
+        List<String> townIds = new ArrayList<String>();
+        townIds.add(town.getUUID().toString());
+
         if (includeNation) {
             Nation nation = town.getNationOrNull();
             if (nation != null) {
@@ -198,10 +264,39 @@ public class WarManager implements Listener {
                         }
                     }
                 }
-    
-            } 
+
+            }
         }
         return townIds;
+    }
+
+    private void buildWarChests(War war) {
+        Double attackerContribution = plugin.getConfig()
+                .getDouble("wars-settings.default.attacker-warchest-contibution", 0.1);
+        Double defenderContribution = plugin.getConfig()
+                .getDouble("wars-settings.default.defender-warchest-contibution", 0.1);
+
+        Double attackerWarchest = 0d;
+        for (String townId : war.getAttacking_towns()) {
+            Town town = TownyAPI.getInstance().getTown(UUID.fromString(townId));
+            if (town != null) {
+                var amount = Math.round(town.getAccount().getCachedBalance(true) * attackerContribution);
+                town.getAccount().withdraw(amount, "War contribution to " + war.getTitle());
+                attackerWarchest += amount;
+            }
+        }
+        war.setAttacker_warchest(attackerWarchest);
+
+        Double defenderWarchest = 0d;
+        for (String townId : war.getDefending_towns()) {
+            Town town = TownyAPI.getInstance().getTown(UUID.fromString(townId));
+            if (town != null) {
+                var amount = Math.round(town.getAccount().getCachedBalance(true) * defenderContribution);
+                town.getAccount().withdraw(amount, "War contribution to " + war.getTitle());
+                defenderWarchest += amount;
+            }
+        }
+        war.setDefender_warchest(defenderWarchest);
     }
 
     private void buildPlayerLists(War war) {
@@ -243,46 +338,39 @@ public class WarManager implements Listener {
         war.setState_changed(false);
     }
 
-    // Notification methods
+    //#region Notification methods
 
     private void sendWarDeclatedNotification(Town attackingTown, Town defendingTown, War war) {
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("war-name", war.getCleanTitle());
-        replacements.put("attacker", war.getDeclaring_town_name());
-        replacements.put("defender", war.getTarget_town_name());
-
-        if (attackingTown.getNationOrNull() != null) {
-            replacements.put("attacker-nation", " (" + attackingTown.getNationOrNull().getName() + ")");
-        } else {
-            replacements.put("attacker-nation", "");
-        }
-        if (defendingTown.getNationOrNull() != null) {
-            replacements.put("defender-nation", " (" + defendingTown.getNationOrNull().getName() + ")");
-        } else {
-            replacements.put("defender-nation", "");
-        }
-        replacements.put("ally-info", "");
-        replacements.put("war-goal-info", "");
-
-        Messenger.broadcastMessageTemplate("war-declared", replacements, false);
-
+        Messenger.broadcastMessageListTemplate("war-declared", war.getMessagePlaceholders(), false);
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_6, 1.0f, 1.0f);
         }
     }
 
     private void sendWarStartNotification(War war) {
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("war-name", war.getCleanTitle());
-
-        Messenger.broadcastMessageTemplate("war-started", replacements, false);
-
+        Messenger.broadcastMessageTemplate("war-started", war.getMessagePlaceholders(), false);
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_7, 1.0f, 1.0f);
         }
     }
 
-    // Public utility functions
+    private void sendWarEndNotification(War war) {
+        Messenger.broadcastMessageListTemplate("war-ended", war.getMessagePlaceholders(), false);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_2, 1.0f, 1.0f);
+        }
+    }
+
+    //#endregion
+
+    //#region Public utility functions
+
+    public War getWarByName(String name) {
+        List<War> allWars = new ArrayList<War>();
+        allWars.addAll(activeWars);
+        allWars.addAll(pendingWars);
+        return allWars.stream().filter(w -> w.getTitle().equals(name)).findFirst().orElse(null);
+    }
 
     public Map<War, WarSide> getActivePlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
@@ -308,7 +396,9 @@ public class WarManager implements Listener {
         return playerWars;
     }
 
-    // Score change listener
+    //#endregion
+
+    //#region Score Listener
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private void onScoreEvent(WarScoreEvent event) {
@@ -331,9 +421,22 @@ public class WarManager implements Listener {
             Messenger.sendMessageTemplate(player, "score-message", replacements, true);
         }
 
-        // TODO: Save record to database
+        // Save record to database
+        WarScoreRecord record = new WarScoreRecord() {
+            {
+                setTimestamp(System.currentTimeMillis());
+                setWar_id(event.getWar().getId());
+                setWar_score_type(event.getScoreType());
+                setPlayer_id(event.getPlayer());
+                setWar_side(event.getSide());
+                setScore_raw(event.getRawScore());
+                setScore_adjusted(event.getFinalScore());
+            }
+        };
+        plugin.getDatabaseManager().getWarScoreRecordDbService().createOrUpdate(record);
 
         war.setState_changed(true);
     }
 
+    //#endregion
 }

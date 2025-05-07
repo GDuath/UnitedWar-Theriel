@@ -1,21 +1,28 @@
 package org.unitedlands.classes;
 
 public enum WarGoal {
-    SKIRMISH(false, false, false, false),
-    INDEPENDENCE(false, false, true, false),
-    DEFAULT(true, true, true, true);
+    SKIRMISH("Skirmish", false, false, false, false),
+    INDEPENDENCE("War for Independence", false, false, true, false),
+    DEFAULT("Dominance", true, true, true, true);
 
+    private final String displayName;
     private final boolean callAttackerNation;
     private final boolean callAttackerAllies;
     private final boolean callDefenderNation;
     private final boolean callDefenderAllies;
 
-    WarGoal(boolean callAttackerNation, boolean callAttackerAllies, boolean callDefenderNation, boolean callDefenderAllies) {
+    WarGoal(String displayName, boolean callAttackerNation, boolean callAttackerAllies, boolean callDefenderNation, boolean callDefenderAllies) {
+        this.displayName = displayName;
         this.callAttackerNation = callAttackerNation;
         this.callAttackerAllies = callAttackerAllies;
         this.callDefenderNation = callDefenderNation;
         this.callDefenderAllies = callDefenderAllies;
     }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
     public boolean callAttackerNation() {
         return callAttackerNation;
     }
