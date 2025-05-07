@@ -22,6 +22,7 @@ import java.util.Objects;
 
 import com.palmergames.bukkit.towny.scheduling.TaskScheduler;
 import com.palmergames.bukkit.towny.scheduling.impl.BukkitTaskScheduler;
+import org.unitedlands.util.WarLivesMetadata;
 
 public class UnitedWar extends JavaPlugin {
 
@@ -58,7 +59,14 @@ public class UnitedWar extends JavaPlugin {
         try {
             TownyAPI.getInstance().registerCustomDataField(MobilisationMetadata.MOBILISATION_FIELD);
         } catch (KeyAlreadyRegisteredException e) {
-            getLogger().warning(e.getMessage()); // A flag with the same key name already exists try again
+            getLogger().warning(e.getMessage());
+        }
+
+        // Try to register the war lives data field.
+        try {
+            TownyAPI.getInstance().registerCustomDataField(WarLivesMetadata.WARLIVES_FIELD);
+        } catch (KeyAlreadyRegisteredException e) {
+            getLogger().warning(e.getMessage());
         }
 
         getLogger().info("Flag successfully registered!");
