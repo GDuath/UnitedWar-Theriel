@@ -401,6 +401,8 @@ messages:
   town-nation-not-found: "§2No town or nation found named §e§l{0}"
   # {0} is the attempted input.
   not-a-number: "§e§l{0} §2is not a number."
+  # {0} is the player username.
+  player-not-found: "§e§l{0} is not a recognised username or not online."
   invalid-mobilisation-number: "§2Mobilisation must be set between 0-100."
   # {0} is the town or nation name.
   # {1} is the mobilisation amount.
@@ -457,3 +459,14 @@ messages:
     - "§f{event-description}"
     - "§7This event has now ended and all effects have been removed"
     - "§c§m+|✦                  +✦+                  |✦+"
+# +---------------------------------------------+
+# |                 War Lives                   |
+# +---------------------------------------------+
+  warlives-usage:
+    # TURN INTO LIST
+    - "§cInvalid command, try: §7/wa warlives [Player Name] set [Int] or /wa warlives [Player Name] delete"
+  # {0} is the player username.
+  warlives-delete: "§e§l{0} §2war lives deleted."
+  # {0} is the town or nation name.
+  # {1} is the mobilisation amount.
+  warlives-set:  "§e§l{0} §2war lives set to §e§l{1}"

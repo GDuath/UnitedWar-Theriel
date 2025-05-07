@@ -2,14 +2,19 @@ package org.unitedlands.commands;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Nation;
+import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.unitedlands.util.MobilisationMetadata;
+import org.unitedlands.util.WarLivesMetadata;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +26,7 @@ import static org.unitedlands.util.Messages.getMessage;
 
 public class WarAdminCommands implements CommandExecutor, TabCompleter {
 
-    private final List<String> subcommands = Collections.singletonList("mobilisation");
+    private final List<String> subcommands = List.of("mobilisation", "warlives");
     public WarAdminCommands() {
     }
 
@@ -55,6 +60,20 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
                 default -> Collections.emptyList();
             };
         }
+
+        if (args[0].equalsIgnoreCase("warlives")) {
+            return switch (args.length) {
+                case 2 -> Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+                case 3 -> Stream.of("set", "delete")
+                        .filter(a -> a.startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
+                default -> Collections.emptyList();
+            };
+        }
+
         return Collections.emptyList();
     }
 
@@ -66,16 +85,25 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (args.length == 0 || !args[0].equalsIgnoreCase("mobilisation")) {
-            sender.sendMessage(getMessage("usage-mobilisation"));
+        if (args[0].equalsIgnoreCase("mobilisation")) {
+            handleMobilisationCommands(sender, args);
             return true;
         }
-        handleMobilisationCommands(sender, args);
+
+        if (args[0].equalsIgnoreCase("warlives")) {
+            handleWarLivesCommands(sender, args);
+            return true;
+        }
+
+        // Unknown subcommand.
+        sender.sendMessage(getMessage("invalid-command"));
         return true;
+
     }
 
     private void handleMobilisationCommands(CommandSender sender, String[] args) {
-        // /wa mobilisation [Town | Nation] [Set | Delete] [Value]
+        // /wa mobilisation [Town | Nation] set [Value]
+        // /wa mobilisation [Town | Nation] delete
         if (args.length < 3) {
             sender.sendMessage(getMessage("usage-mobilisation"));
             return;
@@ -163,6 +191,55 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         // Fallback message.
         sender.sendMessage(getMessage("usage-mobilisation"));
     }
+
+    private void handleWarLivesCommands(CommandSender sender, String[] args) {
+        // /wa warlives [Player Name] set [Int]
+        // /wa warlives [Player Name] delete
+        if (args.length < 3) {
+            sender.sendMessage(getMessage("warlives-usage"));
+            return;
+        }
+
+        String playerName = args[1];
+        OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
+        Resident res = TownyUniverse.getInstance().getResident(target.getUniqueId());
+
+        if (res == null) {
+            sender.sendMessage(getMessage("player-not-found")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(playerName)));
+            return;
+        }
+
+        String action = args[2];
+        // DELETE command branch.
+        if (action.equalsIgnoreCase("delete")) {
+            WarLivesMetadata.removeWarLivesMetaDataFromResident(Objects.requireNonNull(res));
+            sender.sendMessage(getMessage("warlives-delete")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(playerName)));
+            return;
+        }
+
+        // SET command branch.
+        if (action.equalsIgnoreCase("set")) {
+            if (args.length != 4) {
+                sender.sendMessage(getMessage("warlives-usage"));
+                return;
+            }
+            int val;
+            try {
+                val = Integer.parseInt(args[3]);
+            } catch (NumberFormatException ex) {
+                sender.sendMessage(getMessage("not-a-number")
+                        .replaceText(t -> t.matchLiteral("{0}").replacement(args[3])));
+                return;
+            }
+
+            WarLivesMetadata.setWarLivesMetaDataForResident(Objects.requireNonNull(res), val);
+            sender.sendMessage(getMessage("warlives-set")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(playerName))
+                    .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(val))));
+            return;
+        }
+        sender.sendMessage(getMessage("warlives-usage"));
+    }
 }
-
-
