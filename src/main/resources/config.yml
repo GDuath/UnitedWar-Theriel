@@ -37,6 +37,8 @@ mobilisation:
   min-to-declare: 60
   # How much mobilisation decreases when a war is declared.
   cost-to-declare: 20
+  # How much mobilisation costs to toggle peaceful.
+  cost-to-toggle-peaceful: 1
 
 # ------------------------------------------
 # War settings
@@ -66,6 +68,7 @@ wars-settings:
 ###################################################
 
 messages:
+  # Plugin prefix before every system message.
   prefix: "§c§lU§f§lL §7§lWar §8§l» "
   reload: "§2Plugin reloaded."
   invalid-command: "§cInvalid command usage."
@@ -79,4 +82,12 @@ messages:
   # {0} is the town or nation name.
   # {1} is the mobilisation amount.
   mobilisation-set:  "§e§l{0} §2mobilisation set to §e§l{1}"
+  # {0} is the town or nation name.
+  mobilisation-delete: "§e§l{0} §2mobilisation deleted."
+  # {0} is the set cost to toggle.
+  mobilisation-cost: "§bYou paid {0}% of your mobilisation to toggle peacefulness."
+  # {0} is the town name.
+  # Formatted to look like a towny system notification, editable to have it match if changed.
+  mobilisation-notification-gain: "§6[{0}] §bBecause of non-neutral status, {0} has gained some mobilisation progress."
+  mobilisation-notification-lose: "§6[{0}] §bBecause of neutral status, {0} has lost some mobilisation progress."
 

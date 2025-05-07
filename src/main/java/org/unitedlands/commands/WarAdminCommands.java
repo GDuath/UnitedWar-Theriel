@@ -9,7 +9,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.jetbrains.annotations.NotNull;
-import org.unitedlands.UnitedWar;
 import org.unitedlands.util.MobilisationMetadata;
 
 import java.util.Collections;
@@ -23,7 +22,7 @@ import static org.unitedlands.util.Messages.getMessage;
 public class WarAdminCommands implements CommandExecutor, TabCompleter {
 
     private final List<String> subcommands = Collections.singletonList("mobilisation");
-    public WarAdminCommands(UnitedWar plugin) {
+    public WarAdminCommands() {
     }
 
     @Override
@@ -37,20 +36,28 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
                     .collect(Collectors.toList());
         }
 
+        // /wa mobilisation [Town | Nation] [Set | Delete] [Value]
         if (args[0].equalsIgnoreCase("mobilisation")) {
             return switch (args.length) {
                 case 2 ->
                     // Suggest all town and nation names.
-                        Stream.concat( TownyUniverse.getInstance().getTowns().stream().map(Town::getName), TownyUniverse.getInstance().getNations().stream().map(Nation::getName))
+                        Stream.concat(
+                                        TownyUniverse.getInstance().getTowns().stream().map(Town::getName),
+                                        TownyUniverse.getInstance().getNations().stream().map(Nation::getName)
+                                )
                                 .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase()))
                                 .collect(Collectors.toList());
-                case 3 -> Collections.singletonList("set");
+                case 3 ->
+                    // Suggest either 'set' or 'delete'.
+                        Stream.of("set", "delete")
+                                .filter(a -> a.startsWith(args[2].toLowerCase()))
+                                .collect(Collectors.toList());
                 default -> Collections.emptyList();
             };
         }
-
         return Collections.emptyList();
     }
+
 
     @Override
     public boolean onCommand(CommandSender sender, @NotNull Command cmd, @NotNull String label, String @NotNull [] args) {
@@ -63,53 +70,98 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
             sender.sendMessage(getMessage("usage-mobilisation"));
             return true;
         }
-
-        handleMobilisation(sender, label, args);
+        handleMobilisationCommands(sender, args);
         return true;
     }
 
-    private void handleMobilisation(CommandSender sender, String label, String[] args) {
-        // Expect: /wa mobilisation <town|nation> set <0-100>
-        if (args.length != 4 || !args[2].equalsIgnoreCase("set")) {
+    private void handleMobilisationCommands(CommandSender sender, String[] args) {
+        // /wa mobilisation [Town | Nation] [Set | Delete] [Value]
+        if (args.length < 3) {
             sender.sendMessage(getMessage("usage-mobilisation"));
             return;
         }
 
-        String name = args[1];
-        boolean isTown = TownyUniverse.getInstance().hasTown(name);
+        String name   = args[1];
+        String action = args[2];
+        boolean isTown   = TownyUniverse.getInstance().hasTown(name);
         boolean isNation = TownyUniverse.getInstance().hasNation(name);
 
         if (!isTown && !isNation) {
-            Component msg = getMessage("town-nation-not-found").replaceText(t -> t.matchLiteral("{0}").replacement(name));
+            Component msg = getMessage("town-nation-not-found")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(name));
             sender.sendMessage(msg);
             return;
         }
 
-        int val;
-        try {
-            val = Integer.parseInt(args[3]);
-        } catch (NumberFormatException e) {
-            Component msg = getMessage("not-a-number").replaceText(t -> t.matchLiteral("{0}").replacement(args[3]));
-            sender.sendMessage(msg);
-            return;
-        }
-        if (val < 0 || val > 100) {
-            sender.sendMessage(getMessage("invalid-mobilisation-number"));
+        // DELETE command branch.
+        if (action.equalsIgnoreCase("delete")) {
+            if (args.length != 3) {
+                sender.sendMessage(getMessage("usage-mobilisation"));
+                return;
+            }
+
+            String entity = isTown
+                    ? Objects.requireNonNull(TownyUniverse.getInstance().getTown(name)).getName()
+                    : Objects.requireNonNull(TownyUniverse.getInstance().getNation(name)).getName();
+
+            if (isTown) {
+                Town t = TownyUniverse.getInstance().getTown(name);
+                MobilisationMetadata.removeMetaDataFromTown(Objects.requireNonNull(t));
+            } else {
+                Nation n = TownyUniverse.getInstance().getNation(name);
+                MobilisationMetadata.removeMetaDataFromNation(Objects.requireNonNull(n));
+            }
+
+            sender.sendMessage(
+                    getMessage("mobilisation-delete")
+                            .replaceText(t -> t.matchLiteral("{0}").replacement(entity))
+            );
             return;
         }
 
-        String entityName;
-        if (isTown) {
-            Town t = TownyUniverse.getInstance().getTown(name);
-            MobilisationMetadata.setMobilisationForTown(Objects.requireNonNull(t), val);
-            entityName = t.getName();
-        } else {
-            Nation n = TownyUniverse.getInstance().getNation(name);
-            MobilisationMetadata.setMobilisationForNation(Objects.requireNonNull(n), val);
-            entityName = n.getName();
+        // SET command branch.
+        if (action.equalsIgnoreCase("set")) {
+            if (args.length != 4) {
+                sender.sendMessage(getMessage("usage-mobilisation"));
+                return;
+            }
+
+            int val;
+            try {
+                val = Integer.parseInt(args[3]);
+            } catch (NumberFormatException ex) {
+                sender.sendMessage(
+                        getMessage("not-a-number")
+                                .replaceText(t -> t.matchLiteral("{0}").replacement(args[3]))
+                );
+                return;
+            }
+            if (val < 0 || val > 100) {
+                sender.sendMessage(getMessage("invalid-mobilisation-number"));
+                return;
+            }
+
+            String entity;
+            if (isTown) {
+                Town t = Objects.requireNonNull(TownyUniverse.getInstance().getTown(name));
+                MobilisationMetadata.setMobilisationForTown(t, val);
+                entity = t.getName();
+            } else {
+                Nation n = Objects.requireNonNull(TownyUniverse.getInstance().getNation(name));
+                MobilisationMetadata.setMobilisationForNation(n, val);
+                entity = n.getName();
+            }
+
+            sender.sendMessage(
+                    getMessage("mobilisation-set")
+                            .replaceText(t -> t.matchLiteral("{0}").replacement(entity))
+                            .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(val)))
+            );
+            return;
         }
-        Component done = getMessage("mobilisation-set").replaceText(t -> t.matchLiteral("{0}").replacement(entityName)).replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(val)));
-        sender.sendMessage(done);
+
+        // Fallback message.
+        sender.sendMessage(getMessage("usage-mobilisation"));
     }
 }
 

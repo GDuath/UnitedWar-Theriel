@@ -7,6 +7,7 @@ import org.unitedlands.commands.WarAdminCommands;
 import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.DatabaseManager;
+import org.unitedlands.managers.MobilisationManager;
 import org.unitedlands.managers.WarDeclarationManager;
 import org.unitedlands.managers.WarManager;
 import org.unitedlands.schedulers.WarScheduler;
@@ -69,6 +70,7 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ServerEventListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
+        getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
     }
 
     private void registerCommands() {
@@ -76,7 +78,7 @@ public class UnitedWar extends JavaPlugin {
         Objects.requireNonNull(getCommand("wardebug")).setExecutor(debugCommands);
         Objects.requireNonNull(getCommand("wardebug")).setTabCompleter(debugCommands);
 
-        var warAdminCommands = new WarAdminCommands(this);
+        var warAdminCommands = new WarAdminCommands();
         Objects.requireNonNull(getCommand("waradmin")).setExecutor(warAdminCommands);
         Objects.requireNonNull(getCommand("waradmin")).setTabCompleter(warAdminCommands);
     }
