@@ -20,6 +20,26 @@ mysql:
 warscheduler:
   check-interval: 15 # in seconds
 
+###################################################
+# +---------------------------------------------+ #
+# |                 Mobilisation                | #
+# +---------------------------------------------+ #
+###################################################
+
+# Town and Nation mobilisation settings
+
+mobilisation:
+  # How much mobilisation grows per Towny day if not peaceful.
+  daily-growth: 1
+  # How much mobilisation decays per Towny day if peaceful.
+  daily-decay: 1
+  # Minimum amount of mobilisation needed to declare a war.
+  min-to-declare: 60
+  # How much mobilisation decreases when a war is declared.
+  cost-to-declare: 20
+  # How much mobilisation costs to toggle peaceful.
+  cost-to-toggle-peaceful: 1
+
 # ------------------------------------------
 # War events settings
 # ------------------------------------------
@@ -364,12 +384,35 @@ wars-settings:
     attacker-score-cap: 500
     defender-score-cap: 500
 
-# ------------------------------------------
-# Messages
-# ------------------------------------------
+###################################################
+# +---------------------------------------------+ #
+# |                  Messages                   | #
+# +---------------------------------------------+ #
+###################################################
 
 messages:
-  prefix: "§cU§fL War §8» "
+  # Plugin prefix before every system message.
+  prefix: "§c§lU§f§lL §7§lWar §8§l» "
+  reload: "§2Plugin reloaded."
+  invalid-command: "§cInvalid command usage."
+  no-permission: '§2You don''t have permission to perform this command.'
+  usage-mobilisation: "§2Usage: §7/wa mobilisation [Town | Nation] set [0-100]"
+  # {0} is the relevant town or nation name.
+  town-nation-not-found: "§2No town or nation found named §e§l{0}"
+  # {0} is the attempted input.
+  not-a-number: "§e§l{0} §2is not a number."
+  invalid-mobilisation-number: "§2Mobilisation must be set between 0-100."
+  # {0} is the town or nation name.
+  # {1} is the mobilisation amount.
+  mobilisation-set:  "§e§l{0} §2mobilisation set to §e§l{1}"
+  # {0} is the town or nation name.
+  mobilisation-delete: "§e§l{0} §2mobilisation deleted."
+  # {0} is the set cost to toggle.
+  mobilisation-cost: "§bYou paid {0}% of your mobilisation to toggle peacefulness."
+  # {0} is the town name.
+  # Formatted to look like a towny system notification, editable to have it match if changed.
+  mobilisation-notification-gain: "§6[{0}] §bBecause of non-neutral status, {0} has gained some mobilisation progress."
+  mobilisation-notification-lose: "§6[{0}] §bBecause of neutral status, {0} has lost some mobilisation progress."
   war-started: "§fThe war §e§o{war-name} §7§rhas started! Get ready to fight - war point scoring is now active!"
   war-declared:
     - "§c§m+|✦       §r§c§l[§f§l WAR DECLARED §c§l]§c§m       |✦+"
