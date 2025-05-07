@@ -27,7 +27,8 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
     private List<String> debugSubcommands = Arrays.asList(
             "createwar",
-            "createwardeclaration");
+            "createwardeclaration",
+            "resetevent");
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, String alias,
@@ -80,11 +81,18 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             case "createwardeclaration":
                 handleCreateWarDeclaration(sender, args);
                 break;
+            case "resetevent":
+                handleEventReset();
+                break;
             default:
                 break;
         }
 
         return true;
+    }
+
+    private void handleEventReset() {
+        plugin.getWarEventManager().resetEvent();
     }
 
     private void handleCreateWar(CommandSender sender, String[] args) {

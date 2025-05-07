@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
 
@@ -62,8 +61,10 @@ public class War implements Identifiable {
     private transient List<String> attacking_mercenaries;
     private transient List<String> defending_mercenaries;
 
-    private transient List<String> attacking_player;
+    private transient List<String> attacking_players;
     private transient List<String> defending_players;
+
+    private transient Boolean state_changed = false;
 
     @DatabaseField(canBeNull = false, defaultValue = "0")
     private Integer attacker_score = 0;
@@ -91,6 +92,10 @@ public class War implements Identifiable {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getCleanTitle() {
+        return title.replace("_", " ");
     }
 
     public void setTitle(String title) {
@@ -281,12 +286,12 @@ public class War implements Identifiable {
         this.defender_score = defender_score;
     }
 
-    public List<String> getAttacking_player() {
-        return attacking_player;
+    public List<String> getAttacking_players() {
+        return attacking_players;
     }
 
-    public void setAttacking_player(List<String> attacking_player) {
-        this.attacking_player = attacking_player;
+    public void setAttacking_players(List<String> attacking_player) {
+        this.attacking_players = attacking_player;
     }
 
     public List<String> getDefending_players() {
@@ -295,5 +300,13 @@ public class War implements Identifiable {
 
     public void setDefending_players(List<String> defending_players) {
         this.defending_players = defending_players;
+    }
+
+    public Boolean getState_changed() {
+        return state_changed;
+    }
+    
+    public void setState_changed(Boolean state_changed) {
+        this.state_changed = state_changed;
     }
 }

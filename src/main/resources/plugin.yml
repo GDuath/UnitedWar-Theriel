@@ -8,7 +8,9 @@ depend: [ Towny ]
 commands:
   wardebug:
      description: Debugging commands.
+     permission: united.war.admin
      aliases: [wd]
   waradmin:
-     description: Admin commands for war.
+     description: War Admin commands.
+     permission: united.war.admin
      aliases: [wa]

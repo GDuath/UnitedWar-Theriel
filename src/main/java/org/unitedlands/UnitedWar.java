@@ -4,11 +4,14 @@ import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.exceptions.KeyAlreadyRegisteredException;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.unitedlands.commands.WarAdminCommands;
+import org.unitedlands.commands.TownWarCommands;
 import org.unitedlands.commands.WarDebugCommands;
+import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.DatabaseManager;
 import org.unitedlands.managers.MobilisationManager;
 import org.unitedlands.managers.WarDeclarationManager;
+import org.unitedlands.managers.WarEventManager;
 import org.unitedlands.managers.WarManager;
 import org.unitedlands.schedulers.WarScheduler;
 import org.unitedlands.util.MobilisationMetadata;
@@ -25,6 +28,7 @@ public class UnitedWar extends JavaPlugin {
 
     private DatabaseManager databaseManager;
     private WarManager warManager;
+    private WarEventManager warEventManager;
     private WarDeclarationManager warDeclarationManager;
 
     private WarScheduler warScheduler;
@@ -59,6 +63,7 @@ public class UnitedWar extends JavaPlugin {
     private void createManagers() {
         databaseManager = new DatabaseManager(this);
         warManager = new WarManager(this);
+        warEventManager = new WarEventManager(this);
         warDeclarationManager = new WarDeclarationManager(this);
     }
 
@@ -68,6 +73,7 @@ public class UnitedWar extends JavaPlugin {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new ServerEventListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
         getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
@@ -77,6 +83,7 @@ public class UnitedWar extends JavaPlugin {
         var debugCommands = new WarDebugCommands(this);
         Objects.requireNonNull(getCommand("wardebug")).setExecutor(debugCommands);
         Objects.requireNonNull(getCommand("wardebug")).setTabCompleter(debugCommands);
+        new TownWarCommands(this);
 
         var warAdminCommands = new WarAdminCommands();
         Objects.requireNonNull(getCommand("waradmin")).setExecutor(warAdminCommands);
@@ -93,6 +100,10 @@ public class UnitedWar extends JavaPlugin {
 
     public WarScheduler getWarScheduler() {
         return warScheduler;
+    }
+
+    public WarEventManager getWarEventManager() {
+        return warEventManager;
     }
 
     @Override
