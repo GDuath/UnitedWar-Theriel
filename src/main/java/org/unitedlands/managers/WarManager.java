@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.palmergames.bukkit.towny.TownyUniverse;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -29,6 +30,7 @@ import org.unitedlands.util.Messenger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
+import org.unitedlands.util.WarLivesMetadata;
 
 public class WarManager implements Listener {
 
@@ -105,6 +107,7 @@ public class WarManager implements Listener {
     private void startWar(War war) {
         war.setIs_active(true);
         war.setState_changed(true);
+        assignWarLivesToParticipants(war);
         (new WarStartEvent(war)).callEvent();
 
         sendWarStartNotification(war);
@@ -127,6 +130,7 @@ public class WarManager implements Listener {
 
     private void endWar(War war) {
         calculateWarResult(war);
+        removeWarLivesFromParticipants(war);
         war.setIs_active(false);
         war.setIs_ended(true);
         war.setEffective_end_time(System.currentTimeMillis());
@@ -436,6 +440,42 @@ public class WarManager implements Listener {
         plugin.getDatabaseManager().getWarScoreRecordDbService().createOrUpdate(record);
 
         war.setState_changed(true);
+    }
+
+    private void assignWarLivesToParticipants(War war) {
+        List<String> allPlayerIds = new ArrayList<>();
+        allPlayerIds.addAll(war.getAttacking_players());
+        allPlayerIds.addAll(war.getDefending_players());
+
+        for (String uuidStr : allPlayerIds) {
+            try {
+                UUID uuid = UUID.fromString(uuidStr);
+                var resident = TownyUniverse.getInstance().getResident(uuid);
+                if (resident != null) {
+                    WarLivesMetadata.addWarLivesMetaDataToResident(resident);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to assign war lives to resident UUID: " + uuidStr + " - " + e.getMessage());
+            }
+        }
+    }
+
+    private void removeWarLivesFromParticipants(War war) {
+        List<String> allPlayerIds = new ArrayList<>();
+        allPlayerIds.addAll(war.getAttacking_players());
+        allPlayerIds.addAll(war.getDefending_players());
+
+        for (String uuidStr : allPlayerIds) {
+            try {
+                UUID uuid = UUID.fromString(uuidStr);
+                var resident = TownyUniverse.getInstance().getResident(uuid);
+                if (resident != null) {
+                    WarLivesMetadata.removeWarLivesMetaDataFromResident(resident);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to assign war lives to resident UUID: " + uuidStr + " - " + e.getMessage());
+            }
+        }
     }
 
     //#endregion
