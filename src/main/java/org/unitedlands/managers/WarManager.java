@@ -369,6 +369,23 @@ public class WarManager implements Listener {
 
     //#region Public utility functions
 
+    // Get war title for display in /res screen.
+    public String getWarTitle(UUID warId) {
+        var pendingWar = pendingWars.stream()
+                .filter(w -> w.getId().equals(warId))
+                .findFirst().orElse(null);
+        if (pendingWar != null)
+            return pendingWar.getTitle();
+
+        var activeWar = activeWars.stream()
+                .filter(w -> w.getId().equals(warId))
+                .findFirst().orElse(null);
+        if (activeWar != null)
+            return activeWar.getTitle();
+
+        return "(Unknown War)";
+    }
+
     public War getWarByName(String name) {
         List<War> allWars = new ArrayList<War>();
         allWars.addAll(activeWars);
@@ -442,6 +459,8 @@ public class WarManager implements Listener {
         war.setState_changed(true);
     }
 
+    //#endregion
+
     private void assignWarLivesToParticipants(War war) {
         List<String> allPlayerIds = new ArrayList<>();
         allPlayerIds.addAll(war.getAttacking_players());
@@ -452,7 +471,7 @@ public class WarManager implements Listener {
                 UUID uuid = UUID.fromString(uuidStr);
                 var resident = TownyUniverse.getInstance().getResident(uuid);
                 if (resident != null) {
-                    WarLivesMetadata.addWarLivesMetaDataToResident(resident);
+                    WarLivesMetadata.setWarLivesForWarMetaData(resident, war.getId(), 5);
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to assign war lives to resident UUID: " + uuidStr + " - " + e.getMessage());
@@ -470,13 +489,11 @@ public class WarManager implements Listener {
                 UUID uuid = UUID.fromString(uuidStr);
                 var resident = TownyUniverse.getInstance().getResident(uuid);
                 if (resident != null) {
-                    WarLivesMetadata.removeWarLivesMetaDataFromResident(resident);
+                    WarLivesMetadata.removeWarLivesFromWarMetaData(resident, war.getId());
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to assign war lives to resident UUID: " + uuidStr + " - " + e.getMessage());
             }
         }
     }
-
-    //#endregion
 }

@@ -466,7 +466,12 @@ messages:
     # TURN INTO LIST
     - "§cInvalid command, try: §7/wa warlives [Player Name] set [Int] or /wa warlives [Player Name] delete"
   # {0} is the player username.
-  warlives-delete: "§e§l{0} §2war lives deleted."
+  warlives-delete: "§e§l{0} §2war lives removed from §e§l{2}"
   # {0} is the town or nation name.
-  # {1} is the mobilisation amount.
-  warlives-set:  "§e§l{0} §2war lives set to §e§l{1}"
+  # {1} is the war lives amount.
+  # {2} is the war name.
+  warlives-set: "§e§l{0} §2war lives set to §e§l{1} §7in §e§l{2}"
+  # {0} is the player username.
+  # {1} is the war lives amount.
+  # {2} is the war name.
+  warlives-get: "§e§l{0} §7has §e§l{1} §2lives in §e§l{2}"
