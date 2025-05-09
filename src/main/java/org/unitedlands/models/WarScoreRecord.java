@@ -21,11 +21,15 @@ public class WarScoreRecord implements Identifiable {
     private WarScoreType war_score_type;
     @DatabaseField(canBeNull = true, width = 36)
     private UUID player_id;
+    @DatabaseField(canBeNull = true, width = 36)
+    private UUID town_id;
     @DatabaseField(canBeNull = false, dataType = DataType.ENUM_NAME)
     private WarSide war_side;
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(canBeNull = false, defaultValue = "false")
+    private Boolean is_mercenary;
+    @DatabaseField(canBeNull = false, defaultValue = "0")
     private Integer score_raw;
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(canBeNull = false, defaultValue = "0")
     private Integer score_adjusted;
 
     public WarScoreRecord() {
@@ -61,11 +65,23 @@ public class WarScoreRecord implements Identifiable {
     public void setPlayer_id(UUID player_id) {
         this.player_id = player_id;
     }
+    public UUID getTown_id() {
+        return town_id;
+    }
+    public void setTown_id(UUID town_id) {
+        this.town_id = town_id;
+    }
     public WarSide getWar_side() {
         return war_side;
     }
     public void setWar_side(WarSide war_side) {
         this.war_side = war_side;
+    }
+    public Boolean getIs_mercenary() {
+        return is_mercenary;
+    }
+    public void setIs_mercenary(Boolean is_mercenary) {
+        this.is_mercenary = is_mercenary;
     }
     public Integer getScore_raw() {
         return score_raw;

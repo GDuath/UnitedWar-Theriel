@@ -8,7 +8,6 @@ import java.util.concurrent.CompletableFuture;
 import org.unitedlands.models.WarScoreRecord;
 
 import com.j256.ormlite.dao.Dao;
-import com.palmergames.util.FileMgmt;
 
 public class WarScoreRecordDbService extends BaseDbService<WarScoreRecord> {
 

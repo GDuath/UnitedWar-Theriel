@@ -73,7 +73,7 @@ public class PlayerDeathListener implements Listener {
             } else if (victimWar.getValue() == WarSide.DEFENDER
                     && victimWar.getKey().getAttacking_players().contains(killer.getUniqueId().toString())) {
                 WarScoreEvent warScoreEvent = new WarScoreEvent(victimWar.getKey(), killer.getUniqueId(),
-                        WarSide.DEFENDER, warScoreType, reward);
+                        WarSide.ATTACKER, warScoreType, reward);
                 warScoreEvent.callEvent();
             }
         }
