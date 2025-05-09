@@ -67,48 +67,60 @@ public class PlayerDeathListener implements Listener {
             }
         }
 
-        // Check if victim and killer are on opposing sides of the war. If so, give
-        // the killer a reward.
         for (var victimWar : victimWars.entrySet()) {
-            if (victimWar.getValue() == WarSide.ATTACKER
-                    && victimWar.getKey().getDefending_players().contains(killer.getUniqueId().toString())) {
-                WarScoreEvent warScoreEvent = new WarScoreEvent(victimWar.getKey(), killer.getUniqueId(),
-                        WarSide.DEFENDER, warScoreType, reward);
-                warScoreEvent.callEvent();
-            } else if (victimWar.getValue() == WarSide.DEFENDER
-                    && victimWar.getKey().getAttacking_players().contains(killer.getUniqueId().toString())) {
-                WarScoreEvent warScoreEvent = new WarScoreEvent(victimWar.getKey(), killer.getUniqueId(),
-                        WarSide.DEFENDER, warScoreType, reward);
-                warScoreEvent.callEvent();
+            var war = victimWar.getKey();
+            UUID warId = war.getId();
+
+            // Skip if killer is not in this war.
+            boolean killerInWar = war.getAttacking_players().contains(killer.getUniqueId().toString())
+                    || war.getDefending_players().contains(killer.getUniqueId().toString());
+            if (!killerInWar) continue;
+
+            // Check if killer has war lives.
+            var killerRes = TownyUniverse.getInstance().getResident(killer.getUniqueId());
+            if (killerRes == null || WarLivesMetadata.getWarLivesMetaData(killerRes, warId) <= 0) {
+                continue; // Killer is eliminated or not valid.
             }
+
             var resident = TownyUniverse.getInstance().getResident(victim.getUniqueId());
-            if (resident != null) {
-                for (var warEntry : victimWars.entrySet()) {
-                    var war = warEntry.getKey();
-                    UUID warId = war.getId();
-                    int currentLives = WarLivesMetadata.getWarLivesMetaData(resident, warId);
-                    int newLives = Math.max(0, currentLives - 1);
-                    WarLivesMetadata.setWarLivesMetaData(resident, warId, newLives);
+            if (resident == null) continue;
 
-                    String warName = plugin.getWarManager().getWarTitle(warId);
+            int victimLives = WarLivesMetadata.getWarLivesMetaData(resident, warId);
+            if (victimLives <= 0) {
+                continue; // Victim already eliminated, no score
+            }
 
-                    if (currentLives == 0) {
-                        // Already out of lives.
-                        victim.sendMessage(Messages.getMessage("warlives-gone"));
-                    } else if (newLives == 0) {
-                        // Just lost final life.
-                        victim.sendMessage(Messages.getMessage("warlives-final")
-                                .replaceText(t -> t.matchLiteral("{0}").replacement(warName)));
-                    } else {
-                        // Still has lives left.
-                        victim.sendMessage(Messages.getMessage("warlives-lost")
-                                .replaceText(t -> t.matchLiteral("{0}").replacement(String.valueOf(newLives)))
-                                .replaceText(t -> t.matchLiteral("{1}").replacement(warName)));
-                    }
-                }
+            // Determine scores.
+            if (victimWar.getValue() == WarSide.ATTACKER
+                    && war.getDefending_players().contains(killer.getUniqueId().toString())) {
+                new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, warScoreType, reward).callEvent();
+            } else if (victimWar.getValue() == WarSide.DEFENDER
+                    && war.getAttacking_players().contains(killer.getUniqueId().toString())) {
+                new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, warScoreType, reward).callEvent();
+            }
+
+            // Decrease victim lives.
+            int currentLives = WarLivesMetadata.getWarLivesMetaData(resident, warId);
+            int newLives = Math.max(0, currentLives - 1);
+            WarLivesMetadata.setWarLivesMetaData(resident, warId, newLives);
+
+            String warName = plugin.getWarManager().getWarTitle(warId);
+
+            if (currentLives == 0) {
+                // Already out of lives.
+                victim.sendMessage(Messages.getMessage("warlives-gone")
+                        .replaceText(t -> t.matchLiteral("{0}").replacement(warName)));
+            } else if (newLives == 0) {
+                // This death eliminated them.
+                victim.sendMessage(Messages.getMessage("warlives-final")
+                        .replaceText(t -> t.matchLiteral("{0}").replacement(warName)));
+            } else {
+                // Lives still remaining.
+                victim.sendMessage(Messages.getMessage("warlives-lost")
+                        .replaceText(t -> t.matchLiteral("{0}").replacement(String.valueOf(newLives)))
+                        .replaceText(t -> t.matchLiteral("{1}").replacement(warName)));
             }
         }
-
     }
 
     private Player findKillingPlayer(Player deceased, EntityDamageByEntityEvent damageEvent) {
