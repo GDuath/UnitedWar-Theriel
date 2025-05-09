@@ -470,7 +470,7 @@ messages:
   # {0} is the town or nation name.
   # {1} is the war lives amount.
   # {2} is the war name.
-  warlives-set: "§e§l{0} §2war lives set to §e§l{1} §7in §e§l{2}"
+  warlives-set: "§e§l{0} §2war lives set to §e§l{1} §2in §e§l{2}"
   # {0} is the player username.
   # {1} is the war lives amount.
   # {2} is the war name.

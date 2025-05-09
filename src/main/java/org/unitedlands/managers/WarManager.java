@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.object.Resident;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -462,37 +463,37 @@ public class WarManager implements Listener {
     //#endregion
 
     private void assignWarLivesToParticipants(War war) {
-        List<String> allPlayerIds = new ArrayList<>();
-        allPlayerIds.addAll(war.getAttacking_players());
-        allPlayerIds.addAll(war.getDefending_players());
+        List<String> allPlayers = new ArrayList<>();
+        allPlayers.addAll(war.getAttacking_players());
+        allPlayers.addAll(war.getDefending_players());
 
-        for (String uuidStr : allPlayerIds) {
+        for (String uuidStr : allPlayers) {
             try {
                 UUID uuid = UUID.fromString(uuidStr);
-                var resident = TownyUniverse.getInstance().getResident(uuid);
+                Resident resident = TownyUniverse.getInstance().getResident(uuid);
                 if (resident != null) {
-                    WarLivesMetadata.setWarLivesForWarMetaData(resident, war.getId(), 5);
+                    WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), 5); // default lives
                 }
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to assign war lives to resident UUID: " + uuidStr + " - " + e.getMessage());
+                plugin.getLogger().warning("Failed to assign war lives to " + uuidStr + ": " + e.getMessage());
             }
         }
     }
 
     private void removeWarLivesFromParticipants(War war) {
-        List<String> allPlayerIds = new ArrayList<>();
-        allPlayerIds.addAll(war.getAttacking_players());
-        allPlayerIds.addAll(war.getDefending_players());
+        List<String> allPlayers = new ArrayList<>();
+        allPlayers.addAll(war.getAttacking_players());
+        allPlayers.addAll(war.getDefending_players());
 
-        for (String uuidStr : allPlayerIds) {
+        for (String uuidStr : allPlayers) {
             try {
                 UUID uuid = UUID.fromString(uuidStr);
-                var resident = TownyUniverse.getInstance().getResident(uuid);
+                Resident resident = TownyUniverse.getInstance().getResident(uuid);
                 if (resident != null) {
-                    WarLivesMetadata.removeWarLivesFromWarMetaData(resident, war.getId());
+                    WarLivesMetadata.removeWarLivesMetaData(resident, war.getId());
                 }
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to assign war lives to resident UUID: " + uuidStr + " - " + e.getMessage());
+                plugin.getLogger().warning("Failed to remove war lives from " + uuidStr + ": " + e.getMessage());
             }
         }
     }

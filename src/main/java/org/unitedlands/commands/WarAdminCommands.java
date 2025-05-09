@@ -14,6 +14,8 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.models.War;
+import org.unitedlands.util.Messages;
 import org.unitedlands.util.MobilisationMetadata;
 import org.unitedlands.util.WarLivesMetadata;
 
@@ -26,6 +28,7 @@ import static org.unitedlands.util.Messages.getMessage;
 public class WarAdminCommands implements CommandExecutor, TabCompleter {
 
     private final List<String> subcommands = List.of("mobilisation", "warlives");
+
     public WarAdminCommands() {
     }
 
@@ -40,7 +43,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
                     .collect(Collectors.toList());
         }
 
-        // /wa mobilisation [Town | Nation] [Set | Delete] [Value]
+        // Mobilisation autocompletes.
         if (args[0].equalsIgnoreCase("mobilisation")) {
             return switch (args.length) {
                 case 2 ->
@@ -60,20 +63,27 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
             };
         }
 
+        // Warlives autocompletes.
         if (args[0].equalsIgnoreCase("warlives")) {
             return switch (args.length) {
+                // Suggest player name.
                 case 2 -> Bukkit.getOnlinePlayers().stream()
                         .map(Player::getName)
                         .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
+                // Suggest 'set' or 'delete'.
                 case 3 -> Stream.of("set", "delete")
-                        .filter(a -> a.startsWith(args[2].toLowerCase()))
+                        .filter(s -> s.startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
+                // Suggest ongoing war names.
+                case 4 -> UnitedWar.getInstance().getWarManager().getWars().stream()
+                        .map(War::getTitle)
+                        .filter(title -> title.toLowerCase().startsWith(args[3].toLowerCase()))
                         .collect(Collectors.toList());
                 default -> Collections.emptyList();
             };
         }
-
-        return Collections.emptyList();
+        return List.of();
     }
 
 
@@ -191,98 +201,82 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         sender.sendMessage(getMessage("usage-mobilisation"));
     }
 
-    // War lives commands.
     private void handleWarLivesCommands(CommandSender sender, String[] args) {
-        if (args.length < 4) {
-            sender.sendMessage(getMessage("warlives-usage"));
+        if (args.length < 3) {
+            sender.sendMessage(Messages.getMessage("warlives-usage"));
             return;
         }
 
         String playerName = args[1];
-        OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
-        Resident res = TownyUniverse.getInstance().getResident(target.getUniqueId());
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+        Resident res = TownyUniverse.getInstance().getResident(offlinePlayer.getUniqueId());
 
         if (res == null) {
-            sender.sendMessage(getMessage("player-not-found")
+            sender.sendMessage(Messages.getMessage("player-not-found")
                     .replaceText(t -> t.matchLiteral("{0}").replacement(playerName)));
             return;
         }
 
-        String subcommand = args[2].toLowerCase();
-        String warArg = args[3];
+        String action = args[2].toLowerCase();
 
-        switch (subcommand) {
-            case "get" -> {
-                if (warArg.equalsIgnoreCase("all")) {
-                    Map<UUID, Integer> livesMap = WarLivesMetadata.getWarLivesMapMetaData(res);
-                    if (livesMap.isEmpty()) {
-                        sender.sendMessage(Component.text("§e§l" + res.getName() + " §7is not participating in any wars."));
-                        return;
-                    }
-                    for (var entry : livesMap.entrySet()) {
-                        UUID warId = entry.getKey();
-                        int lives = entry.getValue();
-                        String warName = UnitedWar.getInstance().getWarManager().getWarTitle(warId);
-                        sender.sendMessage(getMessage("warlives-get")
-                                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
-                                .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(lives)))
-                                .replaceText(t -> t.matchLiteral("{2}").replacement(warName)));
-                    }
-
-                } else {
-                    try {
-                        UUID warId = UUID.fromString(warArg);
-                        int lives = WarLivesMetadata.getWarLivesForWarMetaData(res, warId);
-                        String warName = UnitedWar.getInstance().getWarManager().getWarTitle(warId);
-                        sender.sendMessage(getMessage("warlives-get")
-                                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
-                                .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(lives)))
-                                .replaceText(t -> t.matchLiteral("{2}").replacement(warName)));
-                    } catch (IllegalArgumentException ex) {
-                        sender.sendMessage(Component.text("§cInvalid war ID."));
-                    }
-                }
-            }
-
-            case "set" -> {
-                if (args.length != 5) {
-                    sender.sendMessage(getMessage("warlives-usage"));
-                    return;
-                }
-
-                try {
-                    UUID warId = UUID.fromString(warArg);
-                    int val = Integer.parseInt(args[4]);
-                    WarLivesMetadata.setWarLivesForWarMetaData(res, warId, val);
-                    String warName = UnitedWar.getInstance().getWarManager().getWarTitle(warId);
-                    sender.sendMessage(getMessage("warlives-set")
-                            .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
-                            .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(val)))
-                            .replaceText(t -> t.matchLiteral("{2}").replacement(warName)));
-                } catch (IllegalArgumentException ex) {
-                    sender.sendMessage(Component.text("§cInvalid war ID or number."));
-                }
-            }
-
-            case "delete" -> {
-                if (warArg.equalsIgnoreCase("all")) {
-                    for (UUID warId : new ArrayList<>(WarLivesMetadata.getWarLivesMapMetaData(res).keySet())) {
-                        WarLivesMetadata.removeWarLivesFromWarMetaData(res, warId);
-                    }
-                    sender.sendMessage(getMessage("warlives-delete")
-                            .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName())));
-                } else {
-                    try {
-                        UUID warId = UUID.fromString(warArg);
-                        WarLivesMetadata.removeWarLivesFromWarMetaData(res, warId);
-                        sender.sendMessage(getMessage("warlives-delete")
-                                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName())));
-                    } catch (IllegalArgumentException ex) {
-                        sender.sendMessage(Component.text("§cInvalid war ID."));
-                    }
-                }
-            }
-            default -> sender.sendMessage(getMessage("warlives-usage"));
+        switch (action) {
+            case "delete" -> handleWarLivesDelete(sender, res, args);
+            case "set" -> handleWarLivesSet(sender, res, args);
+            default -> sender.sendMessage(Messages.getMessage("warlives-usage"));
         }
     }
+
+    // Helper class to remove lives from correct war.
+    private void handleWarLivesDelete(CommandSender sender, Resident res, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage(Messages.getMessage("warlives-usage"));
+            return;
+        }
+
+        String warTitleArg = args[3].replace(" ", "_");
+        var war = UnitedWar.getInstance().getWarManager().getWarByName(warTitleArg);
+        if (war == null) {
+            sender.sendMessage(Messages.getMessage("invalid-command"));
+            return;
+        }
+
+        WarLivesMetadata.removeWarLivesMetaData(res, war.getId());
+
+        sender.sendMessage(Messages.getMessage("warlives-delete")
+                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
+                .replaceText(t -> t.matchLiteral("{2}").replacement(war.getTitle())));
+    }
+
+    // Helper class to set warlives for the correct war.
+    private void handleWarLivesSet(CommandSender sender, Resident res, String[] args) {
+        if (args.length != 5) {
+            sender.sendMessage(Messages.getMessage("warlives-usage"));
+            return;
+        }
+
+        String warTitleArg = args[3].replace(" ", "_");
+        War war = UnitedWar.getInstance().getWarManager().getWarByName(warTitleArg);
+        if (war == null) {
+            sender.sendMessage(Messages.getMessage("invalid-command"));
+            return;
+        }
+
+        int amount;
+        try {
+            amount = Integer.parseInt(args[4]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(Messages.getMessage("not-a-number")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(args[3]))
+            );
+            return;
+        }
+
+        WarLivesMetadata.setWarLivesMetaData(res, war.getId(), amount);
+
+        sender.sendMessage(Messages.getMessage("warlives-set")
+                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
+                .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(amount)))
+                .replaceText(t -> t.matchLiteral("{2}").replacement(war.getTitle())));
+    }
+
 }

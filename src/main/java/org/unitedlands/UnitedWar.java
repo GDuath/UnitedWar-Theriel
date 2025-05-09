@@ -62,13 +62,6 @@ public class UnitedWar extends JavaPlugin {
             getLogger().warning(e.getMessage());
         }
 
-        // Try to register the war lives data field.
-        try {
-            TownyAPI.getInstance().registerCustomDataField(WarLivesMetadata.WARLIVES_FIELD);
-        } catch (KeyAlreadyRegisteredException e) {
-            getLogger().warning(e.getMessage());
-        }
-
         getLogger().info("Flag successfully registered!");
 
         getLogger().info("UnitedWar initialized.");
