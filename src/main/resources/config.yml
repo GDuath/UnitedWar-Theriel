@@ -470,8 +470,14 @@ messages:
   # {0} is the town or nation name.
   # {1} is the war lives amount.
   # {2} is the war name.
-  warlives-set: "§e§l{0} §2war lives set to §e§l{1} §2in §e§l{2}"
+  warlives-set: "§e§l{0} §2war lives set to §e§l{1} §2in §e§l{2}§2."
   # {0} is the player username.
   # {1} is the war lives amount.
   # {2} is the war name.
-  warlives-get: "§e§l{0} §7has §e§l{1} §2lives in §e§l{2}"
+  warlives-get: "§e§l{0} §7has §e§l{1} §2lives in §e§l{2}§2."
+  # {0} is the amount of lives remaining.
+  # {1} is the name of the war.
+  warlives-lost: "§cYou died and lost a war life! You have §e§l{0} §cremaining in §e§l{1}§c."
+  # {0} is the name of the war.
+  warlives-final: "§cYou died and lost your final war life! You have been removed from §e§l{0}§c."
+  warlives-gone: "§cYou died but have already lost your final war life!"

@@ -18,7 +18,7 @@ public class WarLivesMetadata {
     // Set war lives for a specific war.
     public static void setWarLivesMetaData(Resident res, UUID warId, int lives) {
         String key = getMetaKey(warId);
-        String label = "War Lives: " + org.unitedlands.UnitedWar.getInstance().getWarManager().getWarTitle(warId);
+        String label = "War Lives " + org.unitedlands.UnitedWar.getInstance().getWarManager().getWarTitle(warId);
 
         removeWarLivesMetaData(res, warId); // Remove old if present.
         IntegerDataField field = new IntegerDataField(key, lives, label);

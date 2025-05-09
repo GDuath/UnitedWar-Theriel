@@ -1,5 +1,6 @@
 package org.unitedlands.listeners;
 
+import com.palmergames.bukkit.towny.TownyUniverse;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
@@ -19,6 +20,10 @@ import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarScoreEvent;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+import org.unitedlands.util.Messages;
+import org.unitedlands.util.WarLivesMetadata;
+
+import java.util.UUID;
 
 public class PlayerDeathListener implements Listener {
 
@@ -76,6 +81,32 @@ public class PlayerDeathListener implements Listener {
                         WarSide.DEFENDER, warScoreType, reward);
                 warScoreEvent.callEvent();
             }
+            var resident = TownyUniverse.getInstance().getResident(victim.getUniqueId());
+            if (resident != null) {
+                for (var warEntry : victimWars.entrySet()) {
+                    var war = warEntry.getKey();
+                    UUID warId = war.getId();
+                    int currentLives = WarLivesMetadata.getWarLivesMetaData(resident, warId);
+                    int newLives = Math.max(0, currentLives - 1);
+                    WarLivesMetadata.setWarLivesMetaData(resident, warId, newLives);
+
+                    String warName = plugin.getWarManager().getWarTitle(warId);
+
+                    if (currentLives == 0) {
+                        // Already out of lives.
+                        victim.sendMessage(Messages.getMessage("warlives-gone"));
+                    } else if (newLives == 0) {
+                        // Just lost final life.
+                        victim.sendMessage(Messages.getMessage("warlives-final")
+                                .replaceText(t -> t.matchLiteral("{0}").replacement(warName)));
+                    } else {
+                        // Still has lives left.
+                        victim.sendMessage(Messages.getMessage("warlives-lost")
+                                .replaceText(t -> t.matchLiteral("{0}").replacement(String.valueOf(newLives)))
+                                .replaceText(t -> t.matchLiteral("{1}").replacement(warName)));
+                    }
+                }
+            }
         }
 
     }
@@ -90,24 +121,21 @@ public class PlayerDeathListener implements Listener {
         }
 
         // Arrow shot by player
-        else if (damager instanceof Arrow) {
-            Arrow arrow = (Arrow) damager;
+        else if (damager instanceof Arrow arrow) {
             if (arrow.getShooter() instanceof Player) {
                 killer = (Player) arrow.getShooter();
             }
         }
 
         // Trident thrown by player
-        else if (damager instanceof Trident) {
-            Trident trident = (Trident) damager;
+        else if (damager instanceof Trident trident) {
             if (trident.getShooter() instanceof Player) {
                 killer = (Player) trident.getShooter();
             }
         }
 
         // TNT placed by player
-        else if (damager instanceof TNTPrimed) {
-            TNTPrimed tnt = (TNTPrimed) damager;
+        else if (damager instanceof TNTPrimed tnt) {
             if (tnt.getSource() instanceof Player) {
                 killer = (Player) tnt.getSource();
             }
@@ -115,24 +143,21 @@ public class PlayerDeathListener implements Listener {
 
         // Fireball launched by player
         // TODO: Fix this, it doesn't work with fireballs launched by players
-        else if (damager instanceof Fireball) {
-            Fireball fireball = (Fireball) damager;
+        else if (damager instanceof Fireball fireball) {
             if (fireball.getShooter() instanceof Player) {
                 killer = (Player) fireball.getShooter();
             }
         }
 
         // Thrown potion by player
-        else if (damager instanceof ThrownPotion) {
-            ThrownPotion potion = (ThrownPotion) damager;
+        else if (damager instanceof ThrownPotion potion) {
             if (potion.getShooter() instanceof Player) {
                 killer = (Player) potion.getShooter();
             }
         }
 
         // Wolf tamed by player
-        else if (damager instanceof Wolf) {
-            Wolf wolf = (Wolf) damager;
+        else if (damager instanceof Wolf wolf) {
             if (wolf.isTamed() && wolf.getOwner() instanceof Player) {
                 killer = (Player) wolf.getOwner();
             }
