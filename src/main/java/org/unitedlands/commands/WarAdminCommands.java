@@ -2,18 +2,24 @@ package org.unitedlands.commands;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Nation;
+import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.unitedlands.UnitedWar;
+import org.unitedlands.models.War;
+import org.unitedlands.util.Messages;
 import org.unitedlands.util.MobilisationMetadata;
+import org.unitedlands.util.WarLivesMetadata;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,7 +27,8 @@ import static org.unitedlands.util.Messages.getMessage;
 
 public class WarAdminCommands implements CommandExecutor, TabCompleter {
 
-    private final List<String> subcommands = Collections.singletonList("mobilisation");
+    private final List<String> subcommands = List.of("mobilisation", "warlives");
+
     public WarAdminCommands() {
     }
 
@@ -36,7 +43,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
                     .collect(Collectors.toList());
         }
 
-        // /wa mobilisation [Town | Nation] [Set | Delete] [Value]
+        // Mobilisation autocompletes.
         if (args[0].equalsIgnoreCase("mobilisation")) {
             return switch (args.length) {
                 case 2 ->
@@ -55,7 +62,28 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
                 default -> Collections.emptyList();
             };
         }
-        return Collections.emptyList();
+
+        // Warlives autocompletes.
+        if (args[0].equalsIgnoreCase("warlives")) {
+            return switch (args.length) {
+                // Suggest player name.
+                case 2 -> Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+                // Suggest 'set' or 'delete'.
+                case 3 -> Stream.of("set", "delete")
+                        .filter(s -> s.startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
+                // Suggest ongoing war names.
+                case 4 -> UnitedWar.getInstance().getWarManager().getWars().stream()
+                        .map(War::getTitle)
+                        .filter(title -> title.toLowerCase().startsWith(args[3].toLowerCase()))
+                        .collect(Collectors.toList());
+                default -> Collections.emptyList();
+            };
+        }
+        return List.of();
     }
 
 
@@ -66,16 +94,25 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (args.length == 0 || !args[0].equalsIgnoreCase("mobilisation")) {
-            sender.sendMessage(getMessage("usage-mobilisation"));
+        if (args[0].equalsIgnoreCase("mobilisation")) {
+            handleMobilisationCommands(sender, args);
             return true;
         }
-        handleMobilisationCommands(sender, args);
+
+        if (args[0].equalsIgnoreCase("warlives")) {
+            handleWarLivesCommands(sender, args);
+            return true;
+        }
+
+        // Unknown subcommand.
+        sender.sendMessage(getMessage("invalid-command"));
         return true;
+
     }
 
     private void handleMobilisationCommands(CommandSender sender, String[] args) {
-        // /wa mobilisation [Town | Nation] [Set | Delete] [Value]
+        // /wa mobilisation [Town | Nation] set [Value]
+        // /wa mobilisation [Town | Nation] delete
         if (args.length < 3) {
             sender.sendMessage(getMessage("usage-mobilisation"));
             return;
@@ -163,6 +200,83 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         // Fallback message.
         sender.sendMessage(getMessage("usage-mobilisation"));
     }
+
+    private void handleWarLivesCommands(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Messages.getMessage("warlives-usage"));
+            return;
+        }
+
+        String playerName = args[1];
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+        Resident res = TownyUniverse.getInstance().getResident(offlinePlayer.getUniqueId());
+
+        if (res == null) {
+            sender.sendMessage(Messages.getMessage("player-not-found")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(playerName)));
+            return;
+        }
+
+        String action = args[2].toLowerCase();
+
+        switch (action) {
+            case "delete" -> handleWarLivesDelete(sender, res, args);
+            case "set" -> handleWarLivesSet(sender, res, args);
+            default -> sender.sendMessage(Messages.getMessage("warlives-usage"));
+        }
+    }
+
+    // Helper class to remove lives from correct war.
+    private void handleWarLivesDelete(CommandSender sender, Resident res, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage(Messages.getMessage("warlives-usage"));
+            return;
+        }
+
+        String warTitleArg = args[3].replace(" ", "_");
+        var war = UnitedWar.getInstance().getWarManager().getWarByName(warTitleArg);
+        if (war == null) {
+            sender.sendMessage(Messages.getMessage("invalid-command"));
+            return;
+        }
+
+        WarLivesMetadata.removeWarLivesMetaData(res, war.getId());
+
+        sender.sendMessage(Messages.getMessage("warlives-delete")
+                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
+                .replaceText(t -> t.matchLiteral("{2}").replacement(war.getTitle())));
+    }
+
+    // Helper class to set warlives for the correct war.
+    private void handleWarLivesSet(CommandSender sender, Resident res, String[] args) {
+        if (args.length != 5) {
+            sender.sendMessage(Messages.getMessage("warlives-usage"));
+            return;
+        }
+
+        String warTitleArg = args[3].replace(" ", "_");
+        War war = UnitedWar.getInstance().getWarManager().getWarByName(warTitleArg);
+        if (war == null) {
+            sender.sendMessage(Messages.getMessage("invalid-command"));
+            return;
+        }
+
+        int amount;
+        try {
+            amount = Integer.parseInt(args[4]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(Messages.getMessage("not-a-number")
+                    .replaceText(t -> t.matchLiteral("{0}").replacement(args[3]))
+            );
+            return;
+        }
+
+        WarLivesMetadata.setWarLivesMetaData(res, war.getId(), amount);
+
+        sender.sendMessage(Messages.getMessage("warlives-set")
+                .replaceText(t -> t.matchLiteral("{0}").replacement(res.getName()))
+                .replaceText(t -> t.matchLiteral("{1}").replacement(String.valueOf(amount)))
+                .replaceText(t -> t.matchLiteral("{2}").replacement(war.getTitle())));
+    }
+
 }
-
-

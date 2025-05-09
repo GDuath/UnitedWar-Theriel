@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.object.Resident;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -29,6 +31,7 @@ import org.unitedlands.util.Messenger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
+import org.unitedlands.util.WarLivesMetadata;
 
 public class WarManager implements Listener {
 
@@ -105,6 +108,7 @@ public class WarManager implements Listener {
     private void startWar(War war) {
         war.setIs_active(true);
         war.setState_changed(true);
+        assignWarLivesToParticipants(war);
         (new WarStartEvent(war)).callEvent();
 
         sendWarStartNotification(war);
@@ -127,6 +131,7 @@ public class WarManager implements Listener {
 
     private void endWar(War war) {
         calculateWarResult(war);
+        removeWarLivesFromParticipants(war);
         war.setIs_active(false);
         war.setIs_ended(true);
         war.setEffective_end_time(System.currentTimeMillis());
@@ -365,6 +370,23 @@ public class WarManager implements Listener {
 
     //#region Public utility functions
 
+    // Get war title for display in /res screen.
+    public String getWarTitle(UUID warId) {
+        var pendingWar = pendingWars.stream()
+                .filter(w -> w.getId().equals(warId))
+                .findFirst().orElse(null);
+        if (pendingWar != null)
+            return pendingWar.getTitle();
+
+        var activeWar = activeWars.stream()
+                .filter(w -> w.getId().equals(warId))
+                .findFirst().orElse(null);
+        if (activeWar != null)
+            return activeWar.getTitle();
+
+        return "(Unknown War)";
+    }
+
     public War getWarByName(String name) {
         List<War> allWars = new ArrayList<War>();
         allWars.addAll(activeWars);
@@ -439,4 +461,40 @@ public class WarManager implements Listener {
     }
 
     //#endregion
+
+    private void assignWarLivesToParticipants(War war) {
+        List<String> allPlayers = new ArrayList<>();
+        allPlayers.addAll(war.getAttacking_players());
+        allPlayers.addAll(war.getDefending_players());
+
+        for (String uuidStr : allPlayers) {
+            try {
+                UUID uuid = UUID.fromString(uuidStr);
+                Resident resident = TownyUniverse.getInstance().getResident(uuid);
+                if (resident != null) {
+                    WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), 5); // default lives
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to assign war lives to " + uuidStr + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private void removeWarLivesFromParticipants(War war) {
+        List<String> allPlayers = new ArrayList<>();
+        allPlayers.addAll(war.getAttacking_players());
+        allPlayers.addAll(war.getDefending_players());
+
+        for (String uuidStr : allPlayers) {
+            try {
+                UUID uuid = UUID.fromString(uuidStr);
+                Resident resident = TownyUniverse.getInstance().getResident(uuid);
+                if (resident != null) {
+                    WarLivesMetadata.removeWarLivesMetaData(resident, war.getId());
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to remove war lives from " + uuidStr + ": " + e.getMessage());
+            }
+        }
+    }
 }

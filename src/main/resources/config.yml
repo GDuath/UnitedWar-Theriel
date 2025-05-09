@@ -401,6 +401,8 @@ messages:
   town-nation-not-found: "§2No town or nation found named §e§l{0}"
   # {0} is the attempted input.
   not-a-number: "§e§l{0} §2is not a number."
+  # {0} is the player username.
+  player-not-found: "§e§l{0} is not a recognised username or not online."
   invalid-mobilisation-number: "§2Mobilisation must be set between 0-100."
   # {0} is the town or nation name.
   # {1} is the mobilisation amount.
@@ -457,3 +459,25 @@ messages:
     - "§f{event-description}"
     - "§7This event has now ended and all effects have been removed"
     - "§c§m+|✦                  +✦+                  |✦+"
+# +---------------------------------------------+
+# |                 War Lives                   |
+# +---------------------------------------------+
+  warlives-usage:
+    # TURN INTO LIST
+    - "§cInvalid command, try: §7/wa warlives [Player Name] set [Int] or /wa warlives [Player Name] delete"
+  # {0} is the player username.
+  warlives-delete: "§e§l{0} §2war lives removed from §e§l{2}"
+  # {0} is the town or nation name.
+  # {1} is the war lives amount.
+  # {2} is the war name.
+  warlives-set: "§e§l{0} §2war lives set to §e§l{1} §2in §e§l{2}§2."
+  # {0} is the player username.
+  # {1} is the war lives amount.
+  # {2} is the war name.
+  warlives-get: "§e§l{0} §7has §e§l{1} §2lives in §e§l{2}§2."
+  # {0} is the amount of lives remaining.
+  # {1} is the name of the war.
+  warlives-lost: "§cYou died and lost a war life! You have §e§l{0} §cremaining in §e§l{1}§c."
+  # {0} is the name of the war.
+  warlives-final: "§cYou died and lost your final war life! You have been removed from §e§l{0}§c."
+  warlives-gone: "§cYou died but have already lost your final war life!"
