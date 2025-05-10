@@ -304,6 +304,7 @@ public class WarManager implements Listener {
 
     private void endWar(War war) {
         calculateWarResult(war);
+        removeWarLivesFromParticipants(war);
         payoutWarChests(war);
         war.setIs_active(false);
         war.setIs_ended(true);
