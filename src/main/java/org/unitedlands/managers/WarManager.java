@@ -28,7 +28,6 @@ import org.unitedlands.models.WarScoreRecord;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
-import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
 import org.unitedlands.util.WarLivesMetadata;
@@ -50,6 +49,7 @@ public class WarManager implements Listener {
             for (War war : wars) {
                 if (war.getIs_active()) {
                     activeWars.add(war);
+                    (new WarStartEvent(war)).callEvent();
                 } else {
                     pendingWars.add(war);
                 }
@@ -626,6 +626,10 @@ public class WarManager implements Listener {
         allWars.addAll(activeWars);
         allWars.addAll(pendingWars);
         return allWars.stream().filter(w -> w.getTitle().equals(name)).findFirst().orElse(null);
+    }
+
+    public boolean isAnyWarActive() {
+        return activeWars.size() > 0;
     }
 
     public Map<War, WarSide> getActivePlayerWars(UUID playerId) {

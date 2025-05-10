@@ -8,10 +8,12 @@ import org.unitedlands.commands.TownWarCommands;
 import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ContainerPlacementListener;
 import org.unitedlands.listeners.PlayerDeathListener;
+import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.ChunkBackupManager;
 import org.unitedlands.managers.DatabaseManager;
 import org.unitedlands.managers.MobilisationManager;
+import org.unitedlands.managers.SiegeManager;
 import org.unitedlands.managers.WarDeclarationManager;
 import org.unitedlands.managers.WarEventManager;
 import org.unitedlands.managers.WarManager;
@@ -22,7 +24,6 @@ import java.util.Objects;
 
 import com.palmergames.bukkit.towny.scheduling.TaskScheduler;
 import com.palmergames.bukkit.towny.scheduling.impl.BukkitTaskScheduler;
-import org.unitedlands.util.WarLivesMetadata;
 
 public class UnitedWar extends JavaPlugin {
 
@@ -36,6 +37,7 @@ public class UnitedWar extends JavaPlugin {
     private WarManager warManager;
     private WarEventManager warEventManager;
     private WarDeclarationManager warDeclarationManager;
+    private SiegeManager siegeManager;
     private ChunkBackupManager chunkBackupManager;
     private TaskScheduler taskScheduler;
     private WarScheduler warScheduler;
@@ -72,6 +74,7 @@ public class UnitedWar extends JavaPlugin {
         warManager = new WarManager(this);
         warEventManager = new WarEventManager(this);
         warDeclarationManager = new WarDeclarationManager(this);
+        siegeManager = new SiegeManager(this);
         chunkBackupManager = new ChunkBackupManager(this);
     }
 
@@ -86,6 +89,7 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ContainerPlacementListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
+        getServer().getPluginManager().registerEvents(siegeManager, this);
         getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
     }
 
@@ -114,6 +118,10 @@ public class UnitedWar extends JavaPlugin {
 
     public WarEventManager getWarEventManager() {
         return warEventManager;
+    }
+
+    public SiegeManager getSiegeManager() {
+        return siegeManager;
     }
 
     public ChunkBackupManager getChunkBackupManager() {
