@@ -1,5 +1,6 @@
 package org.unitedlands.models;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -71,11 +72,6 @@ public class War implements Identifiable {
     @DatabaseField(canBeNull = true, dataType = DataType.LONG_STRING)
     private String defending_mercenaries_serialized;
 
-    @DatabaseField(canBeNull = false, defaultValue = "0")
-    private Double attacker_warchest;
-    @DatabaseField(canBeNull = false, defaultValue = "0")
-    private Double defender_warchest;
-
     private transient List<String> attacking_towns;
     private transient List<String> defending_towns;
     private transient List<String> attacking_mercenaries;
@@ -83,6 +79,24 @@ public class War implements Identifiable {
 
     private transient List<String> attacking_players;
     private transient List<String> defending_players;
+
+    @DatabaseField(canBeNull = true, dataType = DataType.LONG_STRING)
+    private String attacker_money_warchest_serialized;
+    @DatabaseField(canBeNull = true, dataType = DataType.LONG_STRING)
+    private String defender_money_warchest_serialized;
+
+    private transient Map<String, Double> attacker_money_warchest;
+    private transient Map<String, Double> defender_money_warchest;
+
+    @DatabaseField(canBeNull = true, dataType = DataType.LONG_STRING)
+    private String attacker_claims_warchest_serialized;
+    @DatabaseField(canBeNull = true, dataType = DataType.LONG_STRING)
+    private String defender_claims_warchest_serialized;
+    @DatabaseField(canBeNull = false, defaultValue = "0")
+    private Integer additional_claims_payout;
+
+    private transient Map<String, Integer> attacker_claims_warchest;
+    private transient Map<String, Integer> defender_claims_warchest;
 
     private transient Boolean state_changed = false;
 
@@ -287,26 +301,6 @@ public class War implements Identifiable {
         this.defending_mercenaries_serialized = defending_mercenaries_serialized;
     }
 
-    public Double getAttacker_warchest() {
-        return attacker_warchest;
-    }
-
-    public void setAttacker_warchest(Double attacker_warchest) {
-        this.attacker_warchest = attacker_warchest;
-    }
-
-    public Double getDefender_warchest() {
-        return defender_warchest;
-    }
-
-    public Double getTotal_warchest() {
-        return getAttacker_warchest() + getDefender_warchest();
-    }
-
-    public void setDefender_warchest(Double defender_warchest) {
-        this.defender_warchest = defender_warchest;
-    }
-
     public List<String> getAttacking_towns() {
         if (attacking_towns == null && attacking_towns_serialized != null) {
             attacking_towns = Arrays.asList(attacking_towns_serialized.split("#"));
@@ -353,6 +347,158 @@ public class War implements Identifiable {
     public void setDefending_mercenaries(List<String> defending_mercenaries) {
         this.defending_mercenaries = defending_mercenaries;
         this.defending_mercenaries_serialized = String.join("#", defending_mercenaries);
+    }
+   
+    public String getAttacker_money_warchest_serialized() {
+        return attacker_money_warchest_serialized;
+    }
+
+    public void setAttacker_money_warchest_serialized(String attacker_money_warchest_serialized) {
+        this.attacker_money_warchest_serialized = attacker_money_warchest_serialized;
+    }
+
+    public String getDefender_money_warchest_serialized() {
+        return defender_money_warchest_serialized;
+    }
+
+    public void setDefender_money_warchest_serialized(String defender_money_warchest_serialized) {
+        this.defender_money_warchest_serialized = defender_money_warchest_serialized;
+    }
+
+    public Map<String, Double> getAttacker_money_warchest() {
+        if (attacker_money_warchest == null && attacker_money_warchest_serialized != null) {
+            attacker_money_warchest = new HashMap<String, Double>();
+            var sets = attacker_money_warchest_serialized.split("#");
+            for (String set : sets) {
+                var values = set.split(":");
+                attacker_money_warchest.putIfAbsent(values[0], Double.parseDouble(values[1]));
+            }
+        }
+        return attacker_money_warchest;
+    }
+
+    public void setAttacker_money_warchest(Map<String, Double> attacker_money_warchest) {
+        this.attacker_money_warchest = attacker_money_warchest;
+        List<String> list = new ArrayList<>();
+        for (var set : attacker_money_warchest.entrySet())
+        {
+            list.add(set.getKey() + ":" + set.getValue());
+        }
+        attacker_money_warchest_serialized = String.join("#", list);
+    }
+
+    public Map<String, Double> getDefender_money_warchest() {
+        if (defender_money_warchest == null && defender_money_warchest_serialized != null) {
+            defender_money_warchest = new HashMap<String, Double>();
+            var sets = defender_money_warchest_serialized.split("#");
+            for (String set : sets) {
+                var values = set.split(":");
+                defender_money_warchest.putIfAbsent(values[0], Double.parseDouble(values[1]));
+            }
+        }
+        return defender_money_warchest;
+    }
+
+    public void setDefender_money_warchest(Map<String, Double> defender_money_warchest) {
+        this.defender_money_warchest = defender_money_warchest;
+        List<String> list = new ArrayList<>();
+        for (var set : defender_money_warchest.entrySet())
+        {
+            list.add(set.getKey() + ":" + set.getValue());
+        }
+        defender_money_warchest_serialized = String.join("#", list);
+    }
+
+    public Double getAttacker_total_money_warchest() {
+        if (getAttacker_money_warchest() == null)
+            return 0d;
+        return getAttacker_money_warchest().values().stream().mapToDouble(Double::doubleValue).sum();
+    }
+
+    public Double getDefender_total_money_warchest() {
+        if (getDefender_money_warchest() == null)
+            return 0d;
+        return getDefender_money_warchest().values().stream().mapToDouble(Double::doubleValue).sum();
+    }
+
+    public String getAttacker_claims_warchest_serialized() {
+        return attacker_claims_warchest_serialized;
+    }
+
+    public void setAttacker_claims_warchest_serialized(String attacker_claims_warchest_serialized) {
+        this.attacker_claims_warchest_serialized = attacker_claims_warchest_serialized;
+    }
+
+    public String getDefender_claims_warchest_serialized() {
+        return defender_claims_warchest_serialized;
+    }
+
+    public void setDefender_claims_warchest_serialized(String defender_claims_warchest_serialized) {
+        this.defender_claims_warchest_serialized = defender_claims_warchest_serialized;
+    }
+
+    public Integer getAdditional_claims_payout() {
+        return additional_claims_payout;
+    }
+
+    public void setAdditional_claims_payout(Integer additional_claims_payout) {
+        this.additional_claims_payout = additional_claims_payout;
+    }
+
+    public Map<String, Integer> getAttacker_claims_warchest() {
+        if (attacker_claims_warchest == null && attacker_claims_warchest_serialized != null) {
+            attacker_claims_warchest = new HashMap<String, Integer>();
+            var sets = attacker_claims_warchest_serialized.split("#");
+            for (String set : sets) {
+                var values = set.split(":");
+                attacker_claims_warchest.putIfAbsent(values[0], Integer.parseInt(values[1]));
+            }
+        }
+        return attacker_claims_warchest;
+    }
+
+    public void setAttacker_claims_warchest(Map<String, Integer> attacker_claims_warchest) {
+        this.attacker_claims_warchest = attacker_claims_warchest;
+        List<String> list = new ArrayList<>();
+        for (var set : attacker_claims_warchest.entrySet())
+        {
+            list.add(set.getKey() + ":" + set.getValue());
+        }
+        attacker_claims_warchest_serialized = String.join("#", list);
+    }
+
+    public Map<String, Integer> getDefender_claims_warchest() {
+        if (defender_claims_warchest == null && defender_claims_warchest_serialized != null) {
+            defender_claims_warchest = new HashMap<String, Integer>();
+            var sets = defender_claims_warchest_serialized.split("#");
+            for (String set : sets) {
+                var values = set.split(":");
+                defender_claims_warchest.putIfAbsent(values[0], Integer.parseInt(values[1]));
+            }
+        }
+        return defender_claims_warchest;
+    }
+
+    public void setDefender_claims_warchest(Map<String, Integer> defender_claims_warchest) {
+        this.defender_claims_warchest = defender_claims_warchest;
+        List<String> list = new ArrayList<>();
+        for (var set : defender_claims_warchest.entrySet())
+        {
+            list.add(set.getKey() + ":" + set.getValue());
+        }
+        defender_claims_warchest_serialized = String.join("#", list);
+    }
+
+    public Integer getAttacker_total_claims_warchest() {
+        if (getAttacker_claims_warchest() == null)
+            return 0;
+        return getAttacker_claims_warchest().values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    public Integer getDefender_total_claims_warchest() {
+        if (getDefender_claims_warchest() == null)
+            return 0;
+        return getDefender_claims_warchest().values().stream().mapToInt(Integer::intValue).sum();
     }
 
     public Integer getAttacker_score() {
@@ -420,8 +566,12 @@ public class War implements Identifiable {
         replacements.put("defender", getTarget_town_name());
         replacements.put("attacker-nation", "(" + getDeclaring_nation_name() + ")");
         replacements.put("defender-nation", "(" + getTarget_nation_name() + ")");
-        replacements.put("attacker-ally-info", war_goal.callAttackerAllies() ? "The attacker has called allies into the war." : "The attacker has not called allies into the war.");
-        replacements.put("defender-ally-info", war_goal.callAttackerAllies() ? "The defender has called allies into the war." : "The defender has not called allies into the war.");
+        replacements.put("attacker-ally-info",
+                war_goal.callAttackerAllies() ? "The attacker has called allies into the war."
+                        : "The attacker has not called allies into the war.");
+        replacements.put("defender-ally-info",
+                war_goal.callAttackerAllies() ? "The defender has called allies into the war."
+                        : "The defender has not called allies into the war.");
         replacements.put("war-goal", war_goal.getDisplayName());
         replacements.put("attacker-score", getAttacker_score().toString());
         replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
@@ -429,13 +579,16 @@ public class War implements Identifiable {
         replacements.put("defender-score-cap", getDefender_score_cap().toString());
         replacements.put("war-result", getWar_result().getDisplayName());
         if (!getIs_active() && !getIs_ended()) {
-            replacements.put("timer-info", "War will start in §e" + Formatter.formatDuration(scheduled_begin_time - System.currentTimeMillis()));
+            replacements.put("timer-info", "War will start in §e"
+                    + Formatter.formatDuration(scheduled_begin_time - System.currentTimeMillis()));
         } else if (getIs_active()) {
-            replacements.put("timer-info", "War will end in §e" + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
+            replacements.put("timer-info",
+                    "War will end in §e" + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
         } else {
             replacements.put("timer-info", "War has ended.");
         }
-        replacements.put("war-chest", getTotal_warchest().toString());
+        replacements.put("war-chest-money", String.valueOf(getAttacker_total_money_warchest() + getDefender_total_money_warchest()));
+        replacements.put("war-chest-claims", String.valueOf(getAttacker_total_claims_warchest() + getDefender_total_claims_warchest() + getAdditional_claims_payout()));
 
         return replacements;
     }

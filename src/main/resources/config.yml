@@ -355,6 +355,7 @@ wars-settings:
     defender-warchest-contibution: 0.1 
     attacker-score-cap: 500
     defender-score-cap: 500
+    additional-bonus-claims: 20
   town-town:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
@@ -362,6 +363,7 @@ wars-settings:
     defender-warchest-contibution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
+    additional-bonus-claims: 20
   town-nation:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
@@ -369,6 +371,7 @@ wars-settings:
     defender-warchest-contibution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
+    additional-bonus-claims: 20
   nation-nation:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
@@ -376,6 +379,7 @@ wars-settings:
     defender-warchest-contibution: 0.1 
     attacker-score-cap: 500
     defender-score-cap: 500
+    additional-bonus-claims: 20
   nation-town:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
@@ -383,6 +387,7 @@ wars-settings:
     defender-warchest-contibution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
+    additional-bonus-claims: 20
 
 ###################################################
 # +---------------------------------------------+ #
@@ -421,7 +426,7 @@ messages:
     - "§f§c§o{war-name}"
     - "§7{war-description}"
     - "Attacker: {attacker} {attacker-nation} | Defender: {defender} {defender-nation}"
-    - "§f§lWar Goal: §r{war-goal} | War Chest: §r{war-chest}G"
+    - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims}"
     - "{attacker-ally-info} {defender-ally-info}"
     - "§f§l{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
@@ -430,7 +435,7 @@ messages:
     - "§7{war-description}"
     - "§f§lAttacker: §r{attacker} | §lScore: §r{attacker-score} / {attacker-score-cap}"
     - "§f§lDefender: §r{defender} | §lScore: §r{defender-score} / {defender-score-cap}"
-    - "§f§lWar Goal: §r{war-goal} | War Chest: §r{war-chest}G"
+    - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims}"
     - "{attacker-ally-info} {defender-ally-info}"
     - "§f§l{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
@@ -440,7 +445,7 @@ messages:
     - "§f§o{war-result}"
     - "§f§lAttacker: §r{attacker} | §lFinal score: §r{attacker-score} / {attacker-score-cap}"
     - "§f§lDefender: §r{defender} | §lFinal score: §r{defender-score} / {defender-score-cap}"
-    - "§f§lWar Goal: §r{war-goal} | War Chest: §r{war-chest}G"
+    - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims}"
     - "§c§m+|✦                  +✦+                  |✦+"
   info-not-in-war: "§cYou are not in a war!"
   event-info-scheduled: 

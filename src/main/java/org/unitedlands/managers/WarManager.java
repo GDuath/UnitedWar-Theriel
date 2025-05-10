@@ -1,12 +1,12 @@
 package org.unitedlands.managers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -25,10 +25,10 @@ import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
-import org.unitedlands.services.WarScoreRecordDbService;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
 import org.unitedlands.util.WarLivesMetadata;
@@ -61,6 +61,8 @@ public class WarManager implements Listener {
             return null;
         });
     }
+
+    //#region War handling
 
     public void handleWars() {
 
@@ -129,59 +131,9 @@ public class WarManager implements Listener {
         return false;
     }
 
-    private void endWar(War war) {
-        calculateWarResult(war);
-        removeWarLivesFromParticipants(war);
-        war.setIs_active(false);
-        war.setIs_ended(true);
-        war.setEffective_end_time(System.currentTimeMillis());
-        war.setState_changed(true);
+    //#endregion
 
-        (new WarEndEvent(war)).callEvent();
-
-        sendWarEndNotification(war);
-    }
-
-    public void forceEndWar(War war) {
-        endWar(war);
-        if (pendingWars.contains(war))
-            pendingWars.remove(war);
-        else if (activeWars.contains(war))
-            activeWars.remove(war);
-
-        saveWarToDatabase(war);
-    }
-
-    private void calculateWarResult(War war) {
-        float attackerScore = (float) war.getAttacker_score();
-        float defenderScore = (float) war.getDefender_score();
-
-        if (defenderScore == 0)
-            defenderScore = 0.01f;
-        if (attackerScore == 0)
-            attackerScore = 0.01f;
-
-        double ratio = attackerScore / defenderScore;
-
-        WarResult warResult = WarResult.UNDECIDED;
-        if (ratio < 0.25f) {
-            warResult = WarResult.STRONG_DEFENDER_WIN;
-        } else if (ratio >= 0.25f && ratio < 0.75f) {
-            warResult = WarResult.NORMAL_DEFENDER_WIN;
-        } else if (ratio >= 0.75f && ratio < 0.95f) {
-            warResult = WarResult.NARROW_DEFENDER_WIN;
-        } else if (ratio >= 0.95 && ratio < 1.05f) {
-            warResult = WarResult.DRAW;
-        } else if (ratio >= 1.05f && ratio < 1.333f) {
-            warResult = WarResult.NARROW_ATTACKER_WIN;
-        } else if (ratio >= 1.333f && ratio < 4) {
-            warResult = WarResult.NORMAL_ATTACKER_WIN;
-        } else if (ratio > 4) {
-            warResult = WarResult.STRONG_ATTACKER_WIN;
-        }
-
-        war.setWar_result(warResult);
-    }
+    //#region War creation
 
     public void createWar(String title, String description, String attackingTownId, String defendingTownId,
             WarGoal warGoal) {
@@ -236,6 +188,7 @@ public class WarManager implements Listener {
                 getFactionTownIds(war, defendingTown, warGoal.callDefenderNation(), warGoal.callDefenderAllies()));
 
         war.setWar_result(WarResult.UNDECIDED);
+        war.setAdditional_claims_payout(fileConfig.getInt("wars-settings.default.additional-bonus-claims", 0));
 
         buildWarChests(war);
         buildPlayerLists(war);
@@ -281,27 +234,41 @@ public class WarManager implements Listener {
         Double defenderContribution = plugin.getConfig()
                 .getDouble("wars-settings.default.defender-warchest-contibution", 0.1);
 
-        Double attackerWarchest = 0d;
+        Map<String, Double> attackerMoneyContributions = new HashMap<>();
+        Map<String, Integer> attackerClaimsContributions = new HashMap<>();
         for (String townId : war.getAttacking_towns()) {
             Town town = TownyAPI.getInstance().getTown(UUID.fromString(townId));
             if (town != null) {
-                var amount = Math.round(town.getAccount().getCachedBalance(true) * attackerContribution);
-                town.getAccount().withdraw(amount, "War contribution to " + war.getTitle());
-                attackerWarchest += amount;
+                var money = (double) Math.round(town.getAccount().getCachedBalance(true) * attackerContribution);
+                town.getAccount().withdraw(money, "War contribution to " + war.getTitle());
+                attackerMoneyContributions.put(townId, money);
+
+                if (town.getBonusBlocks() > 0) {
+                    var claims = (int) Math.round((double) town.getBonusBlocks() * attackerContribution);
+                    attackerClaimsContributions.put(townId, claims);
+                }
             }
         }
-        war.setAttacker_warchest(attackerWarchest);
+        war.setAttacker_money_warchest(attackerMoneyContributions);
+        war.setAttacker_claims_warchest(attackerClaimsContributions);
 
-        Double defenderWarchest = 0d;
+        Map<String, Double> defenderMoneyContributions = new HashMap<>();
+        Map<String, Integer> defenderClaimsContributions = new HashMap<>();
         for (String townId : war.getDefending_towns()) {
             Town town = TownyAPI.getInstance().getTown(UUID.fromString(townId));
             if (town != null) {
-                var amount = Math.round(town.getAccount().getCachedBalance(true) * defenderContribution);
+                var amount = (double) Math.round(town.getAccount().getCachedBalance(true) * defenderContribution);
                 town.getAccount().withdraw(amount, "War contribution to " + war.getTitle());
-                defenderWarchest += amount;
+                defenderMoneyContributions.put(townId, amount);
+
+                if (town.getBonusBlocks() > 0) {
+                    var claims = (int) Math.round((double) town.getBonusBlocks() * attackerContribution);
+                    defenderClaimsContributions.put(townId, claims);
+                }
             }
         }
-        war.setDefender_warchest(defenderWarchest);
+        war.setDefender_money_warchest(defenderMoneyContributions);
+        war.setDefender_claims_warchest(defenderClaimsContributions);
     }
 
     private void buildPlayerLists(War war) {
@@ -331,6 +298,271 @@ public class WarManager implements Listener {
         war.setAttacking_players(attackerResidentIds);
     }
 
+    //#endregion
+
+    //#region War ending
+
+    private void endWar(War war) {
+        calculateWarResult(war);
+        removeWarLivesFromParticipants(war);
+        payoutWarChests(war);
+        war.setIs_active(false);
+        war.setIs_ended(true);
+        war.setEffective_end_time(System.currentTimeMillis());
+        war.setState_changed(true);
+
+        (new WarEndEvent(war)).callEvent();
+
+        sendWarEndNotification(war);
+    }
+
+    public void forceEndWar(War war) {
+        endWar(war);
+        if (pendingWars.contains(war))
+            pendingWars.remove(war);
+        else if (activeWars.contains(war))
+            activeWars.remove(war);
+
+        saveWarToDatabase(war);
+    }
+
+    private void calculateWarResult(War war) {
+        float attackerScore = (float) war.getAttacker_score();
+        float defenderScore = (float) war.getDefender_score();
+
+        if (defenderScore == 0)
+            defenderScore = 0.01f;
+        if (attackerScore == 0)
+            attackerScore = 0.01f;
+
+        double ratio = attackerScore / defenderScore;
+
+        WarResult warResult = WarResult.UNDECIDED;
+        if (ratio < 0.25f) {
+            warResult = WarResult.STRONG_DEFENDER_WIN;
+        } else if (ratio >= 0.25f && ratio < 0.75f) {
+            warResult = WarResult.NORMAL_DEFENDER_WIN;
+        } else if (ratio >= 0.75f && ratio < 0.95f) {
+            warResult = WarResult.NARROW_DEFENDER_WIN;
+        } else if (ratio >= 0.95 && ratio < 1.05f) {
+            warResult = WarResult.DRAW;
+        } else if (ratio >= 1.05f && ratio < 1.333f) {
+            warResult = WarResult.NARROW_ATTACKER_WIN;
+        } else if (ratio >= 1.333f && ratio < 4) {
+            warResult = WarResult.NORMAL_ATTACKER_WIN;
+        } else if (ratio > 4) {
+            warResult = WarResult.STRONG_ATTACKER_WIN;
+        }
+
+        war.setWar_result(warResult);
+    }
+
+    //#endregion
+
+    //#region War chest payouts
+
+    private void payoutWarChests(War war) {
+
+        // If the result was a draw, pay back each town's money war contribution. Since bonus claims
+        // have not been subtracted yet, there is no need to pay them back.
+        if (war.getWar_result() == WarResult.DRAW) {
+            repayTownContributions(war.getAttacker_money_warchest());
+            repayTownContributions(war.getDefender_money_warchest());
+            return;
+        }
+
+        // Get all score records of the war asynchronously
+        plugin.getDatabaseManager().getWarScoreRecordDbService().getByWarAsync(war.getId()).thenAccept(records -> {
+            // Go back to main thread
+            Bukkit.getScheduler().runTask(plugin, () -> {
+
+                // Exclude mercenary records
+                var regularRecords = records.stream().filter(r -> !r.getIs_mercenary()).collect(Collectors.toList());
+
+                var attackingTownScores = regularRecords.stream().filter(r -> r.getWar_side() == WarSide.ATTACKER)
+                        .collect(Collectors.groupingBy(WarScoreRecord::getTown_id,
+                                Collectors.summingInt(WarScoreRecord::getScore_adjusted)));
+                var defendingTownScores = regularRecords.stream().filter(r -> r.getWar_side() == WarSide.DEFENDER)
+                        .collect(Collectors.groupingBy(WarScoreRecord::getTown_id,
+                                Collectors.summingInt(WarScoreRecord::getScore_adjusted)));
+
+                Map<UUID, Double> attackingTownContributions = calculateTownContributions(attackingTownScores,
+                        war.getAttacker_score());
+                Map<UUID, Double> defendingTownContributions = calculateTownContributions(defendingTownScores,
+                        war.getDefender_score());
+
+                Double attackerPayoutRatio = 0d;
+                Double defenderPayoutRatio = 0d;
+                WarSide sideToLoseClaims = WarSide.NONE;
+
+                // Determine payout ratios and whether claims should be removed
+                var result = war.getWar_result();
+                if (result == WarResult.NARROW_ATTACKER_WIN) {
+                    attackerPayoutRatio = 0.75d;
+                    defenderPayoutRatio = 0.25d;
+                } else if (result == WarResult.NORMAL_ATTACKER_WIN || result == WarResult.STRONG_ATTACKER_WIN) {
+                    attackerPayoutRatio = 1d;
+                    sideToLoseClaims = WarSide.DEFENDER;
+                } else if (result == WarResult.NARROW_DEFENDER_WIN) {
+                    attackerPayoutRatio = 0.25d;
+                    defenderPayoutRatio = 0.75d;
+                } else if (result == WarResult.NORMAL_DEFENDER_WIN || result == WarResult.STRONG_DEFENDER_WIN) {
+                    defenderPayoutRatio = 1d;
+                    sideToLoseClaims = WarSide.ATTACKER;
+                }
+
+                plugin.getLogger().info("Distribution: attacker " + attackerPayoutRatio + ", defender " + defenderPayoutRatio);
+                plugin.getLogger().info("Side to lose claims: " + sideToLoseClaims.toString());
+
+                var attackerMoneyWarchest = war.getAttacker_total_money_warchest();
+                var defenderMoneyWarchest = war.getDefender_total_money_warchest();
+                var totalMoneyAmount = attackerMoneyWarchest + defenderMoneyWarchest;
+
+                // Account for floating point precision errors
+                if (attackerPayoutRatio >= 0.01d) {
+                    var attackerEntitlement = (double) Math.round(totalMoneyAmount * attackerPayoutRatio);
+
+                    // If the amount won exceeds the initial contributions of all towns, pay back first, then distribute the surplus.
+                    if (attackerEntitlement >= attackerMoneyWarchest)
+                        repayTownContributions(war.getAttacker_money_warchest());
+
+                    var surplus = attackerEntitlement - attackerMoneyWarchest;
+                    var remainder = distributeMoney(surplus, attackingTownContributions);
+
+                    // There might be money left over due to mercenary contributions. Pay the money to the main town. 
+                    if (remainder > 0)
+                        payMoneyToTown(war.getDeclaring_town_id(), remainder, "War chest surplus after distribution");
+                }
+                // Account for floating point precision errors
+                if (defenderPayoutRatio >= 0.01d) {
+                    var defenderEntitlement = (double) Math.round(totalMoneyAmount * defenderPayoutRatio);
+
+                    // If the amount won exceeds the initial contributions of all towns, pay back first, then distribute the surplus.
+                    if (defenderEntitlement >= defenderMoneyWarchest)
+                        repayTownContributions(war.getDefender_money_warchest());
+
+                    var surplus = defenderEntitlement - defenderMoneyWarchest;
+                    var remainder = distributeMoney(surplus, defendingTownContributions);
+
+                    // There might be money left over due to mercenary contributions. Pay the money to the main town. 
+                    if (remainder > 0)
+                        payMoneyToTown(war.getTarget_town_id(), remainder, "War chest surplus after distribution");
+                }
+
+                // Transfer bonus claims between side
+                if (sideToLoseClaims == WarSide.ATTACKER) {
+                    var attackerClaims = war.getAttacker_claims_warchest();
+                    for (var set : attackerClaims.entrySet()) {
+                        removeClaimsFromTown(set.getKey(), set.getValue());
+                    }
+
+                    // There might be a remainder after claims distribution due to rounding errors. Give the claims to the main town.
+                    var remainder = distributeClaims(
+                            war.getAttacker_total_claims_warchest() + war.getAdditional_claims_payout(),
+                            defendingTownContributions);
+                    if (remainder > 0)
+                        addClaimsToTown(war.getTarget_town_id(), remainder);
+
+                } else if (sideToLoseClaims == WarSide.DEFENDER) {
+                    var defenderClaims = war.getDefender_claims_warchest();
+                    for (var set : defenderClaims.entrySet()) {
+                        removeClaimsFromTown(set.getKey(), set.getValue());
+                    }
+
+                    // There might be a remainder after claims distribution due to rounding errors. Give the claims to the main town.
+                    var remainder = distributeClaims(
+                            war.getDefender_total_claims_warchest() + war.getAdditional_claims_payout(),
+                            attackingTownContributions);
+                    if (remainder > 0)
+                        addClaimsToTown(war.getDeclaring_town_id(), remainder);
+                }
+
+            });
+        });
+    }
+
+    private Integer distributeClaims(Integer amount, Map<UUID, Double> townContributions) {
+        if (townContributions == null || townContributions.isEmpty())
+            return amount;
+
+        var remainder = amount;
+        for (var set : townContributions.entrySet()) {
+            Integer share = (int) Math.round(amount * set.getValue());
+            remainder -= share;
+            plugin.getLogger()
+                .info("Giving " + share + " claims to " + set.getKey() + " for " + set.getValue() + " contribution.");
+            addClaimsToTown(set.getKey(), share);
+        }
+        return remainder;
+    }
+
+    private Double distributeMoney(double amount, Map<UUID, Double> townContributions) {
+        if (townContributions == null || townContributions.isEmpty())
+            return amount;
+
+        var remainder = amount;
+        for (var set : townContributions.entrySet()) {
+            Double share = (double) Math.round(amount * set.getValue());
+            remainder -= share;
+            plugin.getLogger()
+                    .info("Paying " + share + "G to " + set.getKey() + " for " + set.getValue() + " contribution.");
+            payMoneyToTown(set.getKey(), share, "Share of war chest payout");
+        }
+        return remainder;
+    }
+
+    private void repayTownContributions(Map<String, Double> moneyContributions) {
+        if (moneyContributions == null || moneyContributions.isEmpty())
+            return;
+        for (var contribution : moneyContributions.entrySet()) {
+            payMoneyToTown(contribution.getKey(), contribution.getValue(), "Repayment of war chest contribution");
+        }
+    }
+
+    private Map<UUID, Double> calculateTownContributions(Map<UUID, Integer> townScores, Integer finalScore) {
+        if (finalScore == 0)
+            return new HashMap<UUID, Double>();
+
+        Map<UUID, Double> townContributions = new HashMap<>();
+        for (var set : townScores.entrySet()) {
+            townContributions.putIfAbsent(set.getKey(), (double) set.getValue() / (double) finalScore);
+        }
+        return townContributions;
+    }
+
+    private void payMoneyToTown(String townId, Double amount, String reason) {
+        payMoneyToTown(UUID.fromString(townId), amount, reason);
+    }
+
+    private void payMoneyToTown(UUID townId, Double amount, String reason) {
+        var town = TownyAPI.getInstance().getTown(townId);
+        if (town != null) {
+            town.getAccount().deposit(amount, reason);
+        }
+    }
+
+    private void removeClaimsFromTown(String townId, Integer amount) {
+        var town = TownyAPI.getInstance().getTown(UUID.fromString(townId));
+        if (town != null) {
+            town.setBonusBlocks(town.getBonusBlocks() - amount);
+        }
+    }
+
+    private void addClaimsToTown(String townId, Integer amount) {
+        addClaimsToTown(UUID.fromString(townId), amount);
+    }
+
+    private void addClaimsToTown(UUID townId, Integer amount) {
+        var town = TownyAPI.getInstance().getTown(townId);
+        if (town != null) {
+            town.addBonusBlocks(amount);
+        }
+    }
+
+    //#endregion
+
+    //#region Database functions
+
     private void saveWarToDatabase(War war) {
         var warDbService = plugin.getDatabaseManager().getWarDbService();
         warDbService.createOrUpdateAsync(war).thenAccept(success -> {
@@ -342,6 +574,8 @@ public class WarManager implements Listener {
         });
         war.setState_changed(false);
     }
+
+    //#endregion
 
     //#region Notification methods
 
@@ -443,7 +677,7 @@ public class WarManager implements Listener {
             Messenger.sendMessageTemplate(player, "score-message", replacements, true);
         }
 
-        // Save record to database
+        // Generate and save record to database
         WarScoreRecord record = new WarScoreRecord() {
             {
                 setTimestamp(System.currentTimeMillis());
@@ -455,6 +689,21 @@ public class WarManager implements Listener {
                 setScore_adjusted(event.getFinalScore());
             }
         };
+        var resident = TownyAPI.getInstance().getResident(event.getPlayer());
+        if (resident != null) {
+            var town = resident.getTownOrNull();
+            if (town != null) {
+                record.setTown_id(town.getUUID());
+            }
+        }
+
+        if ((event.getWar().getAttacking_mercenaries() != null
+                && event.getWar().getAttacking_mercenaries().contains(event.getPlayer().toString())) ||
+                (event.getWar().getDefending_mercenaries() != null
+                        && event.getWar().getAttacking_mercenaries().contains(event.getPlayer().toString()))) {
+            record.setIs_mercenary(true);
+        }
+
         plugin.getDatabaseManager().getWarScoreRecordDbService().createOrUpdate(record);
 
         war.setState_changed(true);
