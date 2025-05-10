@@ -261,7 +261,9 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             return;
         }
 
-        plugin.getWarManager().createWar("Debug War", "Debug War Description",
+        int random = (int) (Math.random() * 10000);
+        String title = "Debug_War_" + random;
+        plugin.getWarManager().createWar(title, "Debug War Description",
                 attackerTown.getUUID().toString(), defenderTown.getUUID().toString(), WarGoal.DEFAULT);
     }
 
