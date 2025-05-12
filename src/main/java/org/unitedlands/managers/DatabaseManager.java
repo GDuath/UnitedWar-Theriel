@@ -10,9 +10,11 @@ import java.sql.SQLException;
 
 import org.unitedlands.UnitedWar;
 import org.unitedlands.models.SchemaVersion;
+import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarEventRecord;
 import org.unitedlands.models.WarScoreRecord;
+import org.unitedlands.services.SiegeChunkDbService;
 import org.unitedlands.services.WarDbService;
 import org.unitedlands.services.WarEventRecordDbService;
 import org.unitedlands.services.WarScoreRecordDbService;
@@ -26,6 +28,7 @@ public class DatabaseManager {
     private WarDbService warDbService;
     private WarEventRecordDbService warEventRecordDbService;
     private WarScoreRecordDbService warScoreRecordDbService;
+    private SiegeChunkDbService siegeChunkDbService;
 
     public DatabaseManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -69,6 +72,7 @@ public class DatabaseManager {
         this.warDbService = new WarDbService(getDao(War.class));
         this.warEventRecordDbService = new WarEventRecordDbService(getDao(WarEventRecord.class));
         this.warScoreRecordDbService = new WarScoreRecordDbService(getDao(WarScoreRecord.class));
+        this.siegeChunkDbService = new SiegeChunkDbService(getDao(SiegeChunk.class));
     }
 
     private void verifySchemaVersion() throws SQLException {
@@ -128,6 +132,10 @@ public class DatabaseManager {
 
     public WarScoreRecordDbService getWarScoreRecordDbService() {
         return warScoreRecordDbService;
+    }
+
+    public SiegeChunkDbService getSiegeChunkDbService() {
+        return siegeChunkDbService;
     }
 
     public ConnectionSource getConnectionSource() {

@@ -6,7 +6,7 @@
 
   <groupId>org.unitedlands</groupId>
   <artifactId>UnitedWar</artifactId>
-  <version>0.1-WARLIVES-SNAPSHOT4</version>
+  <version>0.1</version>
   <name>UnitedWar</name>
 
   <properties>
