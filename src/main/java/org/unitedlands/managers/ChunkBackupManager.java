@@ -1,27 +1,19 @@
 package org.unitedlands.managers;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.zip.*;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
+import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.util.Logger;
 
+import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.regen.PlotBlockData;
@@ -32,201 +24,281 @@ import com.palmergames.util.FileMgmt;
 public class ChunkBackupManager {
 
     private final UnitedWar plugin;
-    private final String rootFolderPath;
-    private final Queue<Runnable> queryQueue = new ConcurrentLinkedQueue<Runnable>();
-    private final ScheduledTask task;
+    private final String baseFolder;
+    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
+    private final ScheduledTask processingTask;
 
     public ChunkBackupManager(UnitedWar plugin) {
         this.plugin = plugin;
-        this.rootFolderPath = plugin.getDataFolder().getPath();
+        this.baseFolder = plugin.getDataFolder().getPath();
 
-        if (!FileMgmt
-                .checkOrCreateFolders(new String[] { rootFolderPath, rootFolderPath + File.separator + "capturesites",
-                        rootFolderPath + File.separator + "capturesites" + File.separator + "deleted" })) {
-            plugin.getLogger().severe("Could not create default folders");
+        // Ensure required folders exist
+        if (!FileMgmt.checkOrCreateFolders(new String[] {
+                baseFolder,
+                baseFolder + File.separator + "chunkbackups",
+                baseFolder + File.separator + "chunkbackups" + File.separator + "deleted"
+        })) {
+            plugin.getLogger().severe("Failed to create default folders.");
         }
 
-        task = plugin.getTaskScheduler().runAsyncRepeating(() -> {
-            while (!queryQueue.isEmpty()) {
-                Runnable operation = (Runnable) queryQueue.poll();
-                operation.run();
+        // Start processing queued tasks asynchronously
+        this.processingTask = plugin.getTaskScheduler().runAsyncRepeating(() -> {
+            Runnable task;
+            while ((task = taskQueue.poll()) != null) {
+                task.run();
             }
         }, 5L, 5L);
     }
 
-    public void finishTasks() {
-        task.cancel();
-
-        while (!queryQueue.isEmpty()) {
-            Runnable operation = (Runnable) queryQueue.poll();
-            operation.run();
-        }
-
-    }
-
-    public void createSnapshotsFor(Collection<TownBlock> townBlocks, UUID uuid) {
-
-        plugin.getLogger().info("Processing " + townBlocks.size() + " blocks");
-        Iterator<TownBlock> townBlockIterator = townBlocks.iterator();
-        while (townBlockIterator.hasNext()) {
-            TownBlock tb = (TownBlock) townBlockIterator.next();
-            makeSnapshot(tb, uuid);
+    public void shutdown() {
+        processingTask.cancel();
+        Runnable task;
+        while ((task = taskQueue.poll()) != null) {
+            task.run();
         }
     }
 
-    private void makeSnapshot(TownBlock tb, UUID uuid) {
-        createPlotSnapshot(tb).thenAcceptAsync((data) -> {
-            if (!data.getBlockList().isEmpty()) {
-                if (savePlotData(data, uuid))
-                    plugin.getLogger().info("Chunk backup complete");
-            }
-        }).exceptionally((e) -> {
-            if (e.getCause() != null) {
-                e = e.getCause();
-            }
+    public void snapshotChunks(Collection<TownBlock> townBlocks, UUID sessionId) {
+        Logger.log("Backing up " + townBlocks.size() + " chunks.");
+        for (TownBlock block : townBlocks) {
+            snapshotChunk(block, sessionId);
+        }
+    }
 
-            plugin.getLogger().log(Level.WARNING,
-                    "An exception occurred while creating a snapshot for " + tb.getWorldCoord().toString(), e);
+    private void snapshotChunk(TownBlock townBlock, UUID sessionId) {
+        createSnapshot(townBlock).thenAcceptAsync(data -> {
+            if (!data.getBlockList().isEmpty() && saveSnapshot(data, sessionId)) {
+                Logger.log("Backup complete for chunk at " + townBlock.getWorldCoord());
+            }
+        }).exceptionally(e -> {
+            Throwable cause = (e.getCause() != null) ? e.getCause() : e;
+            Logger.logError("Error creating snapshot for " + townBlock.getWorldCoord() + ": " + cause.getMessage());
             return null;
         });
     }
 
-    private CompletableFuture<PlotBlockData> createPlotSnapshot(@NotNull TownBlock townBlock) {
-        List<ChunkSnapshot> snapshots = new ArrayList<ChunkSnapshot>();
-        Collection<CompletableFuture<Chunk>> futures = townBlock.getWorldCoord().getChunks();
-        futures.forEach((future) -> {
-            future.thenAccept((chunk) -> {
-                snapshots.add(chunk.getChunkSnapshot(false, false, false));
-            });
-        });
-        return CompletableFuture.allOf((CompletableFuture[]) futures.toArray(new CompletableFuture[0]))
-                .thenApplyAsync((v) -> {
+    private CompletableFuture<PlotBlockData> createSnapshot(@NotNull TownBlock townBlock) {
+        List<ChunkSnapshot> snapshots = Collections.synchronizedList(new ArrayList<>());
+        Collection<CompletableFuture<Chunk>> chunkFutures = townBlock.getWorldCoord().getChunks();
+
+        for (CompletableFuture<Chunk> future : chunkFutures) {
+            future.thenAccept(chunk -> snapshots.add(chunk.getChunkSnapshot(false, false, false)));
+        }
+
+        return CompletableFuture.allOf(chunkFutures.toArray(new CompletableFuture[0]))
+                .thenApplyAsync(v -> {
                     PlotBlockData data = new PlotBlockData(townBlock);
                     data.initialize(snapshots);
                     return data;
                 });
     }
 
-    public boolean savePlotData(PlotBlockData plotChunk, UUID uuid) {
-        String path = getPlotFilename(plotChunk, uuid);
-        plugin.getLogger().info(path);
-        queryQueue.add(() -> {
-            String folder = getFolderName(uuid);
-            File file = new File(folder + File.separator + plotChunk.getWorldName());
-            FileMgmt.savePlotData(plotChunk, file, path);
+    public boolean saveSnapshot(PlotBlockData plotData, UUID sessionId) {
+        String filePath = getSnapshotFilePath(plotData, sessionId);
+        String folder = getSnapshotFolder(sessionId);
+
+        taskQueue.add(() -> {
+            File targetFolder = new File(folder + File.separator + plotData.getWorldName());
+            FileMgmt.savePlotData(plotData, targetFolder, filePath);
         });
         return true;
     }
 
-    public void restorePlots(Collection<TownBlock> townBlocks, UUID uuid) {
-        Iterator<TownBlock> townBlockIterator = townBlocks.iterator();
-        while (townBlockIterator.hasNext()) {
-            TownBlock tb = (TownBlock) townBlockIterator.next();
-            PlotBlockData data = loadPlotData(tb, uuid);
+    public void restoreSnapshots(Collection<TownBlock> townBlocks, UUID sessionId) {
+        for (TownBlock block : townBlocks) {
+            PlotBlockData data = loadSnapshot(block, sessionId);
             if (data != null) {
                 TownyRegenAPI.addToActiveRegeneration(data);
             }
         }
+
+        archiveSessionFolder(sessionId);
     }
 
-    public PlotBlockData loadPlotData(TownBlock townBlock, UUID uuid) {
-        PlotBlockData plotBlockData = null;
-
+    public PlotBlockData loadSnapshot(TownBlock block, UUID sessionId) {
         try {
-            plotBlockData = new PlotBlockData(townBlock);
-        } catch (NullPointerException var9) {
-            plugin.getLogger().severe("CaptureSites: Unable to load plotblockdata for townblock: "
-                    + townBlock.getWorldCoord().toString() + ". Skipping regeneration for this townBlock.");
-            return null;
-        }
+            PlotBlockData data = new PlotBlockData(block);
+            String filePath = getSnapshotFilePath(block, sessionId);
 
-        String fileName = getPlotFilename(townBlock, uuid);
-        if (isFile(fileName)) {
-            try {
-                ZipFile zipFile = new ZipFile(fileName);
-
-                PlotBlockData savedPlotBlockData;
-                try {
-                    InputStream stream = zipFile.getInputStream((ZipEntry) zipFile.entries().nextElement());
-                    savedPlotBlockData = loadDataStream(plotBlockData, stream);
-                } catch (Throwable exception) {
-                    try {
-                        zipFile.close();
-                    } catch (Throwable innerException) {
-                        exception.addSuppressed(innerException);
-                    }
-
-                    throw exception;
-                }
-
-                zipFile.close();
-                return savedPlotBlockData;
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
+            if (!new File(filePath).isFile()) {
                 return null;
             }
-        } else {
+
+            try (ZipFile zipFile = new ZipFile(filePath);
+                    InputStream stream = zipFile.getInputStream(zipFile.entries().nextElement())) {
+                return readDataFromStream(data, stream);
+            }
+
+        } catch (IOException | NullPointerException e) {
+            Logger.logError("Failed to load snapshot for " + block.getWorldCoord() + ": " + e.getMessage());
             return null;
         }
     }
 
-    private static PlotBlockData loadDataStream(PlotBlockData plotBlockData, InputStream stream) {
-        List<String> blockArr = new ArrayList<String>();
-        try {
-            DataInputStream inputStream = new DataInputStream(stream);
-            try {
-                inputStream.mark(3);
-                byte[] key = new byte[3];
-                inputStream.read(key, 0, 3);
-                int version = inputStream.read();
-                plotBlockData.setVersion(version);
-                plotBlockData.setHeight(inputStream.readInt());
-                plotBlockData.setMinHeight(version == 4 ? 0 : inputStream.readInt());
+    public void startRegenerationFromFolder(String folderName) {
+        File baseDir = new File(baseFolder + File.separator + "chunkbackups");
+        File sourceFolder = new File(baseDir, folderName);
 
-                String value;
-                while ((value = inputStream.readUTF()) != null) {
-                    blockArr.add(value);
-                }
-            } catch (Throwable exception) {
-                try {
-                    inputStream.close();
-                } catch (Throwable innerException) {
-                    exception.addSuppressed(innerException);
-                }
-                throw exception;
-            }
-            inputStream.close();
-        } catch (EOFException eofException) {
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
+        if (!sourceFolder.exists() || !sourceFolder.isDirectory()) {
+            Logger.logError("No session folder found with name: " + folderName);
+            return;
         }
 
-        plotBlockData.setBlockList(blockArr);
-        plotBlockData.resetBlockListRestored();
-        return plotBlockData;
+        UUID sessionId;
+        try {
+            String sessionIdStr = folderName.contains("-deleted-")
+                    ? folderName.substring(0, folderName.indexOf("-deleted-"))
+                    : folderName;
+            sessionId = UUID.fromString(sessionIdStr);
+        } catch (IllegalArgumentException e) {
+            Logger.logError("Invalid folder name: not a valid UUID - " + folderName);
+            return;
+        }
+
+        File targetFolder = new File(baseDir, sessionId.toString());
+
+        boolean tempMoved = false;
+        if (!folderName.equals(sessionId.toString())) {
+            if (targetFolder.exists()) {
+                Logger.logError("Cannot restore from archive: session folder already exists: " + sessionId);
+                return;
+            }
+            // Temporarily move back to active session folder
+            if (!sourceFolder.renameTo(targetFolder)) {
+                Logger.logError("Failed to move archived folder back to active: " + folderName);
+                return;
+            }
+            tempMoved = true;
+        }
+
+        try {
+            // Find TownBlocks from snapshot zip files
+            List<TownBlock> townBlocks = new ArrayList<>();
+            File[] worldDirs = targetFolder.listFiles(File::isDirectory);
+            if (worldDirs != null) {
+                for (File worldDir : worldDirs) {
+                    File[] zipFiles = worldDir.listFiles((dir, name) -> name.endsWith(".zip"));
+                    if (zipFiles != null) {
+                        for (File zip : zipFiles) {
+                            String[] parts = zip.getName().split("_");
+                            if (parts.length < 3)
+                                continue;
+                            try {
+                                int x = Integer.parseInt(parts[0]);
+                                int z = Integer.parseInt(parts[1]);
+                                String worldName = worldDir.getName();
+                                TownBlock tb = TownyAPI.getInstance()
+                                        .getTownBlock(new Location(Bukkit.getWorld(worldName), x * 16, 0, z * 16)); // This assumes a way to look up TownBlock
+                                if (tb != null) {
+                                    townBlocks.add(tb);
+                                }
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (townBlocks.isEmpty()) {
+                Logger.log("No valid TownBlock snapshots found in folder: " + folderName);
+                return;
+            }
+
+            // Start regeneration
+            restoreSnapshots(townBlocks, sessionId);
+
+            // Archive after starting regeneration if this was not already archived
+            // if (!folderName.contains("-deleted-")) {
+            //     archiveSessionFolder(sessionId);
+            // }
+
+        } 
+        finally {
+            // Clean up temporary move (only if it was moved back from archive)
+            // if (tempMoved && targetFolder.exists()) {
+            //     String timestamp = String.valueOf(System.currentTimeMillis());
+            //     File deletedDir = new File(baseDir, "deleted");
+            //     File restoredArchive = new File(deletedDir, sessionId + "-deleted-" + timestamp);
+            //     if (!targetFolder.renameTo(restoredArchive)) {
+            //         Logger.logError("Failed to move session folder back to archive: " + restoredArchive.getName());
+            //     }
+            // }
+        }
     }
 
-    private boolean isFile(String fileName) {
-        File file = new File(fileName);
-        return file.exists() && file.isFile();
+    private static PlotBlockData readDataFromStream(PlotBlockData data, InputStream stream) {
+        List<String> blocks = new ArrayList<>();
+        try (DataInputStream input = new DataInputStream(stream)) {
+            input.mark(3);
+            input.skipBytes(3); // skip header
+            int version = input.read();
+            data.setVersion(version);
+            data.setHeight(input.readInt());
+            data.setMinHeight(version == 4 ? 0 : input.readInt());
+
+            try {
+                while (true) {
+                    blocks.add(input.readUTF());
+                }
+            } catch (EOFException ignored) {
+                // Expected end of stream
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        data.setBlockList(blocks);
+        data.resetBlockListRestored();
+        return data;
     }
 
-    private String getFolderName(UUID uuid) {
-        String path = rootFolderPath;
-        return path + File.separator + "capturesites" + File.separator + String.valueOf(uuid);
+    public void archiveSessionFolder(UUID sessionId) {
+        File sessionFolder = new File(getSnapshotFolder(sessionId));
+        if (!sessionFolder.exists() || !sessionFolder.isDirectory()) {
+            Logger.logError("Cannot archive session folder — it doesn't exist: " + sessionFolder.getPath());
+            return;
+        }
+
+        String timestamp = java.time.LocalDateTime.now()
+                .toString()
+                .replace(":", "-");
+
+        File deletedBase = new File(baseFolder + File.separator + "chunkbackups" + File.separator + "deleted");
+        if (!deletedBase.exists()) {
+            if (!deletedBase.mkdirs()) {
+                Logger.logError("Failed to create deleted backup folder.");
+                return;
+            }
+        }
+
+        File archivedFolder = new File(deletedBase, sessionId + "-deleted-" + timestamp);
+
+        if (sessionFolder.renameTo(archivedFolder)) {
+            Logger.log("Archived session folder to: " + archivedFolder.getPath());
+        } else {
+            Logger.logError("Failed to move session folder to deleted: " + sessionFolder.getPath());
+        }
     }
 
-    private String getPlotFilename(PlotBlockData plotChunk, UUID uuid) {
-        String folder = getFolderName(uuid);
-        return folder + File.separator + plotChunk.getWorldName() + File.separator + plotChunk.getX() + "_"
-                + plotChunk.getZ() + "_" + plotChunk.getSize() + ".zip";
-
+    public boolean sessionFolderExists(UUID sessionId) {
+        File folder = new File(getSnapshotFolder(sessionId));
+        return folder.exists() && folder.isDirectory();
     }
 
-    private String getPlotFilename(TownBlock townBlock, UUID uuid) {
-        String folder = getFolderName(uuid);
-        return folder + File.separator + townBlock.getWorld().getName() + File.separator + townBlock.getX() + "_"
-                + townBlock.getZ() + "_" + TownySettings.getTownBlockSize() + ".zip";
+    private String getSnapshotFolder(UUID sessionId) {
+        return baseFolder + File.separator + "chunkbackups" + File.separator + sessionId;
     }
 
+    private String getSnapshotFilePath(PlotBlockData plotData, UUID sessionId) {
+        return getSnapshotFolder(sessionId)
+                + File.separator + plotData.getWorldName()
+                + File.separator + plotData.getX() + "_" + plotData.getZ() + "_" + plotData.getSize() + ".zip";
+    }
+
+    private String getSnapshotFilePath(TownBlock block, UUID sessionId) {
+        return getSnapshotFolder(sessionId)
+                + File.separator + block.getWorld().getName()
+                + File.separator + block.getX() + "_" + block.getZ() + "_" + TownySettings.getTownBlockSize() + ".zip";
+    }
 }

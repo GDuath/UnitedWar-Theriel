@@ -1,11 +1,8 @@
 package org.unitedlands.commands;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.Command;
@@ -22,7 +19,6 @@ import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
-import com.palmergames.bukkit.towny.object.TownBlock;
 
 public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
@@ -39,8 +35,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             "forceevent",
             "addwarscore",
             "endwar",
-            "backupchunk",
-            "restorechunk");
+            "restorechunkbackup");
 
     private List<String> warscoreSubcommands = Arrays.asList(
             "attacker",
@@ -121,10 +116,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             case "endwar":
                 handleEndWar(sender, args);
                 break;
-            case "backupchunk":
-                handleChunkBackup(sender, args);
-                break;
-            case "restorechunk":
+            case "restorechunkbackup":
                 handleChunkrestore(sender, args);
                 break;
             default:
@@ -135,38 +127,13 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
     }
 
     private void handleChunkrestore(CommandSender sender, String[] args) {
-        var player = (Player)sender;
-        var testUUID = UUID.fromString("923f7e4b-674a-4d44-ae9c-045385170e48");
-
-        TownBlock tb = TownyAPI.getInstance().getTownBlock(player);
-        if (tb == null)
-        {
-            Messenger.sendMessage((Player) sender, "§cYou are not in a town block.", true);
+        if (args.length < 2) {
+            Messenger.sendMessage((Player) sender, "Usage: /wd restorechunkbackup <foldername>",
+                    true);
             return;
         }
 
-        List<TownBlock> townBlocks = new ArrayList<>();
-        townBlocks.add(tb);
-
-        plugin.getChunkBackupManager().restorePlots(townBlocks, testUUID);
-        Messenger.sendMessage((Player) sender, "§7Chunk restore started.", true);
-    }
-
-    private void handleChunkBackup(CommandSender sender, String[] args) {
-        var player = (Player)sender;
-        var testUUID = UUID.fromString("923f7e4b-674a-4d44-ae9c-045385170e48");
-
-        TownBlock tb = TownyAPI.getInstance().getTownBlock(player);
-        if (tb == null)
-        {
-            Messenger.sendMessage((Player) sender, "§cYou are not in a town block.", true);
-            return;
-        }
-
-        List<TownBlock> townBlocks = new ArrayList<>();
-        townBlocks.add(tb);
-
-        plugin.getChunkBackupManager().createSnapshotsFor(townBlocks, testUUID);
+        plugin.getChunkBackupManager().startRegenerationFromFolder(args[1]);
         Messenger.sendMessage((Player) sender, "§7Chunk backup started.", true);
     }
 
