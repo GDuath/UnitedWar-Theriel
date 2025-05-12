@@ -11,6 +11,7 @@ import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.ChunkBackupManager;
 import org.unitedlands.managers.DatabaseManager;
+import org.unitedlands.managers.FortressManager;
 import org.unitedlands.managers.MobilisationManager;
 import org.unitedlands.managers.SiegeManager;
 import org.unitedlands.managers.WarDeclarationManager;
@@ -38,6 +39,7 @@ public class UnitedWar extends JavaPlugin {
     private WarDeclarationManager warDeclarationManager;
     private SiegeManager siegeManager;
     private ChunkBackupManager chunkBackupManager;
+    private FortressManager fortressManager;
     private TaskScheduler taskScheduler;
     private WarScheduler warScheduler;
 
@@ -75,6 +77,7 @@ public class UnitedWar extends JavaPlugin {
         warDeclarationManager = new WarDeclarationManager(this);
         siegeManager = new SiegeManager(this);
         chunkBackupManager = new ChunkBackupManager(this);
+        fortressManager = new FortressManager(this);
     }
 
     private void createSchedulers() {
@@ -89,6 +92,7 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
         getServer().getPluginManager().registerEvents(siegeManager, this);
+        getServer().getPluginManager().registerEvents(fortressManager, this);
         getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
     }
 
@@ -123,6 +127,10 @@ public class UnitedWar extends JavaPlugin {
         return siegeManager;
     }
 
+    public FortressManager getFortressManager() {
+        return fortressManager;
+    }
+
     public ChunkBackupManager getChunkBackupManager() {
         return chunkBackupManager;
     }
@@ -140,7 +148,7 @@ public class UnitedWar extends JavaPlugin {
             databaseManager.disconnect();
         }
         if (chunkBackupManager != null) {
-            chunkBackupManager.finishTasks();
+            chunkBackupManager.shutdown();
         }
         if (warScheduler != null) {
             warScheduler.shutdown();

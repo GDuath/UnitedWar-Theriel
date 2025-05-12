@@ -119,6 +119,7 @@ default-rewards:
 ###################################################
 
 siege-settings:
+  fortress-zone-radius: 2
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
   # If false, the health decay and resoration only apply once per team in the majority

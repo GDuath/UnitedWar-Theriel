@@ -91,6 +91,7 @@ public class PlayerDeathListener implements Listener {
             }
 
             // Determine scores.
+            // TODO: add mercenaries
             if (victimWar.getValue() == WarSide.ATTACKER
                     && war.getDefending_players().contains(killer.getUniqueId().toString())) {
                 new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, warScoreType, reward).callEvent();

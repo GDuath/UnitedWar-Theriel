@@ -662,6 +662,18 @@ public class WarManager implements Listener {
         return getActivePlayerWars(playerId).size() > 0;
     }
 
+    public boolean isTownInWar(String townId) {
+        for (War war : activeWars) {
+            if (war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId))
+                return true;
+        }
+        for (War war : pendingWars) {
+            if (war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId))
+                return true;
+        }
+        return false;
+    }
+
     public Map<War, WarSide> getPendingPlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
         for (War war : pendingWars) {

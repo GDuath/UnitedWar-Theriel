@@ -148,7 +148,6 @@ public class SiegeManager implements Listener {
                                     WarScoreType.SIEGE_HOME_CAPTURE, reward);
                         } else {
                             reward = plugin.getConfig().getInt("default-rewards.siege-chunk-capture", 10);
-                            message = "score-capture-attacker";
                             warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
                                     WarScoreType.SIEGE_HOME_CAPTURE, reward);
                         }
@@ -214,7 +213,6 @@ public class SiegeManager implements Listener {
 
                         // Give fortress chunks higher health
                         int maxHealth = plugin.getConfig().getInt("siege-settings.town-chunk-health", 10);
-                        plugin.getLogger().info(townBlock.getType().getName());
                         if (townBlock.getType().getName().equals("fortress")) {
                             maxHealth = plugin.getConfig().getInt("siege-settings.fortress-chunk-health", 100);
                         } else if (townBlock.isHomeBlock()) {
@@ -458,7 +456,6 @@ public class SiegeManager implements Listener {
         if (playerSiegeEventListenerRegistered && !plugin.getWarManager().isAnyWarActive()) {
             HandlerList.unregisterAll((Listener) playerSiegeEventListener);
             playerSiegeEventListenerRegistered = false;
-            plugin.getLogger().info("Listener removed");
         }
 
         removeSiegeChunks(event.getWar());
