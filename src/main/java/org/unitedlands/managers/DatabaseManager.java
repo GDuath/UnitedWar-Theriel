@@ -134,6 +134,10 @@ public class DatabaseManager {
         return warScoreRecordDbService;
     }
 
+    public SiegeChunkDbService getSiegeChunkDbService() {
+        return siegeChunkDbService;
+    }
+
     public ConnectionSource getConnectionSource() {
         return connectionSource;
     }

@@ -1,13 +1,38 @@
 package org.unitedlands.managers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.WarScoreType;
+import org.unitedlands.classes.WarSide;
+import org.unitedlands.events.SiegeChunkHealthChangeEvent;
 import org.unitedlands.events.WarEndEvent;
+import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.listeners.PlayerSiegeEventListener;
+import org.unitedlands.models.SiegeChunk;
+import org.unitedlands.models.War;
+import org.unitedlands.util.Logger;
+import org.unitedlands.util.Messenger;
+
+import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.Town;
+import com.palmergames.bukkit.towny.object.TownBlock;
+
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.bossbar.BossBar.Color;
+import net.kyori.adventure.bossbar.BossBar.Overlay;
+import net.kyori.adventure.text.Component;
 
 public class SiegeManager implements Listener {
 
@@ -16,10 +41,397 @@ public class SiegeManager implements Listener {
 
     private boolean playerSiegeEventListenerRegistered = false;
 
+    private Map<String, SiegeChunk> siegeChunks = new HashMap<String, SiegeChunk>();
+    private Map<String, BossBar> chunkBossBars = new HashMap<String, BossBar>();
+    private Map<String, List<Player>> chunkBossBarViewers = new HashMap<String, List<Player>>();
+
     public SiegeManager(UnitedWar plugin) {
         this.plugin = plugin;
         this.playerSiegeEventListener = new PlayerSiegeEventListener(plugin);
     }
+
+    public void loadSiegeChunks() {
+        plugin.getDatabaseManager().getSiegeChunkDbService().getAllAsync().thenAccept(chunks -> {
+            for (var chunk : chunks) {
+                var location = new Location(Bukkit.getWorld(chunk.getWorld()), (double) chunk.getX() * 16, 0d,
+                        (double) chunk.getZ() * 16);
+                var townBlock = TownyAPI.getInstance().getTownBlock(location);
+                if (townBlock != null) {
+                    chunk.setTownBlock(townBlock);
+                    siegeChunks.put(chunk.getChunkKey(), chunk);
+                    createChunkBossBar(chunk);
+                    updateBossBar(chunk);
+                } else {
+                    Logger.logError("Error loading chunk " + chunk.getChunkKey());
+                }
+            }
+            ;
+            Logger.log("Loaded " + chunks.size() + " siege chunks from database.");
+        });
+    }
+
+    public void handleSiegeChunks() {
+        if (!siegeChunks.isEmpty()) {
+            for (var set : siegeChunks.entrySet()) {
+                var chunk = set.getValue();
+
+                if (chunk.getOccupied())
+                    continue;
+
+                // Change health depending on relative player counts
+                var attackingPlayers = chunk.getPlayersInChunk().get(WarSide.ATTACKER);
+                var defendingPlayers = chunk.getPlayersInChunk().get(WarSide.DEFENDER);
+
+                Integer healthChange = 0;
+                if (attackingPlayers.size() > defendingPlayers.size()) {
+                    healthChange = plugin.getConfig().getInt("siege-settings.health-decay-rate", 0) * -1;
+                    if (plugin.getConfig().getBoolean("siege-settings.use-superiority-multiplier", false)) {
+                        var superiority = attackingPlayers.size() - defendingPlayers.size();
+                        healthChange *= superiority;
+                    }
+                } else if (defendingPlayers.size() > attackingPlayers.size()) {
+                    healthChange = plugin.getConfig().getInt("siege-settings.health-restore-rate", 0);
+                    if (plugin.getConfig().getBoolean("siege-settings.use-superiority-multiplier", false)) {
+                        var superiority = defendingPlayers.size() - attackingPlayers.size();
+                        healthChange *= superiority;
+                    }
+                }
+
+                // Don't heal further than max health.
+                if (chunk.getCurrent_health() + healthChange > chunk.getMax_health()) {
+                    healthChange = chunk.getMax_health() - chunk.getCurrent_health();
+                }
+
+                var finalHealthChange = healthChange;
+                if (finalHealthChange != 0) {
+                    SiegeChunkHealthChangeEvent event = new SiegeChunkHealthChangeEvent() {
+                        {
+                            setChunk(chunk);
+                            setHealthChange(finalHealthChange);
+                        }
+                    };
+
+                    event.callEvent();
+
+                    // Some listener may have cancelled the event
+                    if (event.isCancelled())
+                        return;
+
+                    // Set new health, but not higher than the max health
+                    chunk.setCurrent_health(
+                            Math.min(chunk.getMax_health(), chunk.getCurrent_health() + event.getHealthChange()));
+
+                    if (chunk.getCurrent_health() <= 0) {
+                        chunk.setCurrent_health(0);
+                        chunk.setOccupied(true);
+                        chunk.setOccupation_time(System.currentTimeMillis());
+
+                        War war = plugin.getWarManager().getWarById(chunk.getWar_id());
+
+                        // The capture will be attributed to the first player in the attacker list (for being 
+                        // in the chunk for the longest uninterrupted time)  
+                        UUID firstAttackingPlayer = chunk.getPlayersInChunk().get(WarSide.ATTACKER).getFirst();
+
+                        Integer reward = 0;
+                        WarScoreEvent warScoreEvent = null;
+                        String message = "score-capture-attacker";
+
+                        if (chunk.getTownBlock().getTypeName().equals("fortress")) {
+                            reward = plugin.getConfig().getInt("default-rewards.siege-fortress-capture", 100);
+                            message = "score-capture-fortress-attacker";
+                            warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
+                                    WarScoreType.SIEGE_FORTRESS_CAPTURE, reward);
+                        } else if (chunk.getTownBlock().isHomeBlock()) {
+                            reward = plugin.getConfig().getInt("default-rewards.siege-home-capture", 50);
+                            message = "score-capture-home-attacker";
+                            warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
+                                    WarScoreType.SIEGE_HOME_CAPTURE, reward);
+                        } else {
+                            reward = plugin.getConfig().getInt("default-rewards.siege-chunk-capture", 10);
+                            message = "score-capture-attacker";
+                            warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
+                                    WarScoreType.SIEGE_HOME_CAPTURE, reward);
+                        }
+                        warScoreEvent.callEvent();
+
+                        if (!event.isCancelled())
+                            sendCaptureNotifications(chunk, reward, message);
+                    }
+
+                    chunk.setState_changed(true);
+                    updateBossBar(chunk);
+                }
+
+                if (chunk.getState_changed())
+                    saveSiegeChunkToDatabase(chunk);
+            }
+        }
+    }
+
+    private void sendCaptureNotifications(SiegeChunk chunk, Integer reward, String message) {
+        var attackers = chunk.getPlayersInChunk().get(WarSide.ATTACKER);
+        for (var attacker : attackers) {
+            var player = Bukkit.getPlayer(attacker);
+            if (player == null)
+                continue;
+            var replacements = new HashMap<String, String>();
+            replacements.put("reward", reward.toString());
+
+            Messenger.sendMessageTemplate(player, message, replacements, true);
+        }
+    }
+
+    public void updatePlayerInChunk(Player player, TownBlock previousBlock, TownBlock targetBlock) {
+        if (previousBlock != null) {
+            String key = getChunkKey(previousBlock);
+            if (siegeChunks.containsKey(key)) {
+                removePlayerFromSiegeChunk(player, key);
+            }
+        }
+        if (targetBlock != null) {
+            String key = getChunkKey(targetBlock);
+            if (siegeChunks.containsKey(key)) {
+                addPlayerToSiegeChunk(player, key);
+            } else {
+                if (createSiegeChunk(targetBlock))
+                    addPlayerToSiegeChunk(player, key);
+            }
+        }
+    }
+
+    //#region Siege chunk creation
+
+    private boolean createSiegeChunk(TownBlock townBlock) {
+        // Check if the chunk belongs to a town that is at war
+        List<War> wars = plugin.getWarManager().getWars();
+        if (!wars.isEmpty()) {
+            Town town = TownyAPI.getInstance().getTownOrNull(townBlock);
+            if (town != null) {
+                // Iterate all ongoing wars. Since towns can be a part of multiple wars 
+                for (var war : wars) {
+                    if (war.getAttacking_towns().contains(town.getUUID().toString())
+                            || war.getDefending_towns().contains(town.getUUID().toString())) {
+
+                        // Give fortress chunks higher health
+                        int maxHealth = plugin.getConfig().getInt("siege-settings.town-chunk-health", 10);
+                        plugin.getLogger().info(townBlock.getType().getName());
+                        if (townBlock.getType().getName().equals("fortress")) {
+                            maxHealth = plugin.getConfig().getInt("siege-settings.fortress-chunk-health", 100);
+                        } else if (townBlock.isHomeBlock()) {
+                            maxHealth = plugin.getConfig().getInt("siege-settings.home-chunk-health", 50);
+                        }
+                        // Make sure max health is always 1 or higher
+                        maxHealth = Math.max(1, maxHealth);
+
+                        // Create the chunk itself and save it to the database
+                        SiegeChunk siegeChunk = new SiegeChunk();
+                        siegeChunk.setWorld(townBlock.getWorld().getName());
+                        siegeChunk.setX(townBlock.getCoord().getX());
+                        siegeChunk.setZ(townBlock.getCoord().getZ());
+                        siegeChunk.setWar_id(war.getId());
+                        siegeChunk.setMax_health(maxHealth);
+                        siegeChunk.setCurrent_health((int) Math.round((double) maxHealth
+                                * plugin.getConfig().getDouble("siege-settings.health-start-percentage", 1d)));
+                        siegeChunk.setTownBlock(townBlock);
+
+                        var key = siegeChunk.getChunkKey();
+                        siegeChunks.put(key, siegeChunk);
+
+                        saveSiegeChunkToDatabase(siegeChunk);
+
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    //#endregion
+
+    //#region Siege chunk removal
+    
+    private void removeSiegeChunks(War war) {
+        List<String> keysToRemove = new ArrayList<>();
+        List<UUID> idsToRemove = new ArrayList<>();
+        for (var set : siegeChunks.entrySet()) {
+            if (set.getValue().getWar_id().equals(war.getId())) {
+                keysToRemove.add(set.getKey());
+                idsToRemove.add(set.getValue().getId());
+            }
+        }
+        for (var key : keysToRemove) {
+            siegeChunks.remove(key);
+            var chunkBossBar = chunkBossBars.get(key);
+            var viewers = chunkBossBarViewers.get(key);
+            if (!viewers.isEmpty()) {
+                for (var viewer : viewers)
+                    chunkBossBar.removeViewer(viewer);
+            }
+            chunkBossBars.remove(key);
+            chunkBossBarViewers.remove(key);
+        }
+
+        for (var id : idsToRemove) {
+            deleteSiegeChunkFromDatabase(id);
+        }
+
+        Logger.log("Removed all siege chunk data for war " + war.getTitle());
+    }
+
+    //#endregion 
+
+    //#region Player handling
+
+    private void addPlayerToSiegeChunk(Player player, String key) {
+        if (!siegeChunks.containsKey(key))
+            return;
+
+        var siegeChunk = siegeChunks.get(key);
+
+        var war = plugin.getWarManager().getWarById(siegeChunk.getWar_id());
+        if (war == null)
+            return;
+
+        // See get the town the chunk belongs to 
+        var townBlock = siegeChunk.getTownBlock();
+        if (townBlock == null)
+            return;
+        Town town = townBlock.getTownOrNull();
+        if (town == null)
+            return;
+
+        var attackingPlayerList = war.getAttacking_players();
+        var attackingMercenaryList = war.getAttacking_mercenaries();
+        var defendingPlayerList = war.getDefending_players();
+        var defendingMercenaryList = war.getDefending_mercenaries();
+
+        var attackingTownList = war.getAttacking_towns();
+        var defendingTownList = war.getDefending_towns();
+
+        String playerId = player.getUniqueId().toString();
+        String townId = town.getUUID().toString();
+
+        if (attackingPlayerList.contains(playerId) || attackingMercenaryList.contains(playerId)) {
+            // Player is an attacker. See if they are in an attacking or defending town.
+            if (attackingTownList.contains(townId)) {
+                // Player is a town on his own side and should be defending
+                addPlayerToChunkPlayerList(siegeChunk, WarSide.DEFENDER, player);
+            } else if (defendingTownList.contains(townId)) {
+                // Player is a town on the opposing side and should be attacking
+                addPlayerToChunkPlayerList(siegeChunk, WarSide.ATTACKER, player);
+            }
+        } else if (defendingPlayerList.contains(playerId) || defendingMercenaryList.contains(playerId)) {
+            if (attackingTownList.contains(townId)) {
+                // Player is a town on the opposing side and should be attacking
+                addPlayerToChunkPlayerList(siegeChunk, WarSide.ATTACKER, player);
+            } else if (defendingTownList.contains(townId)) {
+                // Player is a town on his own side and should be defending
+                addPlayerToChunkPlayerList(siegeChunk, WarSide.DEFENDER, player);
+            }
+        } else {
+            // The player doesn't belong to this war at all. Just add them to the boss bar viewer list.
+            addPlayerToBossBar(player, key);
+        }
+    }
+
+    private void addPlayerToChunkPlayerList(SiegeChunk siegeChunk, WarSide side, Player player) {
+        var chunkPlayers = siegeChunk.getPlayersInChunk().get(side);
+        if (!chunkPlayers.contains(player.getUniqueId())) {
+            chunkPlayers.add(player.getUniqueId());
+            addPlayerToBossBar(player, siegeChunk.getChunkKey());
+        }
+    }
+
+    private void removePlayerFromSiegeChunk(Player player, String key) {
+        if (!siegeChunks.containsKey(key))
+            return;
+        var siegeChunk = siegeChunks.get(key);
+        var playersInChunk = siegeChunk.getPlayersInChunk();
+
+        var attackingPlayers = playersInChunk.get(WarSide.ATTACKER);
+        if (attackingPlayers.contains(player.getUniqueId())) {
+            attackingPlayers.remove(player.getUniqueId());
+        }
+
+        var defendingPlayers = playersInChunk.get(WarSide.DEFENDER);
+        if (defendingPlayers.contains(player.getUniqueId())) {
+            defendingPlayers.remove(player.getUniqueId());
+        }
+
+        removePlayerFromBossBar(player, key);
+    }
+
+    //#endregion
+
+    //#region Boss bar
+
+    private void createChunkBossBar(String key) {
+        if (!siegeChunks.containsKey(key))
+            return;
+        createChunkBossBar(siegeChunks.get(key));
+    }
+
+    private void createChunkBossBar(SiegeChunk chunk) {
+        if (!chunkBossBars.containsKey(chunk.getChunkKey())) {
+            War war = plugin.getWarManager().getWarById(chunk.getWar_id());
+            String warNameDisplay = war.getTitle() + " | ";
+            BossBar chunkBossBar = BossBar.bossBar(
+                    Component.text(warNameDisplay + "HP: " + chunk.getCurrent_health() + " / "
+                            + chunk.getMax_health()),
+                    ((float) chunk.getCurrent_health() / (float) chunk.getMax_health()),
+                    BossBar.Color.YELLOW,
+                    BossBar.Overlay.NOTCHED_10);
+            chunkBossBars.put(chunk.getChunkKey(), chunkBossBar);
+            chunkBossBarViewers.put(chunk.getChunkKey(), new ArrayList<>());
+        }
+    }
+
+    private void addPlayerToBossBar(Player player, String key) {
+        if (!chunkBossBars.containsKey(key))
+            createChunkBossBar(key);
+        chunkBossBars.get(key).addViewer(player);
+        var viewers = chunkBossBarViewers.get(key);
+        if (!viewers.contains(player))
+            viewers.add(player);
+    }
+
+    private void updateBossBar(SiegeChunk chunk) {
+        var key = chunk.getChunkKey();
+        if (!chunkBossBars.containsKey(key))
+            return;
+
+        var chunkBossBar = chunkBossBars.get(key);
+        chunkBossBar.progress((float) chunk.getCurrent_health() / (float) chunk.getMax_health());
+
+        War war = plugin.getWarManager().getWarById(chunk.getWar_id());
+        String warNameDisplay = war.getTitle() + " | ";
+        if (chunk.getOccupied()) {
+            chunkBossBar.name(Component.text(warNameDisplay + "§c(Occupied)"));
+            chunkBossBar.overlay(Overlay.PROGRESS);
+        } else {
+            chunkBossBar.name(Component
+                    .text(warNameDisplay + "HP: " + chunk.getCurrent_health() + " / " + chunk.getMax_health()));
+            if (chunkBossBar.progress() >= 0.95f) {
+                chunkBossBar.color(Color.GREEN);
+            } else if (chunkBossBar.progress() >= 0.25) {
+                chunkBossBar.color(Color.YELLOW);
+            } else {
+                chunkBossBar.color(Color.RED);
+            }
+        }
+    }
+
+    private void removePlayerFromBossBar(Player player, String key) {
+        if (!chunkBossBars.containsKey(key))
+            return;
+        chunkBossBars.get(key).removeViewer(player);
+        var viewers = chunkBossBarViewers.get(key);
+        if (viewers.contains(player))
+            viewers.remove(player);
+    }
+
+    //#endregion
 
     //#region Event listeners
 
@@ -30,16 +442,59 @@ public class SiegeManager implements Listener {
             Bukkit.getPluginManager().registerEvents(playerSiegeEventListener, plugin);
             playerSiegeEventListenerRegistered = true;
         }
+
+        // Try to add online players to siege chunks once on start of the war.
+        var onlinePlayers = Bukkit.getOnlinePlayers();
+        for (var player : onlinePlayers) {
+            var plot = TownyAPI.getInstance().getTownBlock(player.getLocation());
+            plugin.getSiegeManager().updatePlayerInChunk(player, null, plot);
+        }
     }
 
     @EventHandler
     public void onWarEnd(WarEndEvent event) {
         // If there's no nore wars, stop listening to avoid unnecessary overhead 
+
         if (playerSiegeEventListenerRegistered && !plugin.getWarManager().isAnyWarActive()) {
             HandlerList.unregisterAll((Listener) playerSiegeEventListener);
             playerSiegeEventListenerRegistered = false;
+            plugin.getLogger().info("Listener removed");
         }
+
+        removeSiegeChunks(event.getWar());
     }
 
     //#endregion
+
+    //#region Database functions 
+
+    private void saveSiegeChunkToDatabase(SiegeChunk siegeChunk) {
+        var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
+        siegeChunkDbService.createOrUpdateAsync(siegeChunk).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().severe("Failed to save siege chunk " + siegeChunk.getChunkKey() + " to database!");
+            }
+        });
+        siegeChunk.setState_changed(false);
+    }
+
+    private void deleteSiegeChunkFromDatabase(UUID id) {
+        var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
+        siegeChunkDbService.deleteAsync(id).thenAccept(success -> {
+            if (!success) {
+                plugin.getLogger().severe("Failed to delete siege chunk " + id.toString() + " from database!");
+            }
+        });
+    }
+
+    //#endregion
+
+    //#region Utility functions
+
+    public String getChunkKey(TownBlock block) {
+        return block.getWorld().getName() + ":" + block.getCoord().getX() + ":" + block.getCoord().getZ();
+    }
+
+    //#endregion
+
 }

@@ -11,6 +11,7 @@ import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
 import org.unitedlands.util.Formatter;
+import org.unitedlands.util.Logger;
 
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
@@ -348,7 +349,7 @@ public class War implements Identifiable {
         this.defending_mercenaries = defending_mercenaries;
         this.defending_mercenaries_serialized = String.join("#", defending_mercenaries);
     }
-   
+
     public String getAttacker_money_warchest_serialized() {
         return attacker_money_warchest_serialized;
     }
@@ -371,7 +372,8 @@ public class War implements Identifiable {
             var sets = attacker_money_warchest_serialized.split("#");
             for (String set : sets) {
                 var values = set.split(":");
-                attacker_money_warchest.putIfAbsent(values[0], Double.parseDouble(values[1]));
+                if (values.length == 2)
+                    attacker_money_warchest.putIfAbsent(values[0], Double.parseDouble(values[1]));
             }
         }
         return attacker_money_warchest;
@@ -380,8 +382,7 @@ public class War implements Identifiable {
     public void setAttacker_money_warchest(Map<String, Double> attacker_money_warchest) {
         this.attacker_money_warchest = attacker_money_warchest;
         List<String> list = new ArrayList<>();
-        for (var set : attacker_money_warchest.entrySet())
-        {
+        for (var set : attacker_money_warchest.entrySet()) {
             list.add(set.getKey() + ":" + set.getValue());
         }
         attacker_money_warchest_serialized = String.join("#", list);
@@ -393,7 +394,8 @@ public class War implements Identifiable {
             var sets = defender_money_warchest_serialized.split("#");
             for (String set : sets) {
                 var values = set.split(":");
-                defender_money_warchest.putIfAbsent(values[0], Double.parseDouble(values[1]));
+                if (values.length == 2)
+                    defender_money_warchest.putIfAbsent(values[0], Double.parseDouble(values[1]));
             }
         }
         return defender_money_warchest;
@@ -402,8 +404,7 @@ public class War implements Identifiable {
     public void setDefender_money_warchest(Map<String, Double> defender_money_warchest) {
         this.defender_money_warchest = defender_money_warchest;
         List<String> list = new ArrayList<>();
-        for (var set : defender_money_warchest.entrySet())
-        {
+        for (var set : defender_money_warchest.entrySet()) {
             list.add(set.getKey() + ":" + set.getValue());
         }
         defender_money_warchest_serialized = String.join("#", list);
@@ -451,7 +452,8 @@ public class War implements Identifiable {
             var sets = attacker_claims_warchest_serialized.split("#");
             for (String set : sets) {
                 var values = set.split(":");
-                attacker_claims_warchest.putIfAbsent(values[0], Integer.parseInt(values[1]));
+                if (values.length == 2)
+                    attacker_claims_warchest.putIfAbsent(values[0], Integer.parseInt(values[1]));
             }
         }
         return attacker_claims_warchest;
@@ -460,8 +462,7 @@ public class War implements Identifiable {
     public void setAttacker_claims_warchest(Map<String, Integer> attacker_claims_warchest) {
         this.attacker_claims_warchest = attacker_claims_warchest;
         List<String> list = new ArrayList<>();
-        for (var set : attacker_claims_warchest.entrySet())
-        {
+        for (var set : attacker_claims_warchest.entrySet()) {
             list.add(set.getKey() + ":" + set.getValue());
         }
         attacker_claims_warchest_serialized = String.join("#", list);
@@ -473,7 +474,8 @@ public class War implements Identifiable {
             var sets = defender_claims_warchest_serialized.split("#");
             for (String set : sets) {
                 var values = set.split(":");
-                defender_claims_warchest.putIfAbsent(values[0], Integer.parseInt(values[1]));
+                if (values.length == 2)
+                    defender_claims_warchest.putIfAbsent(values[0], Integer.parseInt(values[1]));
             }
         }
         return defender_claims_warchest;
@@ -482,8 +484,7 @@ public class War implements Identifiable {
     public void setDefender_claims_warchest(Map<String, Integer> defender_claims_warchest) {
         this.defender_claims_warchest = defender_claims_warchest;
         List<String> list = new ArrayList<>();
-        for (var set : defender_claims_warchest.entrySet())
-        {
+        for (var set : defender_claims_warchest.entrySet()) {
             list.add(set.getKey() + ":" + set.getValue());
         }
         defender_claims_warchest_serialized = String.join("#", list);
@@ -587,7 +588,8 @@ public class War implements Identifiable {
         } else {
             replacements.put("timer-info", "War has ended.");
         }
-        replacements.put("war-chest-money", String.valueOf(getAttacker_total_money_warchest() + getDefender_total_money_warchest()));
+        replacements.put("war-chest-money",
+                String.valueOf(getAttacker_total_money_warchest() + getDefender_total_money_warchest()));
         replacements.put("war-chest-claims", String.valueOf(getAttacker_total_claims_warchest() + getDefender_total_claims_warchest() + getAdditional_claims_payout()));
 
         return replacements;

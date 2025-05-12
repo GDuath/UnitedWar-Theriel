@@ -8,7 +8,6 @@ import org.unitedlands.commands.TownWarCommands;
 import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ContainerPlacementListener;
 import org.unitedlands.listeners.PlayerDeathListener;
-import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.ChunkBackupManager;
 import org.unitedlands.managers.DatabaseManager;

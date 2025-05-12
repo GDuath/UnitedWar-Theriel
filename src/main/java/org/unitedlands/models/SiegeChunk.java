@@ -1,5 +1,7 @@
 package org.unitedlands.models;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -9,6 +11,8 @@ import org.unitedlands.classes.WarSide;
 
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.TownBlock;
 
 @DatabaseTable(tableName = "siege_chunks")
 public class SiegeChunk implements Identifiable {
@@ -30,12 +34,23 @@ public class SiegeChunk implements Identifiable {
     private Integer max_health;
     @DatabaseField(canBeNull = false)
     private Integer current_health;
-    @DatabaseField(canBeNull = false)
-    private Boolean occupied;
+    @DatabaseField(canBeNull = false, defaultValue = "false")
+    private Boolean occupied = false;
     @DatabaseField(canBeNull = true)
-    private Long occipation_time;
+    private Long occupation_time;
+
+    private transient Boolean state_changed = false;
+
+    private transient War war;
+    private transient TownBlock townBlock;
 
     private transient Map<WarSide, List<UUID>> playersInChunk;
+
+    public SiegeChunk() {
+        playersInChunk = new HashMap<WarSide, List<UUID>>();
+        playersInChunk.put(WarSide.ATTACKER, new ArrayList<UUID>());
+        playersInChunk.put(WarSide.DEFENDER, new ArrayList<UUID>());
+    }
 
     public UUID getId() {
         return id;
@@ -70,7 +85,7 @@ public class SiegeChunk implements Identifiable {
     }
 
     public String getChunkKey() {
-        return world + ":" + getX() + ":" + getZ(); 
+        return world + ":" + getX() + ":" + getZ();
     }
 
     public UUID getWar_id() {
@@ -105,12 +120,28 @@ public class SiegeChunk implements Identifiable {
         this.occupied = occupied;
     }
 
-    public Long getOccipation_time() {
-        return occipation_time;
+    public Long getOccupation_time() {
+        return occupation_time;
     }
 
-    public void setOccipation_time(Long occipation_time) {
-        this.occipation_time = occipation_time;
+    public void setOccupation_time(Long occipation_time) {
+        this.occupation_time = occipation_time;
+    }
+
+    public Boolean getState_changed() {
+        return state_changed;
+    }
+
+    public void setState_changed(Boolean state_changed) {
+        this.state_changed = state_changed;
+    }
+
+    public TownBlock getTownBlock() {
+        return townBlock;
+    }
+
+    public void setTownBlock(TownBlock townBlock) {
+        this.townBlock = townBlock;
     }
 
     public Map<WarSide, List<UUID>> getPlayersInChunk() {

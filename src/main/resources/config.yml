@@ -52,6 +52,7 @@ war-events:
   - "00:00"
   pick-table:
     "SAMPLE": 1
+
 # ------------------------------------------
 # War settings
 # ------------------------------------------
@@ -97,6 +98,41 @@ wars-settings:
     attacker-score-cap: 500
     defender-score-cap: 500
     additional-bonus-claims: 20
+
+###################################################
+# +---------------------------------------------+ #
+# |               Score settings                | #
+# +---------------------------------------------+ #
+###################################################
+
+default-rewards:
+  pvp-kill: 10
+  pvp-leader-kill: 50
+  siege-chunk-capture: 10
+  siege-fortress-capture: 100
+  siege-home-capture: 50
+
+###################################################
+# +---------------------------------------------+ #
+# |               Siege settings                | #
+# +---------------------------------------------+ #
+###################################################
+
+siege-settings:
+  # If true, the health decay and restoration is applied per player in the majority:
+  # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
+  # If false, the health decay and resoration only apply once per team in the majority
+  use-superiority-multiplier: true;
+  # The starting HP of chunks at the begginning of a war (relative to max health)
+  health-start-percentage: 1.0
+  # The amount of HP a chunk loses when the attackers are in a majority
+  health-decay-rate: 1
+  # The amount of HP a chunk heals when the defenders are in a majority
+  health-restore-rate: 1
+  # Initial max health points for chunk types
+  town-chunk-health: 10
+  home-chunk-health: 50
+  fortress-chunk-health: 100
 
 ###################################################
 # +---------------------------------------------+ #
@@ -173,6 +209,12 @@ messages:
     - "§f{event-description}"
     - "§7This event has now ended and all effects have been removed"
     - "§c§m+|✦                  +✦+                  |✦+"
+  score-message: "§7You scored §f§l{score} points §7§rfor: §e{action}"
+  score-capture-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
+  score-capture-home-attacker: "§7Your team received §f§l{reward} points §7§rfor bringing down an enemy home chunk!"
+  score-capture-fortress-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
+
+
 # +---------------------------------------------+
 # |                 War Lives                   |
 # +---------------------------------------------+

@@ -109,8 +109,8 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
 
     private void handleWarInfo(CommandSender sender, String[] args) {
 
-        var activePlayerWars = plugin.getWarManager().getActivePlayerWars(((Player)sender).getUniqueId());
-        var pendingPlayerWars = plugin.getWarManager().getPendingPlayerWars(((Player)sender).getUniqueId());
+        var activePlayerWars = plugin.getWarManager().getActivePlayerWars(((Player) sender).getUniqueId());
+        var pendingPlayerWars = plugin.getWarManager().getPendingPlayerWars(((Player) sender).getUniqueId());
 
         var allWars = new HashMap<War, WarSide>();
         if (activePlayerWars != null) {
@@ -121,11 +121,11 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         }
 
         if (allWars.isEmpty()) {
-            Messenger.sendMessageTemplate(((Player)sender), "info-not-in-war", null, true);
+            Messenger.sendMessageTemplate(((Player) sender), "info-not-in-war", null, true);
             return;
         } else {
             for (var war : allWars.keySet()) {
-                Messenger.sendMessageListTemplate(((Player)sender), "war-info", war.getMessagePlaceholders(), false);
+                Messenger.sendMessageListTemplate(((Player) sender), "war-info", war.getMessagePlaceholders(), false);
             }
         }
     }
@@ -145,7 +145,5 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
     private void handleWarEvent(CommandSender sender) {
 
     }
-
-
 
 }

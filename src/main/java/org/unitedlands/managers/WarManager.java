@@ -91,13 +91,6 @@ public class WarManager implements Listener {
         activeWars.removeAll(endedWars);
     }
 
-    public List<War> getWars() {
-        List<War> allWars = new ArrayList<>();
-        allWars.addAll(pendingWars);
-        allWars.addAll(activeWars);
-        return allWars;
-    }
-
     private boolean warCanBeStarted(War war) {
         var currentTime = System.currentTimeMillis();
         if (war.getScheduled_begin_time() <= currentTime && war.getScheduled_end_time() >= currentTime
@@ -189,6 +182,9 @@ public class WarManager implements Listener {
 
         war.setWar_result(WarResult.UNDECIDED);
         war.setAdditional_claims_payout(fileConfig.getInt("wars-settings.default.additional-bonus-claims", 0));
+
+        war.setAttacking_mercenaries(new ArrayList<String>());
+        war.setDefending_mercenaries(new ArrayList<String>());
 
         buildWarChests(war);
         buildPlayerLists(war);
@@ -317,12 +313,12 @@ public class WarManager implements Listener {
     }
 
     public void forceEndWar(War war) {
-        endWar(war);
         if (pendingWars.contains(war))
             pendingWars.remove(war);
         else if (activeWars.contains(war))
             activeWars.remove(war);
 
+        endWar(war);
         saveWarToDatabase(war);
     }
 
@@ -411,7 +407,8 @@ public class WarManager implements Listener {
                     sideToLoseClaims = WarSide.ATTACKER;
                 }
 
-                plugin.getLogger().info("Distribution: attacker " + attackerPayoutRatio + ", defender " + defenderPayoutRatio);
+                plugin.getLogger()
+                        .info("Distribution: attacker " + attackerPayoutRatio + ", defender " + defenderPayoutRatio);
                 plugin.getLogger().info("Side to lose claims: " + sideToLoseClaims.toString());
 
                 var attackerMoneyWarchest = war.getAttacker_total_money_warchest();
@@ -490,7 +487,8 @@ public class WarManager implements Listener {
             Integer share = (int) Math.round(amount * set.getValue());
             remainder -= share;
             plugin.getLogger()
-                .info("Giving " + share + " claims to " + set.getKey() + " for " + set.getValue() + " contribution.");
+                    .info("Giving " + share + " claims to " + set.getKey() + " for " + set.getValue()
+                            + " contribution.");
             addClaimsToTown(set.getKey(), share);
         }
         return remainder;
@@ -566,10 +564,8 @@ public class WarManager implements Listener {
     private void saveWarToDatabase(War war) {
         var warDbService = plugin.getDatabaseManager().getWarDbService();
         warDbService.createOrUpdateAsync(war).thenAccept(success -> {
-            if (success) {
-                plugin.getLogger().info("War saved to database.");
-            } else {
-                plugin.getLogger().severe("Failed to save war to database.");
+            if (!success) {
+                plugin.getLogger().severe("Failed to save war + " + war.getTitle() + " to database!");
             }
         });
         war.setState_changed(false);
@@ -621,6 +617,24 @@ public class WarManager implements Listener {
         return "(Unknown War)";
     }
 
+    public List<War> getWars() {
+        List<War> allWars = new ArrayList<>();
+        allWars.addAll(pendingWars);
+        allWars.addAll(activeWars);
+        return allWars;
+    }
+
+    public Collection<War> getActiveWars() {
+        return activeWars;
+    }
+
+    public War getWarById(UUID warId) {
+        List<War> allWars = new ArrayList<War>();
+        allWars.addAll(activeWars);
+        allWars.addAll(pendingWars);
+        return allWars.stream().filter(w -> w.getId().equals(warId)).findFirst().orElse(null);
+    }
+
     public War getWarByName(String name) {
         List<War> allWars = new ArrayList<War>();
         allWars.addAll(activeWars);
@@ -642,6 +656,10 @@ public class WarManager implements Listener {
             }
         }
         return playerWars;
+    }
+
+    public boolean isPlayerInActiveWar(UUID playerId) {
+        return getActivePlayerWars(playerId).size() > 0;
     }
 
     public Map<War, WarSide> getPendingPlayerWars(UUID playerId) {
@@ -674,11 +692,13 @@ public class WarManager implements Listener {
         if (!event.getScoreType().isSilent()) {
             var player = Bukkit.getPlayer(event.getPlayer());
 
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("score", event.getFinalScore().toString());
-            replacements.put("action", event.getScoreType().getDisplayName());
+            if (player != null) {
+                Map<String, String> replacements = new HashMap<>();
+                replacements.put("score", event.getFinalScore().toString());
+                replacements.put("action", event.getScoreType().getDisplayName());
 
-            Messenger.sendMessageTemplate(player, "score-message", replacements, true);
+                Messenger.sendMessageTemplate(player, "score-message", replacements, true);
+            }
         }
 
         // Generate and save record to database
@@ -693,19 +713,23 @@ public class WarManager implements Listener {
                 setScore_adjusted(event.getFinalScore());
             }
         };
-        var resident = TownyAPI.getInstance().getResident(event.getPlayer());
-        if (resident != null) {
-            var town = resident.getTownOrNull();
-            if (town != null) {
-                record.setTown_id(town.getUUID());
-            }
-        }
 
-        if ((event.getWar().getAttacking_mercenaries() != null
-                && event.getWar().getAttacking_mercenaries().contains(event.getPlayer().toString())) ||
-                (event.getWar().getDefending_mercenaries() != null
-                        && event.getWar().getAttacking_mercenaries().contains(event.getPlayer().toString()))) {
-            record.setIs_mercenary(true);
+        if (event.getPlayer() != null) {
+            var resident = TownyAPI.getInstance().getResident(event.getPlayer());
+            if (resident != null) {
+                var town = resident.getTownOrNull();
+                if (town != null) {
+                    record.setTown_id(town.getUUID());
+                }
+            }
+
+            if ((event.getWar().getAttacking_mercenaries() != null
+                    && event.getWar().getAttacking_mercenaries().contains(event.getPlayer().toString())) ||
+                    (event.getWar().getDefending_mercenaries() != null
+                            && event.getWar().getAttacking_mercenaries().contains(event.getPlayer().toString()))) {
+                record.setIs_mercenary(true);
+
+            }
         }
 
         plugin.getDatabaseManager().getWarScoreRecordDbService().createOrUpdate(record);
