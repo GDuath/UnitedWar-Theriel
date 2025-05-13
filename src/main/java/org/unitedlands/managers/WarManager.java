@@ -1,22 +1,19 @@
 package org.unitedlands.managers;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
+import com.palmergames.bukkit.towny.object.metadata.CustomDataField;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
@@ -793,5 +790,39 @@ public class WarManager implements Listener {
                 plugin.getLogger().warning("Failed to remove war lives from " + uuid + ": " + e.getMessage());
             }
         }
+    }
+
+    @EventHandler
+    // Fallback to remove war life metadata from wars that may no longer exist but missed other deletion events.
+    public void removeOutdatedWarLives(PlayerJoinEvent event) {
+        UUID playerId = event.getPlayer().getUniqueId();
+        Resident resident = TownyUniverse.getInstance().getResident(playerId);
+
+        if (resident == null) return;
+
+        List<CustomDataField<?>> metadata = new ArrayList<>(resident.getMetadata());
+        for (CustomDataField<?> field : metadata) {
+            String key = field.getKey();
+            if (!key.startsWith("unitedwar_war_lives_")) continue;
+
+            try {
+                UUID warId = UUID.fromString(key.replace("unitedwar_war_lives_", ""));
+                War war = plugin.getWarManager().getWars().stream()
+                        .filter(w -> w.getId().equals(warId))
+                        .findFirst()
+                        .orElse(null);
+
+                // War is either not found or not active anymore
+                if (war == null || !war.getIs_active()) {
+                    resident.removeMetaData(key);
+                }
+
+            } catch (IllegalArgumentException ignored) {
+                // Malformed UUID in key
+            }
+        }
+
+        // Save changes if any metadata was removed
+        TownyUniverse.getInstance().getDataSource().saveResident(resident);
     }
 }
