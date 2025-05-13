@@ -26,6 +26,7 @@ import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -56,9 +57,9 @@ public class WarManager implements Listener {
                 }
                 buildPlayerLists(war);
             }
-            plugin.getLogger().info("Loaded " + wars.size() + " war(s) from the database.");
+            Logger.log("Loaded " + wars.size() + " war(s) from the database.");
         }).exceptionally(e -> {
-            plugin.getLogger().severe("Failed to load wars from the database: " + e.getMessage());
+            Logger.logError("Failed to load wars from the database: " + e.getMessage());
             return null;
         });
     }
@@ -408,7 +409,7 @@ public class WarManager implements Listener {
 
                 plugin.getLogger()
                         .info("Distribution: attacker " + attackerPayoutRatio + ", defender " + defenderPayoutRatio);
-                plugin.getLogger().info("Side to lose claims: " + sideToLoseClaims.toString());
+                Logger.log("Side to lose claims: " + sideToLoseClaims.toString());
 
                 var attackerMoneyWarchest = war.getAttacker_total_money_warchest();
                 var defenderMoneyWarchest = war.getDefender_total_money_warchest();
@@ -556,7 +557,7 @@ public class WarManager implements Listener {
         var warDbService = plugin.getDatabaseManager().getWarDbService();
         warDbService.createOrUpdateAsync(war).thenAccept(success -> {
             if (!success) {
-                plugin.getLogger().severe("Failed to save war + " + war.getTitle() + " to database!");
+                Logger.logError("Failed to save war + " + war.getTitle() + " to database!");
             }
         });
         war.setState_changed(false);

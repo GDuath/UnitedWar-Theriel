@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.MobilisationMetadata;
 
 import static org.unitedlands.util.Messages.getMessage;
@@ -48,7 +49,7 @@ public class MobilisationManager implements Listener {
             }
             // Log mobilisation change.
             if (next != cur) {
-                plugin.getLogger().info("Town " + town.getName() + " mobilisation: " + cur + "% → " + next + "%");
+                Logger.log("Town " + town.getName() + " mobilisation: " + cur + "% → " + next + "%");
                 // Change message depending on if there is mobilisation gain or loss.
                 String key = town.isNeutral()
                         ? "mobilisation-notification-lose"
@@ -73,7 +74,7 @@ public class MobilisationManager implements Listener {
             }
             // Log mobilisation change.
             if (next != cur) {
-                plugin.getLogger().info("Nation " + nation.getName() + " mobilisation: " + cur + "% → " + next + "%");
+                Logger.log("Nation " + nation.getName() + " mobilisation: " + cur + "% → " + next + "%");
                 // Change message depending on if there is mobilisation gain or loss.
                 String key = nation.isNeutral()
                         ? "mobilisation-notification-lose"

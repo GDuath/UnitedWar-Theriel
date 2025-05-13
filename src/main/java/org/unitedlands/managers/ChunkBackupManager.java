@@ -38,7 +38,7 @@ public class ChunkBackupManager {
                 baseFolder + File.separator + "chunkbackups",
                 baseFolder + File.separator + "chunkbackups" + File.separator + "deleted"
         })) {
-            plugin.getLogger().severe("Failed to create default folders.");
+            Logger.logError("Failed to create default folders.");
         }
 
         // Start processing queued tasks asynchronously

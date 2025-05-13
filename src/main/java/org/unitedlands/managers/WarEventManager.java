@@ -14,6 +14,7 @@ import org.unitedlands.classes.warevents.BaseWarEvent;
 import org.unitedlands.classes.warevents.SampleEvent;
 import org.unitedlands.models.WarEventRecord;
 import org.unitedlands.util.Formatter;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 import org.bukkit.event.HandlerList;
 
@@ -69,9 +70,9 @@ public class WarEventManager {
                     } else {
                         removeCurrentEvent();
                     }
-                    plugin.getLogger().info("Loaded ongoing event: " + currentEvent.getDisplayname());
+                    Logger.log("Loaded ongoing event: " + currentEvent.getDisplayname());
                 } else {
-                    plugin.getLogger().severe(
+                    Logger.logError(
                             "No event found for the loaded ongoing record. Event type: " + record.getEvent_type());
                 }
             }
@@ -93,7 +94,7 @@ public class WarEventManager {
         if (currentEvent != null) {
             removeCurrentEvent();
         }
-        plugin.getLogger().info("Event reset.");
+        Logger.log("Event reset.");
     }
 
     private void handleCurrentEvent() {
@@ -131,7 +132,7 @@ public class WarEventManager {
                     pickRandomEvent();
                     skippedEventTime = null;
                 } else {
-                    plugin.getLogger().info("Event creation skipped for " + timeStr + " due to random chance.");
+                    Logger.log("Event creation skipped for " + timeStr + " due to random chance.");
                     skippedEventTime = timeStr;
                 }
             }

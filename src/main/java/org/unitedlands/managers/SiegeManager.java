@@ -467,7 +467,7 @@ public class SiegeManager implements Listener {
         var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
         siegeChunkDbService.createOrUpdateAsync(siegeChunk).thenAccept(success -> {
             if (!success) {
-                plugin.getLogger().severe("Failed to save siege chunk " + siegeChunk.getChunkKey() + " to database!");
+                Logger.logError("Failed to save siege chunk " + siegeChunk.getChunkKey() + " to database!");
             }
         });
         siegeChunk.setState_changed(false);
@@ -477,7 +477,7 @@ public class SiegeManager implements Listener {
         var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
         siegeChunkDbService.deleteAsync(id).thenAccept(success -> {
             if (!success) {
-                plugin.getLogger().severe("Failed to delete siege chunk " + id.toString() + " from database!");
+                Logger.logError("Failed to delete siege chunk " + id.toString() + " from database!");
             }
         });
     }

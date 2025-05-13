@@ -5,6 +5,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.events.WarScoreEvent;
+import org.unitedlands.util.Logger;
 
 public class WarScheduler {
 
@@ -21,8 +22,8 @@ public class WarScheduler {
         Long checkInterval = plugin.getConfig().getInt("warscheduler.check-interval", 15) * 20L;
         warSchedulerTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::run, checkInterval, checkInterval);
 
-        plugin.getLogger().info("War scheduler set to running with interval: " + checkInterval + " ticks.");
-        plugin.getLogger().info("War scheduler initialized");
+        Logger.log("War scheduler set to running with interval: " + checkInterval + " ticks.");
+        Logger.log("War scheduler initialized");
     }
 
     public void run() {
@@ -50,9 +51,9 @@ public class WarScheduler {
     public void shutdown() {
         if (warSchedulerTask != null) {
             warSchedulerTask.cancel();
-            plugin.getLogger().info("War scheduler stopped.");
+            Logger.log("War scheduler stopped.");
         } else {
-            plugin.getLogger().info("War scheduler was not running.");
+            Logger.log("War scheduler was not running.");
         }
     }
 }
