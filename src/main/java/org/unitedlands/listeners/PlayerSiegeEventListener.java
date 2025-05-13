@@ -1,11 +1,17 @@
 package org.unitedlands.listeners;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityToggleGlideEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.event.PlayerChangePlotEvent;
@@ -50,6 +56,64 @@ public class PlayerSiegeEventListener implements Listener {
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, toPlot);
+    }
+
+    @EventHandler
+    public void onEnderPearlUse(ProjectileLaunchEvent event) {
+
+        var customCooldowns = plugin.getConfig().getConfigurationSection("warzone-pvp.cooldowns.projectiles");
+        if (!customCooldowns.getKeys(false).contains(event.getEntityType().toString()))
+            return;
+
+        if (event.getEntity().getShooter() instanceof Player) {
+
+            Player player = (Player) event.getEntity().getShooter();
+
+            if (!isPlayerSubjectToWarZone(player))
+                return;
+
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                player.setCooldown(Material.getMaterial(event.getEntityType().toString()), plugin.getConfig()
+                        .getInt("warzone-pvp.cooldowns.projectiles." + event.getEntityType().toString(), 1) * 20);
+            }, 1L);
+
+        }
+    }
+
+    @EventHandler
+    public void onToggleGlide(EntityToggleGlideEvent event) {
+        if (event.getEntity() instanceof Player) {
+            var player = (Player) event.getEntity();
+
+            if (!isPlayerSubjectToWarZone(player))
+                return;
+
+            if (event.isGliding()) {
+
+                if (plugin.getConfig().getBoolean("warzone-pvp.disable-elytra", true)) {
+                    event.setCancelled(true);
+                    Messenger.sendMessage(player, "§cYou can't use elytras in war zones!", true);
+                }
+            }
+        }
+    }
+
+    private boolean isPlayerSubjectToWarZone(Player player) {
+        if (!plugin.getWarManager().isPlayerInActiveWar(player.getUniqueId()))
+            return false;
+
+        var townBlock = TownyAPI.getInstance().getTownBlock(player);
+        if (townBlock == null)
+            return false;
+
+        var town = townBlock.getTownOrNull();
+        if (town == null)
+            return false;
+
+        if (!plugin.getWarManager().isTownInWar(town.getUUID()))
+            return false;
+
+        return true;
     }
 
 }

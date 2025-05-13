@@ -82,7 +82,6 @@ public class FortressManager implements Listener {
                                 "nationbuild,nationdestroy,nationswitch,nationitemuse," +
                                 "allybuild,allydestroy,allyswitch,allyitemuse," +
                                 "pvp,fire,explosion");
-                Logger.log("Griefing permissions forced.");
                 townBlocksInZone.add(townBlock);
             }
         }
@@ -97,7 +96,6 @@ public class FortressManager implements Listener {
             TownBlock townBlock = getTownBlock(chunk);
             if (townBlock != null) {
                 townBlock.setPermissions("denyall");
-                Logger.log("Griefing permissions reset.");
                 townBlocksInZone.add(townBlock);
             }
         }
