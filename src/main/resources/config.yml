@@ -170,7 +170,7 @@ messages:
   info-not-in-war: "§cYou are not in a war!"
 
   # +---------------------------------------------+ #
-  # |               War Messages                   | #
+  # |               War Messages                  | #
   # +---------------------------------------------+ #
 
   war-started: "§fThe war §e§o{war-name} §7§rhas started! Get ready to fight - war point scoring is now active!"

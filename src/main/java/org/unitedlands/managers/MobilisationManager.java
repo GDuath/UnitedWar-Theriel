@@ -7,17 +7,16 @@ import com.palmergames.bukkit.towny.event.town.toggle.TownToggleNeutralEvent;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
-import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.util.Logger;
+import org.unitedlands.util.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
 
-import static org.unitedlands.util.Messages.getMessage;
-import static org.unitedlands.util.Messages.getRaw;
+import java.util.Map;
 
 public class MobilisationManager implements Listener {
 
@@ -54,10 +53,9 @@ public class MobilisationManager implements Listener {
                 String key = town.isNeutral()
                         ? "mobilisation-notification-lose"
                         : "mobilisation-notification-gain";
-                Component notice = getRaw(key).replaceText(t -> t.matchLiteral("{0}").replacement(town.getName()));
                 for (Resident res : town.getResidents()) {
                     if (res.isOnline() && res.getPlayer() != null)
-                        res.getPlayer().sendMessage(notice);
+                        Messenger.sendMessageTemplate(res.getPlayer(), key, Map.of("0", town.getName()), false);
                 }
             }
             MobilisationMetadata.setMobilisationForTown(town, next);
@@ -79,10 +77,9 @@ public class MobilisationManager implements Listener {
                 String key = nation.isNeutral()
                         ? "mobilisation-notification-lose"
                         : "mobilisation-notification-gain";
-                Component notice = getRaw(key).replaceText(t -> t.matchLiteral("{0}").replacement(nation.getName()));
                 for (Resident res : nation.getResidents()) {
                     if (res.isOnline() && res.getPlayer() != null)
-                        res.getPlayer().sendMessage(notice);
+                        Messenger.sendMessageTemplate(res.getPlayer(), key, Map.of("0", nation.getName()), false);
                 }
             }
             MobilisationMetadata.setMobilisationForNation(nation, next);
@@ -129,11 +126,12 @@ public class MobilisationManager implements Listener {
         MobilisationMetadata.setMobilisationForTown(town, next);
 
         // Notify the town leader.
-        Component msg = getMessage("mobilisation-cost").replaceText(t -> t.matchLiteral("{0}").replacement(String.valueOf(paid)));
         var mayor = town.getMayor();
         if (mayor != null && mayor.isOnline()) {
             Player p = mayor.getPlayer();
-            if (p != null) p.sendMessage(msg);
+            if (p != null) {
+                Messenger.sendMessageTemplate(p, "mobilisation-cost", Map.of("0", String.valueOf(paid)), true);
+            }
         }
     }
 
@@ -151,11 +149,12 @@ public class MobilisationManager implements Listener {
         MobilisationMetadata.setMobilisationForNation(nation, next);
 
         // Notify the nation leader.
-        Component msg = getMessage("mobilisation-cost").replaceText(t -> t.matchLiteral("{0}").replacement(String.valueOf(paid)));
         var king = nation.getKing();
         if (king != null && king.isOnline()) {
             Player p = king.getPlayer();
-            if (p != null) p.sendMessage(msg);
+            if (p != null) {
+                Messenger.sendMessageTemplate(p, "mobilisation-cost", Map.of("0", String.valueOf(paid)), true);
+            }
         }
     }
 }

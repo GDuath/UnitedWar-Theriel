@@ -20,9 +20,10 @@ import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarScoreEvent;
 
 import com.palmergames.bukkit.towny.TownyAPI;
-import org.unitedlands.util.Messages;
+import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerDeathListener implements Listener {
@@ -108,17 +109,16 @@ public class PlayerDeathListener implements Listener {
 
             if (currentLives == 0) {
                 // Already out of lives.
-                victim.sendMessage(Messages.getMessage("warlives-gone")
-                        .replaceText(t -> t.matchLiteral("{0}").replacement(warName)));
+                Messenger.sendMessageTemplate
+                        (victim, "warlives-gone", Map.of("0", warName), true);
             } else if (newLives == 0) {
                 // This death eliminated them.
-                victim.sendMessage(Messages.getMessage("warlives-final")
-                        .replaceText(t -> t.matchLiteral("{0}").replacement(warName)));
+                Messenger.sendMessageTemplate
+                        (victim, "warlives-final", Map.of("0", warName), true);
             } else {
                 // Lives still remaining.
-                victim.sendMessage(Messages.getMessage("warlives-lost")
-                        .replaceText(t -> t.matchLiteral("{0}").replacement(String.valueOf(newLives)))
-                        .replaceText(t -> t.matchLiteral("{1}").replacement(warName)));
+                Messenger.sendMessageTemplate
+                        (victim, "warlives-lost", Map.of("0", String.valueOf(newLives), "1", warName), true);
             }
         }
     }

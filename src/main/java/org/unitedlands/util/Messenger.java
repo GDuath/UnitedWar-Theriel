@@ -3,7 +3,7 @@ package org.unitedlands.util;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
 
 import net.kyori.adventure.text.Component;
@@ -28,7 +28,7 @@ public class Messenger {
         Bukkit.getServer().broadcast(component);
     }
 
-    public static void sendMessage(Player player, String message, boolean includePrefix) {
+    public static void sendMessage(CommandSender sender, String message, boolean includePrefix) {
         Component component;
         if (includePrefix) {
             var prefix = plugin.getConfig().getString("messages.prefix");
@@ -36,10 +36,10 @@ public class Messenger {
         } else {
             component = Component.text(message);
         }
-        player.sendMessage(component);
+        sender.sendMessage(component);
     }
 
-    public static void sendMessageTemplate(Player player, String messageId, Map<String, String> replacements,
+    public static void sendMessageTemplate(CommandSender sender, String messageId, Map<String, String> replacements,
             boolean includePrefix) {
 
         var message = plugin.getConfig().getString("messages." + messageId);
@@ -55,10 +55,10 @@ public class Messenger {
             return;
         }
 
-        sendMessage(player, message, includePrefix);
+        sendMessage(sender, message, includePrefix);
     }
 
-    public static void sendMessageListTemplate(Player player, String messageListId, Map<String, String> replacements,
+    public static void sendMessageListTemplate(CommandSender sender, String messageListId, Map<String, String> replacements,
             boolean includePrefix) {
 
         var messageList = plugin.getConfig().getStringList("messages." + messageListId);
@@ -74,7 +74,7 @@ public class Messenger {
                     message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
                 }
             }
-            sendMessage(player, message, includePrefix);
+            sendMessage(sender, message, includePrefix);
         }
     }
 
