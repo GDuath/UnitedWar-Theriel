@@ -72,8 +72,8 @@ public class PlayerDeathListener implements Listener {
             UUID warId = war.getId();
 
             // Skip if killer is not in this war.
-            boolean killerInWar = war.getAttacking_players().contains(killer.getUniqueId().toString())
-                    || war.getDefending_players().contains(killer.getUniqueId().toString());
+            boolean killerInWar = war.getAttacking_players().contains(killer.getUniqueId())
+                    || war.getDefending_players().contains(killer.getUniqueId());
             if (!killerInWar) continue;
 
             // Check if killer has war lives.
@@ -93,10 +93,10 @@ public class PlayerDeathListener implements Listener {
             // Determine scores.
             // TODO: add mercenaries
             if (victimWar.getValue() == WarSide.ATTACKER
-                    && war.getDefending_players().contains(killer.getUniqueId().toString())) {
+                    && war.getDefending_players().contains(killer.getUniqueId())) {
                 new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, warScoreType, reward).callEvent();
             } else if (victimWar.getValue() == WarSide.DEFENDER
-                    && war.getAttacking_players().contains(killer.getUniqueId().toString())) {
+                    && war.getAttacking_players().contains(killer.getUniqueId())) {
                 new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, warScoreType, reward).callEvent();
             }
 

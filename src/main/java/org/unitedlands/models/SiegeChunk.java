@@ -11,7 +11,6 @@ import org.unitedlands.classes.WarSide;
 
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.TownBlock;
 
 @DatabaseTable(tableName = "siege_chunks")
@@ -134,6 +133,14 @@ public class SiegeChunk implements Identifiable {
 
     public void setState_changed(Boolean state_changed) {
         this.state_changed = state_changed;
+    }
+
+    public War getWar() {
+        return war;
+    }
+
+    public void setWar(War war) {
+        this.war = war;
     }
 
     public TownBlock getTownBlock() {

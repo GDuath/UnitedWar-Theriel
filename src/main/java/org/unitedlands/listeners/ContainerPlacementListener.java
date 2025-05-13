@@ -5,16 +5,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.util.Messenger;
-
-import com.palmergames.bukkit.towny.TownyAPI;
 
 public class ContainerPlacementListener implements Listener {
 
-    private final UnitedWar plugin;
+    //private final UnitedWar plugin;
 
     public ContainerPlacementListener(UnitedWar plugin) {
-        this.plugin = plugin;
+        // this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

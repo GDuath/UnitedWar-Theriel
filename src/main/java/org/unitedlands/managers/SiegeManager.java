@@ -208,8 +208,7 @@ public class SiegeManager implements Listener {
             if (town != null) {
                 // Iterate all ongoing wars. Since towns can be a part of multiple wars 
                 for (var war : wars) {
-                    if (war.getAttacking_towns().contains(town.getUUID().toString())
-                            || war.getDefending_towns().contains(town.getUUID().toString())) {
+                    if (war.getAttacking_towns().contains(town.getUUID()) || war.getDefending_towns().contains(town.getUUID())) {
 
                         // Give fortress chunks higher health
                         int maxHealth = plugin.getConfig().getInt("siege-settings.town-chunk-health", 10);
@@ -307,8 +306,8 @@ public class SiegeManager implements Listener {
         var attackingTownList = war.getAttacking_towns();
         var defendingTownList = war.getDefending_towns();
 
-        String playerId = player.getUniqueId().toString();
-        String townId = town.getUUID().toString();
+        UUID playerId = player.getUniqueId();
+        UUID townId = town.getUUID();
 
         if (attackingPlayerList.contains(playerId) || attackingMercenaryList.contains(playerId)) {
             // Player is an attacker. See if they are in an attacking or defending town.

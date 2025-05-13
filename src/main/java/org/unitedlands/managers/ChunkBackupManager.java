@@ -157,7 +157,6 @@ public class ChunkBackupManager {
 
         File targetFolder = new File(baseDir, sessionId.toString());
 
-        boolean tempMoved = false;
         if (!folderName.equals(sessionId.toString())) {
             if (targetFolder.exists()) {
                 Logger.logError("Cannot restore from archive: session folder already exists: " + sessionId);
@@ -168,7 +167,6 @@ public class ChunkBackupManager {
                 Logger.logError("Failed to move archived folder back to active: " + folderName);
                 return;
             }
-            tempMoved = true;
         }
 
         try {
@@ -207,22 +205,9 @@ public class ChunkBackupManager {
             // Start regeneration
             restoreSnapshots(townBlocks, sessionId);
 
-            // Archive after starting regeneration if this was not already archived
-            // if (!folderName.contains("-deleted-")) {
-            //     archiveSessionFolder(sessionId);
-            // }
-
         } 
         finally {
-            // Clean up temporary move (only if it was moved back from archive)
-            // if (tempMoved && targetFolder.exists()) {
-            //     String timestamp = String.valueOf(System.currentTimeMillis());
-            //     File deletedDir = new File(baseDir, "deleted");
-            //     File restoredArchive = new File(deletedDir, sessionId + "-deleted-" + timestamp);
-            //     if (!targetFolder.renameTo(restoredArchive)) {
-            //         Logger.logError("Failed to move session folder back to archive: " + restoredArchive.getName());
-            //     }
-            // }
+
         }
     }
 

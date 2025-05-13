@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.Command;
@@ -15,7 +14,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;

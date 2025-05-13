@@ -1,18 +1,14 @@
 package org.unitedlands.classes;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.bukkit.Chunk;
 
-import com.palmergames.bukkit.towny.object.TownBlock;
-
 public class FortressZone {
 
     private Chunk fortressChunk;
-    private Set<Chunk> zoneChunks = new HashSet();
+    private Set<Chunk> zoneChunks = new HashSet<>();
 
     public FortressZone(Chunk fortressBlock, Set<Chunk> zoneBlocks) {
         this.fortressChunk = fortressBlock;
