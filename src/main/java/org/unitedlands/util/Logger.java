@@ -11,10 +11,10 @@ public class Logger {
     }
 
     public static void log(String message) {
-        Logger.log(message);
+        plugin.getLogger().info(message);
     }
 
         public static void logError(String message) {
-        Logger.logError(message);
+        plugin.getLogger().severe(message);
     }
 }

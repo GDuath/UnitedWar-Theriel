@@ -660,6 +660,26 @@ public class WarManager implements Listener {
         return playerWars;
     }
 
+    public Map<War, WarSide> getAllPlayerWars(UUID playerId) {
+        Map<War, WarSide> allWars = new HashMap<>();
+
+        for (War war : activeWars) {
+            WarSide warSide = war.getPlayerWarSide(playerId);
+            if (warSide != WarSide.NONE) {
+                allWars.put(war, warSide);
+            }
+        }
+
+        for (War war : pendingWars) {
+            WarSide warSide = war.getPlayerWarSide(playerId);
+            if (warSide != WarSide.NONE) {
+                allWars.put(war, warSide);
+            }
+        }
+
+        return allWars;
+    }
+
     public boolean isPlayerInActiveWar(UUID playerId) {
         return getActivePlayerWars(playerId).size() > 0;
     }
