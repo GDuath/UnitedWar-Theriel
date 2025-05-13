@@ -151,6 +151,24 @@ war-events:
 
 ###################################################
 # +---------------------------------------------+ #
+# |                 Warzone PVP                 | #
+# +---------------------------------------------+ #
+###################################################
+
+# Special rules for pvp inside of war zones (town in an active war). 
+# These only apply to players participating in an active war.
+
+warzone-pvp:
+  disable-elytra: true
+  disable-tp: false
+  disable-pw: false
+  cooldowns:
+    projectiles:
+      ENDER_PEARL: 5 # in seconds
+      WIND_CHARGE: 5 # in seconds
+
+###################################################
+# +---------------------------------------------+ #
 # |                  Messages                   | #
 # +---------------------------------------------+ #
 ###################################################
