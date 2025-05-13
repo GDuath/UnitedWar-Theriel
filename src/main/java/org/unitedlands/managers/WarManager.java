@@ -1,14 +1,13 @@
 package org.unitedlands.managers;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -38,8 +37,8 @@ public class WarManager implements Listener {
 
     private final UnitedWar plugin;
 
-    private Collection<War> pendingWars = new ArrayList<>();
-    private Collection<War> activeWars = new ArrayList<>();
+    private Set<War> pendingWars = new HashSet<>();
+    private Set<War> activeWars = new HashSet<>();
 
     public WarManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -68,7 +67,7 @@ public class WarManager implements Listener {
 
     public void handleWars() {
 
-        List<War> startedWars = new ArrayList<>();
+        Set<War> startedWars = new HashSet<>();
         for (War war : pendingWars) {
             if (warCanBeStarted(war)) {
                 startWar(war);
@@ -81,7 +80,7 @@ public class WarManager implements Listener {
         pendingWars.removeAll(startedWars);
         activeWars.addAll(startedWars);
 
-        List<War> endedWars = new ArrayList<>();
+        Set<War> endedWars = new HashSet<>();
         for (War war : activeWars) {
             if (warCanBeEnded(war)) {
                 endWar(war);
@@ -609,8 +608,8 @@ public class WarManager implements Listener {
         return "(Unknown War)";
     }
 
-    public List<War> getWars() {
-        List<War> allWars = new ArrayList<>();
+    public Set<War> getWars() {
+        Set<War> allWars = new HashSet<>();
         allWars.addAll(pendingWars);
         allWars.addAll(activeWars);
         return allWars;
@@ -621,17 +620,17 @@ public class WarManager implements Listener {
     }
 
     public War getWarById(UUID warId) {
-        List<War> allWars = new ArrayList<War>();
-        allWars.addAll(activeWars);
-        allWars.addAll(pendingWars);
-        return allWars.stream().filter(w -> w.getId().equals(warId)).findFirst().orElse(null);
+        return Stream.concat(activeWars.stream(), pendingWars.stream())
+                .filter(w -> w.getId().equals(warId))
+                .findFirst()
+                .orElse(null);
     }
 
     public War getWarByName(String name) {
-        List<War> allWars = new ArrayList<War>();
-        allWars.addAll(activeWars);
-        allWars.addAll(pendingWars);
-        return allWars.stream().filter(w -> w.getTitle().equals(name)).findFirst().orElse(null);
+        return Stream.concat(activeWars.stream(), pendingWars.stream())
+                .filter(w -> w.getTitle().equals(name))
+                .findFirst()
+                .orElse(null);
     }
 
     public boolean isAnyWarActive() {
@@ -641,11 +640,21 @@ public class WarManager implements Listener {
     public Map<War, WarSide> getActivePlayerWars(UUID playerId) {
         Map<War, WarSide> playerWars = new HashMap<>();
         for (War war : activeWars) {
-            if (war.getAttacking_players().contains(playerId)) {
-                playerWars.put(war, WarSide.ATTACKER);
-            } else if (war.getDefending_players().contains(playerId)) {
-                playerWars.put(war, WarSide.DEFENDER);
-            }
+            WarSide warSide = war.getPlayerWarSide(playerId);
+            if (warSide == WarSide.NONE)
+                continue;
+            playerWars.put(war, warSide);
+        }
+        return playerWars;
+    }
+
+    public Map<War, WarSide> getPendingPlayerWars(UUID playerId) {
+        Map<War, WarSide> playerWars = new HashMap<>();
+        for (War war : pendingWars) {
+            WarSide warSide = war.getPlayerWarSide(playerId);
+            if (warSide == WarSide.NONE)
+                continue;
+            playerWars.put(war, warSide);
         }
         return playerWars;
     }
@@ -664,18 +673,6 @@ public class WarManager implements Listener {
                 return true;
         }
         return false;
-    }
-
-    public Map<War, WarSide> getPendingPlayerWars(UUID playerId) {
-        Map<War, WarSide> playerWars = new HashMap<>();
-        for (War war : pendingWars) {
-            if (war.getAttacking_players().contains(playerId)) {
-                playerWars.put(war, WarSide.ATTACKER);
-            } else if (war.getDefending_players().contains(playerId)) {
-                playerWars.put(war, WarSide.DEFENDER);
-            }
-        }
-        return playerWars;
     }
 
     //#endregion

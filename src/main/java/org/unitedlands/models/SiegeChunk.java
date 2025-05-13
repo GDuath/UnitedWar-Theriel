@@ -1,8 +1,7 @@
 package org.unitedlands.models;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,12 +42,12 @@ public class SiegeChunk implements Identifiable {
     private transient War war;
     private transient TownBlock townBlock;
 
-    private transient Map<WarSide, List<UUID>> playersInChunk;
+    private transient Map<WarSide, LinkedHashSet<UUID>> playersInChunk;
 
     public SiegeChunk() {
-        playersInChunk = new HashMap<WarSide, List<UUID>>();
-        playersInChunk.put(WarSide.ATTACKER, new ArrayList<UUID>());
-        playersInChunk.put(WarSide.DEFENDER, new ArrayList<UUID>());
+        playersInChunk = new HashMap<WarSide, LinkedHashSet<UUID>>();
+        playersInChunk.put(WarSide.ATTACKER, new LinkedHashSet<UUID>());
+        playersInChunk.put(WarSide.DEFENDER, new LinkedHashSet<UUID>());
     }
 
     public UUID getId() {
@@ -151,11 +150,11 @@ public class SiegeChunk implements Identifiable {
         this.townBlock = townBlock;
     }
 
-    public Map<WarSide, List<UUID>> getPlayersInChunk() {
+    public Map<WarSide, LinkedHashSet<UUID>> getPlayersInChunk() {
         return playersInChunk;
     }
 
-    public void setPlayersInChunk(Map<WarSide, List<UUID>> playersInChunk) {
+    public void setPlayersInChunk(Map<WarSide, LinkedHashSet<UUID>> playersInChunk) {
         this.playersInChunk = playersInChunk;
     }
 

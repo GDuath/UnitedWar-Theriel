@@ -57,24 +57,28 @@ public class PlayerDeathListener implements Listener {
         var reward = plugin.getConfig().getInt("default-rewards.pvp-kill", 10);
         var warScoreType = WarScoreType.PVP_KILL;
 
+        // If this player is not tracked by Towny, don't continue
+        var victimRes = TownyAPI.getInstance().getResident(victim);
+        if (victimRes == null)
+            return;
+
         // See if the victim is a mayor or general in their town.
         // If so, prepare a higher reward.
-        var victimRes = TownyAPI.getInstance().getResident(victim);
-        if (victimRes != null) {
-            if (victimRes.isMayor() || victimRes.getTownRanks().contains("co-mayor") || victimRes.getTownRanks().contains("general")) {
-                reward = plugin.getConfig().getInt("default-rewards.pvp-leader-kill", 50);
-                warScoreType = WarScoreType.PVP_LEADER_KILL;
-            }
+        if (victimRes.isMayor() || victimRes.getTownRanks().contains("co-mayor")
+                || victimRes.getTownRanks().contains("general")) {
+            reward = plugin.getConfig().getInt("default-rewards.pvp-leader-kill", 50);
+            warScoreType = WarScoreType.PVP_LEADER_KILL;
         }
 
         for (var victimWar : victimWars.entrySet()) {
+            var victimWarSide = victimWar.getValue();
             var war = victimWar.getKey();
             UUID warId = war.getId();
 
             // Skip if killer is not in this war.
-            boolean killerInWar = war.getAttacking_players().contains(killer.getUniqueId())
-                    || war.getDefending_players().contains(killer.getUniqueId());
-            if (!killerInWar) continue;
+            var killerWarSide = war.getPlayerWarSide(killer.getUniqueId());
+            if (killerWarSide == WarSide.NONE)
+                continue;
 
             // Check if killer has war lives.
             var killerRes = TownyUniverse.getInstance().getResident(killer.getUniqueId());
@@ -82,28 +86,23 @@ public class PlayerDeathListener implements Listener {
                 continue; // Killer is eliminated or not valid.
             }
 
-            var resident = TownyUniverse.getInstance().getResident(victim.getUniqueId());
-            if (resident == null) continue;
-
-            int victimLives = WarLivesMetadata.getWarLivesMetaData(resident, warId);
+            int victimLives = WarLivesMetadata.getWarLivesMetaData(victimRes, warId);
             if (victimLives <= 0) {
                 continue; // Victim already eliminated, no score
             }
 
             // Determine scores.
-            // TODO: add mercenaries
-            if (victimWar.getValue() == WarSide.ATTACKER
-                    && war.getDefending_players().contains(killer.getUniqueId())) {
+
+            if (victimWarSide == WarSide.ATTACKER && killerWarSide == WarSide.DEFENDER) {
                 new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, warScoreType, reward).callEvent();
-            } else if (victimWar.getValue() == WarSide.DEFENDER
-                    && war.getAttacking_players().contains(killer.getUniqueId())) {
+            } else if (victimWarSide == WarSide.DEFENDER && killerWarSide == WarSide.ATTACKER) {
                 new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, warScoreType, reward).callEvent();
             }
 
             // Decrease victim lives.
-            int currentLives = WarLivesMetadata.getWarLivesMetaData(resident, warId);
+            int currentLives = WarLivesMetadata.getWarLivesMetaData(victimRes, warId);
             int newLives = Math.max(0, currentLives - 1);
-            WarLivesMetadata.setWarLivesMetaData(resident, warId, newLives);
+            WarLivesMetadata.setWarLivesMetaData(victimRes, warId, newLives);
 
             String warName = plugin.getWarManager().getWarTitle(warId);
 

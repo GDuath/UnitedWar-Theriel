@@ -619,6 +619,15 @@ public class War implements Identifiable {
             return WarSide.NONE;
     }
 
+    public WarSide getTownWarSide(UUID townId) {
+        if (getAttacking_towns().contains(townId))
+            return WarSide.ATTACKER;
+        else if (getDefending_towns().contains(townId))
+            return WarSide.DEFENDER;
+        else
+            return WarSide.NONE;
+    }
+
     public Map<String, String> getMessagePlaceholders() {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("war-name", getCleanTitle());
