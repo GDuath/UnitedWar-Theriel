@@ -114,7 +114,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         // /wa mobilisation [Town | Nation] set [Value]
         // /wa mobilisation [Town | Nation] delete
         if (args.length < 3) {
-            sender.sendMessage(getMessage("usage-mobilisation"));
+            sender.sendMessage(getMessage("mobilisation-usage"));
             return;
         }
 
@@ -133,7 +133,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         // DELETE command branch.
         if (action.equalsIgnoreCase("delete")) {
             if (args.length != 3) {
-                sender.sendMessage(getMessage("usage-mobilisation"));
+                sender.sendMessage(getMessage("mobilisation-usage"));
                 return;
             }
 
@@ -159,7 +159,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         // SET command branch.
         if (action.equalsIgnoreCase("set")) {
             if (args.length != 4) {
-                sender.sendMessage(getMessage("usage-mobilisation"));
+                sender.sendMessage(getMessage("mobilisation-usage"));
                 return;
             }
 
@@ -174,7 +174,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
                 return;
             }
             if (val < 0 || val > 100) {
-                sender.sendMessage(getMessage("invalid-mobilisation-number"));
+                sender.sendMessage(getMessage("mobilisation-number-invalid"));
                 return;
             }
 
@@ -198,7 +198,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         }
 
         // Fallback message.
-        sender.sendMessage(getMessage("usage-mobilisation"));
+        sender.sendMessage(getMessage("mobilisation-usage"));
     }
 
     private void handleWarLivesCommands(CommandSender sender, String[] args) {

@@ -1,11 +1,13 @@
-# ------------------------------------------
-# Database connection settings
-# ------------------------------------------
+###################################################
+# +---------------------------------------------+ #
+# |             Database Connection             | #
+# +---------------------------------------------+ #
+###################################################
 
 # CAUTION! Developer mode will drop all database tables on startup. DO NOT USE IN PRODUCTION.  
 developer-mode: true
 
-# Database connection settings
+# Database connection settings.
 mysql:
   host: localhost
   port: 3306
@@ -13,9 +15,11 @@ mysql:
   password: unitedwar
   database: unitedwar
 
-# ------------------------------------------
-# War scheduler settings
-# ------------------------------------------
+###################################################
+# +---------------------------------------------+ #
+# |                War Scheduler                | #
+# +---------------------------------------------+ #
+###################################################
 
 warscheduler:
   check-interval: 15 # in seconds
@@ -40,61 +44,55 @@ mobilisation:
   # How much mobilisation costs to toggle peaceful.
   cost-to-toggle-peaceful: 1
 
-# ------------------------------------------
-# War events settings
-# ------------------------------------------
-
-war-events:
-  # Chance for a random event to happen every hour
-  event-warmup-time: 30 # in seconds
-  random-event-chance: 0.0
-  event-schedule:
-  - "00:00"
-  pick-table:
-    "SAMPLE": 1
-
-# ------------------------------------------
-# War settings
-# ------------------------------------------
+###################################################
+# +---------------------------------------------+ #
+# |                 War Settings                | #
+# +---------------------------------------------+ #
+###################################################
 
 wars-settings:
+
   default:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contibution: 0.1 # in percentage of town balance
-    defender-warchest-contibution: 0.1 
+    attacker-warchest-contribution: 0.1 # in percentage of town balance
+    defender-warchest-contribution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
     additional-bonus-claims: 20
+
   town-town:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contibution: 0.1 
-    defender-warchest-contibution: 0.1
+    attacker-warchest-contribution: 0.1
+    defender-warchest-contribution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
     additional-bonus-claims: 20
+
   town-nation:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contibution: 0.1 
-    defender-warchest-contibution: 0.1
+    attacker-warchest-contribution: 0.1
+    defender-warchest-contribution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
     additional-bonus-claims: 20
+
   nation-nation:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contibution: 0.1
-    defender-warchest-contibution: 0.1 
+    attacker-warchest-contribution: 0.1
+    defender-warchest-contribution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
     additional-bonus-claims: 20
+
   nation-town:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contibution: 0.1 
-    defender-warchest-contibution: 0.1
+    attacker-warchest-contribution: 0.1
+    defender-warchest-contribution: 0.1
     attacker-score-cap: 500
     defender-score-cap: 500
     additional-bonus-claims: 20
@@ -122,9 +120,9 @@ siege-settings:
   fortress-zone-radius: 2
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
-  # If false, the health decay and resoration only apply once per team in the majority
+  # If false, the health decay and restoration only apply once per team in the majority
   use-superiority-multiplier: true;
-  # The starting HP of chunks at the begginning of a war (relative to max health)
+  # The starting HP of chunks at the beginning of a war (relative to max health)
   health-start-percentage: 1.0
   # The amount of HP a chunk loses when the attackers are in a majority
   health-decay-rate: 1
@@ -134,6 +132,22 @@ siege-settings:
   town-chunk-health: 10
   home-chunk-health: 50
   fortress-chunk-health: 100
+
+###################################################
+# +---------------------------------------------+ #
+# |                  War Events                 | #
+# +---------------------------------------------+ #
+###################################################
+
+war-events:
+  # Chance for a random event to happen every hour
+  event-warmup-time: 30 # in seconds
+  # 0.0 is disabled and 1.0 is guaranteed.
+  random-event-chance: 0.0
+  event-schedule:
+    - "00:00"
+  pick-table:
+    "SAMPLE": 1
 
 ###################################################
 # +---------------------------------------------+ #
@@ -147,25 +161,18 @@ messages:
   reload: "§2Plugin reloaded."
   invalid-command: "§cInvalid command usage."
   no-permission: '§2You don''t have permission to perform this command.'
-  usage-mobilisation: "§2Usage: §7/wa mobilisation [Town | Nation] set [0-100]"
   # {0} is the relevant town or nation name.
   town-nation-not-found: "§2No town or nation found named §e§l{0}"
   # {0} is the attempted input.
   not-a-number: "§e§l{0} §2is not a number."
   # {0} is the player username.
   player-not-found: "§e§l{0} is not a recognised username or not online."
-  invalid-mobilisation-number: "§2Mobilisation must be set between 0-100."
-  # {0} is the town or nation name.
-  # {1} is the mobilisation amount.
-  mobilisation-set:  "§e§l{0} §2mobilisation set to §e§l{1}"
-  # {0} is the town or nation name.
-  mobilisation-delete: "§e§l{0} §2mobilisation deleted."
-  # {0} is the set cost to toggle.
-  mobilisation-cost: "§bYou paid {0}% of your mobilisation to toggle peacefulness."
-  # {0} is the town name.
-  # Formatted to look like a towny system notification, editable to have it match if changed.
-  mobilisation-notification-gain: "§6[{0}] §bBecause of non-neutral status, {0} has gained some mobilisation progress."
-  mobilisation-notification-lose: "§6[{0}] §bBecause of neutral status, {0} has lost some mobilisation progress."
+  info-not-in-war: "§cYou are not in a war!"
+
+  # +---------------------------------------------+ #
+  # |               War Messages                   | #
+  # +---------------------------------------------+ #
+
   war-started: "§fThe war §e§o{war-name} §7§rhas started! Get ready to fight - war point scoring is now active!"
   war-declared:
     - "§c§m+|✦       §r§c§l[§f§l WAR DECLARED §c§l]§c§m       |✦+"
@@ -193,7 +200,11 @@ messages:
     - "§f§lDefender: §r{defender} | §lFinal score: §r{defender-score} / {defender-score-cap}"
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims}"
     - "§c§m+|✦                  +✦+                  |✦+"
-  info-not-in-war: "§cYou are not in a war!"
+
+  # +---------------------------------------------+ #
+  # |                War Events                   | #
+  # +---------------------------------------------+ #
+
   event-info-scheduled: 
     - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
     - "§7A new war event will will begin soon! It will have the following effects:"
@@ -210,15 +221,40 @@ messages:
     - "§f{event-description}"
     - "§7This event has now ended and all effects have been removed"
     - "§c§m+|✦                  +✦+                  |✦+"
+
+  # +---------------------------------------------+ #
+  # |               Mobilisation                  | #
+  # +---------------------------------------------+ #
+
+  mobilisation-usage: "§2Usage: §7/wa mobilisation [Town | Nation] set [0-100]"
+  mobilisation-number-invalid: "§2Mobilisation must be set between 0-100."
+  # {0} is the town or nation name.
+  # {1} is the mobilisation amount.
+  mobilisation-set:  "§e§l{0} §2mobilisation set to §e§l{1}"
+  # {0} is the town or nation name.
+  mobilisation-delete: "§e§l{0} §2mobilisation deleted."
+  # {0} is the set cost to toggle.
+  mobilisation-cost: "§bYou paid {0}% of your mobilisation to toggle peacefulness."
+  # {0} is the town name.
+  # Formatted to look like a towny system notification, editable to have it match if changed.
+  mobilisation-notification-gain: "§6[{0}] §bBecause of non-neutral status, {0} has gained some mobilisation progress."
+  mobilisation-notification-lose: "§6[{0}] §bBecause of neutral status, {0} has lost some mobilisation progress."
+
+
+  # +---------------------------------------------+ #
+  # |                  Scores                     | #
+  # +---------------------------------------------+ #
+
   score-message: "§7You scored §f§l{score} points §7§rfor: §e{action}"
   score-capture-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
   score-capture-home-attacker: "§7Your team received §f§l{reward} points §7§rfor bringing down an enemy home chunk!"
   score-capture-fortress-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
 
 
-# +---------------------------------------------+
-# |                 War Lives                   |
-# +---------------------------------------------+
+  # +---------------------------------------------+ #
+  # |                 War Lives                   | #
+  # +---------------------------------------------+ #
+
   warlives-usage:
     # TURN INTO LIST
     - "§cInvalid command, try: §7/wa warlives [Player Name] set [Int] or /wa warlives [Player Name] delete"

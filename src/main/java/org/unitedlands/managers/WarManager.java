@@ -226,9 +226,9 @@ public class WarManager implements Listener {
 
     private void buildWarChests(War war) {
         Double attackerContribution = plugin.getConfig()
-                .getDouble("wars-settings.default.attacker-warchest-contibution", 0.1);
+                .getDouble("wars-settings.default.attacker-warchest-contribution", 0.1);
         Double defenderContribution = plugin.getConfig()
-                .getDouble("wars-settings.default.defender-warchest-contibution", 0.1);
+                .getDouble("wars-settings.default.defender-warchest-contribution", 0.1);
 
         Map<UUID, Double> attackerMoneyContributions = new HashMap<>();
         Map<UUID, Integer> attackerClaimsContributions = new HashMap<>();
