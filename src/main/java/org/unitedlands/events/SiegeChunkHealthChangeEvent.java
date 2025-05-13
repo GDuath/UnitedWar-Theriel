@@ -3,9 +3,7 @@ package org.unitedlands.events;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.unitedlands.classes.WarSide;
 import org.unitedlands.models.SiegeChunk;
-import org.unitedlands.models.War;
 
 public class SiegeChunkHealthChangeEvent extends Event implements Cancellable {
 

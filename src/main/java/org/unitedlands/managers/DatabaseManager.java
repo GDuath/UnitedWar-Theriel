@@ -18,6 +18,7 @@ import org.unitedlands.services.SiegeChunkDbService;
 import org.unitedlands.services.WarDbService;
 import org.unitedlands.services.WarEventRecordDbService;
 import org.unitedlands.services.WarScoreRecordDbService;
+import org.unitedlands.util.Logger;
 
 public class DatabaseManager {
 
@@ -56,12 +57,12 @@ public class DatabaseManager {
         try {
             this.connectionSource = new JdbcConnectionSource(url, username, password);
 
-            plugin.getLogger().info("Connected to MySQL database: " + url);
+            Logger.log("Connected to MySQL database: " + url);
 
             verifySchemaVersion();
             registerServices();
 
-            plugin.getLogger().info("DatabaseManager initialized successfully.");
+            Logger.log("DatabaseManager initialized successfully.");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -115,7 +116,7 @@ public class DatabaseManager {
         if (connectionSource != null) {
             try {
                 connectionSource.close();
-                plugin.getLogger().info("Disconnected from MySQL database.");
+                Logger.log("Disconnected from MySQL database.");
             } catch (Exception e) {
                 e.printStackTrace();
             }

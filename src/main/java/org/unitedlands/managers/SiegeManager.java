@@ -1,9 +1,9 @@
 package org.unitedlands.managers;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -43,7 +43,7 @@ public class SiegeManager implements Listener {
 
     private Map<String, SiegeChunk> siegeChunks = new HashMap<String, SiegeChunk>();
     private Map<String, BossBar> chunkBossBars = new HashMap<String, BossBar>();
-    private Map<String, List<Player>> chunkBossBarViewers = new HashMap<String, List<Player>>();
+    private Map<String, Set<Player>> chunkBossBarViewers = new HashMap<String, Set<Player>>();
 
     public SiegeManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -192,7 +192,7 @@ public class SiegeManager implements Listener {
             if (siegeChunks.containsKey(key)) {
                 addPlayerToSiegeChunk(player, key);
             } else {
-                if (createSiegeChunk(targetBlock))
+                if (createSiegeChunk(targetBlock, player))
                     addPlayerToSiegeChunk(player, key);
             }
         }
@@ -200,65 +200,70 @@ public class SiegeManager implements Listener {
 
     //#region Siege chunk creation
 
-    private boolean createSiegeChunk(TownBlock townBlock) {
-        // Check if the chunk belongs to a town that is at war
-        List<War> wars = plugin.getWarManager().getWars();
-        if (!wars.isEmpty()) {
-            Town town = TownyAPI.getInstance().getTownOrNull(townBlock);
-            if (town != null) {
-                // Iterate all ongoing wars. Since towns can be a part of multiple wars 
-                for (var war : wars) {
-                    if (war.getAttacking_towns().contains(town.getUUID().toString())
-                            || war.getDefending_towns().contains(town.getUUID().toString())) {
+    private boolean createSiegeChunk(TownBlock townBlock, Player player) {
 
-                        // Give fortress chunks higher health
-                        int maxHealth = plugin.getConfig().getInt("siege-settings.town-chunk-health", 10);
-                        if (townBlock.getType().getName().equals("fortress")) {
-                            maxHealth = plugin.getConfig().getInt("siege-settings.fortress-chunk-health", 100);
-                        } else if (townBlock.isHomeBlock()) {
-                            maxHealth = plugin.getConfig().getInt("siege-settings.home-chunk-health", 50);
-                        }
-                        // Make sure max health is always 1 or higher
-                        maxHealth = Math.max(1, maxHealth);
+        // Get the active players wars. Only create a siege chunk if the entering player is in a war.
+        Map<War, WarSide> activePlayerWars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
+        if (activePlayerWars == null || activePlayerWars.isEmpty())
+            return false;
 
-                        // Create the chunk itself and save it to the database
-                        SiegeChunk siegeChunk = new SiegeChunk();
-                        siegeChunk.setWorld(townBlock.getWorld().getName());
-                        siegeChunk.setX(townBlock.getCoord().getX());
-                        siegeChunk.setZ(townBlock.getCoord().getZ());
-                        siegeChunk.setWar_id(war.getId());
-                        siegeChunk.setMax_health(maxHealth);
-                        siegeChunk.setCurrent_health((int) Math.round((double) maxHealth
-                                * plugin.getConfig().getDouble("siege-settings.health-start-percentage", 1d)));
-                        siegeChunk.setTownBlock(townBlock);
+        // Get the town. If null (e.g. in the wilderness), don't create a siege chunk.
+        Town town = townBlock.getTownOrNull();
+        if (town == null)
+            return false;
 
-                        var key = siegeChunk.getChunkKey();
-                        siegeChunks.put(key, siegeChunk);
+        // Iterate the active player wars. Only create a siege chunk if the town is participating in it.
+        for (var war : activePlayerWars.keySet()) {
+            if (war.getTownWarSide(town.getUUID()) != WarSide.NONE) {
 
-                        saveSiegeChunkToDatabase(siegeChunk);
-
-                        return true;
-                    }
+                // Give fortress chunks higher health
+                int maxHealth = plugin.getConfig().getInt("siege-settings.town-chunk-health", 10);
+                if (townBlock.getType().getName().equals("fortress")) {
+                    maxHealth = plugin.getConfig().getInt("siege-settings.fortress-chunk-health", 100);
+                } else if (townBlock.isHomeBlock()) {
+                    maxHealth = plugin.getConfig().getInt("siege-settings.home-chunk-health", 50);
                 }
+                
+                // Make sure max health is always 1 or higher
+                maxHealth = Math.max(1, maxHealth);
+
+                // Create the chunk itself and save it to the database
+                SiegeChunk siegeChunk = new SiegeChunk();
+                siegeChunk.setWorld(townBlock.getWorld().getName());
+                siegeChunk.setX(townBlock.getCoord().getX());
+                siegeChunk.setZ(townBlock.getCoord().getZ());
+                siegeChunk.setMax_health(maxHealth);
+                siegeChunk.setCurrent_health((int) Math.round((double) maxHealth
+                        * plugin.getConfig().getDouble("siege-settings.health-start-percentage", 1d)));
+                siegeChunk.setTownBlock(townBlock);
+                siegeChunk.setWar_id(war.getId());
+
+                var key = siegeChunk.getChunkKey();
+                siegeChunks.put(key, siegeChunk);
+
+                saveSiegeChunkToDatabase(siegeChunk);
+
+                return true;
             }
         }
+
         return false;
     }
 
     //#endregion
 
     //#region Siege chunk removal
-    
+
     private void removeSiegeChunks(War war) {
-        List<String> keysToRemove = new ArrayList<>();
-        List<UUID> idsToRemove = new ArrayList<>();
+        Set<String> keysToRemoveFromMemory = new HashSet<>();
+        Set<UUID> idsToRemoveFromDatabase = new HashSet<>();
         for (var set : siegeChunks.entrySet()) {
             if (set.getValue().getWar_id().equals(war.getId())) {
-                keysToRemove.add(set.getKey());
-                idsToRemove.add(set.getValue().getId());
+                keysToRemoveFromMemory.add(set.getKey());
+                idsToRemoveFromDatabase.add(set.getValue().getId());
             }
         }
-        for (var key : keysToRemove) {
+        for (var key : keysToRemoveFromMemory) {
             siegeChunks.remove(key);
             var chunkBossBar = chunkBossBars.get(key);
             var viewers = chunkBossBarViewers.get(key);
@@ -270,7 +275,7 @@ public class SiegeManager implements Listener {
             chunkBossBarViewers.remove(key);
         }
 
-        for (var id : idsToRemove) {
+        for (var id : idsToRemoveFromDatabase) {
             deleteSiegeChunkFromDatabase(id);
         }
 
@@ -299,31 +304,25 @@ public class SiegeManager implements Listener {
         if (town == null)
             return;
 
-        var attackingPlayerList = war.getAttacking_players();
-        var attackingMercenaryList = war.getAttacking_mercenaries();
-        var defendingPlayerList = war.getDefending_players();
-        var defendingMercenaryList = war.getDefending_mercenaries();
+        UUID playerId = player.getUniqueId();
+        UUID townId = town.getUUID();
 
-        var attackingTownList = war.getAttacking_towns();
-        var defendingTownList = war.getDefending_towns();
+        WarSide playerWarSide = war.getPlayerWarSide(playerId);
+        WarSide townWarSide = war.getTownWarSide(townId);
 
-        String playerId = player.getUniqueId().toString();
-        String townId = town.getUUID().toString();
-
-        if (attackingPlayerList.contains(playerId) || attackingMercenaryList.contains(playerId)) {
-            // Player is an attacker. See if they are in an attacking or defending town.
-            if (attackingTownList.contains(townId)) {
+        if (playerWarSide == WarSide.ATTACKER) {
+            if (townWarSide == WarSide.ATTACKER) {
                 // Player is a town on his own side and should be defending
                 addPlayerToChunkPlayerList(siegeChunk, WarSide.DEFENDER, player);
-            } else if (defendingTownList.contains(townId)) {
+            } else if (townWarSide == WarSide.DEFENDER) {
                 // Player is a town on the opposing side and should be attacking
                 addPlayerToChunkPlayerList(siegeChunk, WarSide.ATTACKER, player);
             }
-        } else if (defendingPlayerList.contains(playerId) || defendingMercenaryList.contains(playerId)) {
-            if (attackingTownList.contains(townId)) {
+        } else if (playerWarSide == WarSide.DEFENDER) {
+            if (townWarSide == WarSide.ATTACKER) {
                 // Player is a town on the opposing side and should be attacking
                 addPlayerToChunkPlayerList(siegeChunk, WarSide.ATTACKER, player);
-            } else if (defendingTownList.contains(townId)) {
+            } else if (townWarSide == WarSide.DEFENDER) {
                 // Player is a town on his own side and should be defending
                 addPlayerToChunkPlayerList(siegeChunk, WarSide.DEFENDER, player);
             }
@@ -381,17 +380,16 @@ public class SiegeManager implements Listener {
                     BossBar.Color.YELLOW,
                     BossBar.Overlay.NOTCHED_10);
             chunkBossBars.put(chunk.getChunkKey(), chunkBossBar);
-            chunkBossBarViewers.put(chunk.getChunkKey(), new ArrayList<>());
+            chunkBossBarViewers.put(chunk.getChunkKey(), new HashSet<>());
         }
     }
 
     private void addPlayerToBossBar(Player player, String key) {
         if (!chunkBossBars.containsKey(key))
             createChunkBossBar(key);
+
         chunkBossBars.get(key).addViewer(player);
-        var viewers = chunkBossBarViewers.get(key);
-        if (!viewers.contains(player))
-            viewers.add(player);
+        chunkBossBarViewers.get(key).add(player);
     }
 
     private void updateBossBar(SiegeChunk chunk) {
@@ -469,7 +467,7 @@ public class SiegeManager implements Listener {
         var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
         siegeChunkDbService.createOrUpdateAsync(siegeChunk).thenAccept(success -> {
             if (!success) {
-                plugin.getLogger().severe("Failed to save siege chunk " + siegeChunk.getChunkKey() + " to database!");
+                Logger.logError("Failed to save siege chunk " + siegeChunk.getChunkKey() + " to database!");
             }
         });
         siegeChunk.setState_changed(false);
@@ -479,7 +477,7 @@ public class SiegeManager implements Listener {
         var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
         siegeChunkDbService.deleteAsync(id).thenAccept(success -> {
             if (!success) {
-                plugin.getLogger().severe("Failed to delete siege chunk " + id.toString() + " from database!");
+                Logger.logError("Failed to delete siege chunk " + id.toString() + " from database!");
             }
         });
     }

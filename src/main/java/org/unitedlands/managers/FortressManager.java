@@ -10,7 +10,6 @@ import org.unitedlands.classes.FortressZone;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.listeners.FortressZoneBlockDropListener;
-import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.util.Logger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
@@ -163,7 +162,7 @@ public class FortressManager implements Listener {
     @EventHandler
     public void onWarEnd(WarEndEvent event) {
 
-        List<String> townsWithoutWar = new ArrayList<>();
+        Set<UUID> townsWithoutWar = new HashSet<>();
         for (var townId : event.getWar().getAttacking_towns()) {
             if (!plugin.getWarManager().isTownInWar(townId))
                 townsWithoutWar.add(townId);
@@ -173,7 +172,7 @@ public class FortressManager implements Listener {
                 townsWithoutWar.add(townId);
         }
 
-        List<Town> towns = new ArrayList<>();
+        Set<Town> towns = new HashSet<>();
         towns.addAll(getTownsFromIds(townsWithoutWar));
 
         for (Town town : towns) {
@@ -191,10 +190,10 @@ public class FortressManager implements Listener {
         }
     }
 
-    private List<Town> getTownsFromIds(List<String> ids) {
+    private List<Town> getTownsFromIds(Set<UUID> ids) {
         List<Town> towns = new ArrayList<>();
-        for (String id : ids) {
-            Town town = TownyAPI.getInstance().getTown(UUID.fromString(id));
+        for (UUID id : ids) {
+            Town town = TownyAPI.getInstance().getTown(id);
             if (town != null)
                 towns.add(town);
         }
