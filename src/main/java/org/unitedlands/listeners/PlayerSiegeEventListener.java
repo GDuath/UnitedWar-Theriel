@@ -1,5 +1,7 @@
 package org.unitedlands.listeners;
 
+import java.util.HashMap;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -10,6 +12,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.ItemStack;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.util.Messenger;
 
@@ -30,6 +33,8 @@ public class PlayerSiegeEventListener implements Listener {
             return;
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
+
+        handleElytra(event.getPlayer());
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, toPlot);
     }
 
@@ -95,6 +100,27 @@ public class PlayerSiegeEventListener implements Listener {
                     Messenger.sendMessage(player, "§cYou can't use elytras in war zones!", true);
                 }
             }
+        }
+    }
+
+    private void handleElytra(Player player) {
+        if (!isPlayerSubjectToWarZone(player))
+            return;
+
+        if (!plugin.getConfig().getBoolean("warzone-pvp.disable-elytra", true))
+            return;
+
+        ItemStack chestplate = player.getInventory().getChestplate();
+
+        if (chestplate != null && chestplate.getType() == Material.ELYTRA) {
+            player.getInventory().setChestplate(null);
+
+            HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(chestplate);
+            for (ItemStack leftover : leftovers.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+            }
+
+            Messenger.sendMessage(player, "§cElytras are disabled in warzones. Your elytra has been removed and placed in your inventory.", true);
         }
     }
 
