@@ -12,6 +12,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.unitedlands.UnitedWar;
@@ -21,6 +22,7 @@ import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
+import org.unitedlands.listeners.TownyEventListener;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
 import org.unitedlands.util.Logger;
@@ -35,11 +37,16 @@ public class WarManager implements Listener {
 
     private final UnitedWar plugin;
 
+    private final TownyEventListener townyEventListener;
+
+    private boolean townyEventListenerRegistered;
+
     private Set<War> pendingWars = new HashSet<>();
     private Set<War> activeWars = new HashSet<>();
 
     public WarManager(UnitedWar plugin) {
         this.plugin = plugin;
+        this.townyEventListener = new TownyEventListener(plugin);
     }
 
     public void loadWars() {
@@ -105,6 +112,7 @@ public class WarManager implements Listener {
         assignWarLivesToParticipants(war);
         (new WarStartEvent(war)).callEvent();
 
+        registerWarListeners();
         sendWarStartNotification(war);
     }
 
@@ -192,6 +200,7 @@ public class WarManager implements Listener {
 
         pendingWars.add(war);
 
+        registerWarListeners();
         sendWarDeclatedNotification(attackingTown, defendingTown, war);
     }
 
@@ -306,6 +315,7 @@ public class WarManager implements Listener {
 
         (new WarEndEvent(war)).callEvent();
 
+        removeWarListeners();
         sendWarEndNotification(war);
     }
 
@@ -758,6 +768,8 @@ public class WarManager implements Listener {
 
     //#endregion
 
+    //#region War Lives
+
     private void assignWarLivesToParticipants(War war) {
         Set<UUID> allPlayers = new HashSet<>();
         allPlayers.addAll(war.getAttacking_players());
@@ -798,12 +810,14 @@ public class WarManager implements Listener {
         UUID playerId = event.getPlayer().getUniqueId();
         Resident resident = TownyUniverse.getInstance().getResident(playerId);
 
-        if (resident == null) return;
+        if (resident == null)
+            return;
 
         List<CustomDataField<?>> metadata = new ArrayList<>(resident.getMetadata());
         for (CustomDataField<?> field : metadata) {
             String key = field.getKey();
-            if (!key.startsWith("unitedwar_war_lives_")) continue;
+            if (!key.startsWith("unitedwar_war_lives_"))
+                continue;
 
             try {
                 UUID warId = UUID.fromString(key.replace("unitedwar_war_lives_", ""));
@@ -825,4 +839,24 @@ public class WarManager implements Listener {
         // Save changes if any metadata was removed
         TownyUniverse.getInstance().getDataSource().saveResident(resident);
     }
+
+    //#endregion
+
+    //#region Dynamic listeners
+
+    private void registerWarListeners() {
+        if (!townyEventListenerRegistered) {
+            Bukkit.getPluginManager().registerEvents(townyEventListener, plugin);
+            townyEventListenerRegistered = true;
+        }
+    }
+
+    private void removeWarListeners() {
+        if (townyEventListenerRegistered && !isAnyWarActive()) {
+            HandlerList.unregisterAll((Listener) townyEventListener);
+            townyEventListenerRegistered = false;
+        }
+    }
+
+    //#endregion
 }
