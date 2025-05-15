@@ -93,10 +93,10 @@ public class SiegeManager implements Listener {
 
                 if (enabled == false) {
                     Logger.log("Sieges and griefing disabled for " + town.getName());
-                    plugin.getFortressManager().disableGriefing(town);
+                    plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "off");
                 } else {
                     Logger.log("Sieges and griefing enabled for " + town.getName());
-                    plugin.getFortressManager().enableGriefing(town);
+                    plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "on");
                 }
             }
         }

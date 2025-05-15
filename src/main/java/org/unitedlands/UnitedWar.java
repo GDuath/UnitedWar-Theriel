@@ -11,7 +11,7 @@ import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.managers.ChunkBackupManager;
 import org.unitedlands.managers.DatabaseManager;
-import org.unitedlands.managers.FortressManager;
+import org.unitedlands.managers.GriefZoneManager;
 import org.unitedlands.managers.MobilisationManager;
 import org.unitedlands.managers.SiegeManager;
 import org.unitedlands.managers.WarDeclarationManager;
@@ -39,7 +39,7 @@ public class UnitedWar extends JavaPlugin {
     private WarDeclarationManager warDeclarationManager;
     private SiegeManager siegeManager;
     private ChunkBackupManager chunkBackupManager;
-    private FortressManager fortressManager;
+    private GriefZoneManager griefZoneManager;
     private TaskScheduler taskScheduler;
     private WarScheduler warScheduler;
 
@@ -77,7 +77,7 @@ public class UnitedWar extends JavaPlugin {
         warDeclarationManager = new WarDeclarationManager(this);
         siegeManager = new SiegeManager(this);
         chunkBackupManager = new ChunkBackupManager(this);
-        fortressManager = new FortressManager(this);
+        griefZoneManager = new GriefZoneManager(this);
     }
 
     private void createSchedulers() {
@@ -92,7 +92,7 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
         getServer().getPluginManager().registerEvents(siegeManager, this);
-        getServer().getPluginManager().registerEvents(fortressManager, this);
+        getServer().getPluginManager().registerEvents(griefZoneManager, this);
         getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
     }
 
@@ -127,8 +127,8 @@ public class UnitedWar extends JavaPlugin {
         return siegeManager;
     }
 
-    public FortressManager getFortressManager() {
-        return fortressManager;
+    public GriefZoneManager getGriefZoneManager() {
+        return griefZoneManager;
     }
 
     public ChunkBackupManager getChunkBackupManager() {

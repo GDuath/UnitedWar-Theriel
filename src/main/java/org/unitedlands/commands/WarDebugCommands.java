@@ -127,14 +127,14 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
     }
 
     private void handleChunkrestore(CommandSender sender, String[] args) {
-        if (args.length < 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /wd restorechunkbackup <foldername>",
-                    true);
-            return;
-        }
+        // if (args.length < 2) {
+        //     Messenger.sendMessage((Player) sender, "Usage: /wd restorechunkbackup <foldername>",
+        //             true);
+        //     return;
+        // }
 
-        plugin.getChunkBackupManager().startRegenerationFromFolder(args[1]);
-        Messenger.sendMessage((Player) sender, "§7Chunk backup started.", true);
+        // plugin.getChunkBackupManager().startRegenerationFromFolder(args[1]);
+        // Messenger.sendMessage((Player) sender, "§7Chunk backup started.", true);
     }
 
     private void handleEndWar(CommandSender sender, String[] args) {
