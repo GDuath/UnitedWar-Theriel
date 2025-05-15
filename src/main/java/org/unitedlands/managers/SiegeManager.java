@@ -45,6 +45,8 @@ public class SiegeManager implements Listener {
     private Map<String, BossBar> chunkBossBars = new HashMap<String, BossBar>();
     private Map<String, Set<Player>> chunkBossBarViewers = new HashMap<String, Set<Player>>();
 
+    private Map<UUID, Boolean> siegeEnabled = new HashMap<UUID, Boolean>();
+
     public SiegeManager(UnitedWar plugin) {
         this.plugin = plugin;
         this.playerSiegeEventListener = new PlayerSiegeEventListener(plugin);
@@ -58,6 +60,7 @@ public class SiegeManager implements Listener {
                 var townBlock = TownyAPI.getInstance().getTownBlock(location);
                 if (townBlock != null) {
                     chunk.setTownBlock(townBlock);
+                    chunk.setTown(townBlock.getTownOrNull());
                     siegeChunks.put(chunk.getChunkKey(), chunk);
                     createChunkBossBar(chunk);
                     updateBossBar(chunk);
@@ -70,17 +73,49 @@ public class SiegeManager implements Listener {
         });
     }
 
+    public void toggleSieges(War war, WarSide warSide, boolean enabled) {
+
+        Set<UUID> towns = new HashSet<>();
+
+        if (warSide == WarSide.ATTACKER)
+            towns = war.getAttacking_towns();
+        else if (warSide == WarSide.DEFENDER)
+            towns = war.getDefending_towns();
+
+        for (UUID townId : towns) {
+            var currentStatus = siegeEnabled.computeIfAbsent(townId, k -> true);
+            if (!currentStatus.equals(enabled)) {
+                siegeEnabled.put(townId, enabled);
+
+                var town = TownyAPI.getInstance().getTown(townId);
+                if (town == null)
+                    continue;
+
+                if (enabled == false) {
+                    Logger.log("Sieges and griefing disabled for " + town.getName());
+                    plugin.getFortressManager().disableGriefing(town);
+                } else {
+                    Logger.log("Sieges and griefing enabled for " + town.getName());
+                    plugin.getFortressManager().enableGriefing(town);
+                }
+            }
+        }
+    }
+
     public void handleSiegeChunks() {
         if (!siegeChunks.isEmpty()) {
             for (var set : siegeChunks.entrySet()) {
-                var chunk = set.getValue();
+                var siegeChunk = set.getValue();
 
-                if (chunk.getOccupied())
+                if (siegeChunk.getOccupied())
+                    continue;
+
+                if (!siegeEnabled.get(siegeChunk.getTown().getUUID()))
                     continue;
 
                 // Change health depending on relative player counts
-                var attackingPlayers = chunk.getPlayersInChunk().get(WarSide.ATTACKER);
-                var defendingPlayers = chunk.getPlayersInChunk().get(WarSide.DEFENDER);
+                var attackingPlayers = siegeChunk.getPlayersInChunk().get(WarSide.ATTACKER);
+                var defendingPlayers = siegeChunk.getPlayersInChunk().get(WarSide.DEFENDER);
 
                 Integer healthChange = 0;
                 if (attackingPlayers.size() > defendingPlayers.size()) {
@@ -98,15 +133,15 @@ public class SiegeManager implements Listener {
                 }
 
                 // Don't heal further than max health.
-                if (chunk.getCurrent_health() + healthChange > chunk.getMax_health()) {
-                    healthChange = chunk.getMax_health() - chunk.getCurrent_health();
+                if (siegeChunk.getCurrent_health() + healthChange > siegeChunk.getMax_health()) {
+                    healthChange = siegeChunk.getMax_health() - siegeChunk.getCurrent_health();
                 }
 
                 var finalHealthChange = healthChange;
                 if (finalHealthChange != 0) {
                     SiegeChunkHealthChangeEvent event = new SiegeChunkHealthChangeEvent() {
                         {
-                            setChunk(chunk);
+                            setChunk(siegeChunk);
                             setHealthChange(finalHealthChange);
                         }
                     };
@@ -118,30 +153,31 @@ public class SiegeManager implements Listener {
                         return;
 
                     // Set new health, but not higher than the max health
-                    chunk.setCurrent_health(
-                            Math.min(chunk.getMax_health(), chunk.getCurrent_health() + event.getHealthChange()));
+                    siegeChunk.setCurrent_health(
+                            Math.min(siegeChunk.getMax_health(),
+                                    siegeChunk.getCurrent_health() + event.getHealthChange()));
 
-                    if (chunk.getCurrent_health() <= 0) {
-                        chunk.setCurrent_health(0);
-                        chunk.setOccupied(true);
-                        chunk.setOccupation_time(System.currentTimeMillis());
+                    if (siegeChunk.getCurrent_health() <= 0) {
+                        siegeChunk.setCurrent_health(0);
+                        siegeChunk.setOccupied(true);
+                        siegeChunk.setOccupation_time(System.currentTimeMillis());
 
-                        War war = plugin.getWarManager().getWarById(chunk.getWar_id());
+                        War war = plugin.getWarManager().getWarById(siegeChunk.getWar_id());
 
                         // The capture will be attributed to the first player in the attacker list (for being 
                         // in the chunk for the longest uninterrupted time)  
-                        UUID firstAttackingPlayer = chunk.getPlayersInChunk().get(WarSide.ATTACKER).getFirst();
+                        UUID firstAttackingPlayer = siegeChunk.getPlayersInChunk().get(WarSide.ATTACKER).getFirst();
 
                         Integer reward = 0;
                         WarScoreEvent warScoreEvent = null;
                         String message = "score-capture-attacker";
 
-                        if (chunk.getTownBlock().getTypeName().equals("fortress")) {
+                        if (siegeChunk.getTownBlock().getTypeName().equals("fortress")) {
                             reward = plugin.getConfig().getInt("default-rewards.siege-fortress-capture", 100);
                             message = "score-capture-fortress-attacker";
                             warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
                                     WarScoreType.SIEGE_FORTRESS_CAPTURE, reward);
-                        } else if (chunk.getTownBlock().isHomeBlock()) {
+                        } else if (siegeChunk.getTownBlock().isHomeBlock()) {
                             reward = plugin.getConfig().getInt("default-rewards.siege-home-capture", 50);
                             message = "score-capture-home-attacker";
                             warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
@@ -154,15 +190,15 @@ public class SiegeManager implements Listener {
                         warScoreEvent.callEvent();
 
                         if (!event.isCancelled())
-                            sendCaptureNotifications(chunk, reward, message);
+                            sendCaptureNotifications(siegeChunk, reward, message);
                     }
 
-                    chunk.setState_changed(true);
-                    updateBossBar(chunk);
+                    siegeChunk.setState_changed(true);
+                    updateBossBar(siegeChunk);
                 }
 
-                if (chunk.getState_changed())
-                    saveSiegeChunkToDatabase(chunk);
+                if (siegeChunk.getState_changed())
+                    saveSiegeChunkToDatabase(siegeChunk);
             }
         }
     }
@@ -223,7 +259,7 @@ public class SiegeManager implements Listener {
                 } else if (townBlock.isHomeBlock()) {
                     maxHealth = plugin.getConfig().getInt("siege-settings.home-chunk-health", 50);
                 }
-                
+
                 // Make sure max health is always 1 or higher
                 maxHealth = Math.max(1, maxHealth);
 
@@ -236,6 +272,7 @@ public class SiegeManager implements Listener {
                 siegeChunk.setCurrent_health((int) Math.round((double) maxHealth
                         * plugin.getConfig().getDouble("siege-settings.health-start-percentage", 1d)));
                 siegeChunk.setTownBlock(townBlock);
+                siegeChunk.setTown(townBlock.getTownOrNull());
                 siegeChunk.setWar_id(war.getId());
 
                 var key = siegeChunk.getChunkKey();
@@ -488,6 +525,11 @@ public class SiegeManager implements Listener {
 
     public String getChunkKey(TownBlock block) {
         return block.getWorld().getName() + ":" + block.getCoord().getX() + ":" + block.getCoord().getZ();
+    }
+
+    public boolean isSiegeEnabled(UUID townId)
+    {
+        return siegeEnabled.computeIfAbsent(townId, k -> false);
     }
 
     //#endregion

@@ -1,6 +1,7 @@
 package org.unitedlands.managers;
 
 import java.util.*;
+
 import org.bukkit.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -10,7 +11,6 @@ import org.unitedlands.classes.FortressZone;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.listeners.FortressZoneBlockDropListener;
-import org.unitedlands.util.Logger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
@@ -57,51 +57,113 @@ public class FortressManager implements Listener {
                         Set<Chunk> zoneChunks = getChunksInRadius(centerChunk, radius);
 
                         if (!zoneChunks.isEmpty()) {
-                            Logger.log("Found " + zoneChunks.size() + " fortress chunks!");
+                            var fortressZone = new FortressZone(centerChunk, zoneChunks);
                             townFortressZones
                                     .computeIfAbsent(town, k -> new ArrayList<>())
-                                    .add(new FortressZone(centerChunk, zoneChunks));
+                                    .add(fortressZone);
 
-                            enableGriefing(town, zoneChunks);
                         }
+                    }
+
+                    createSnapshot(town);
+
+                    if (plugin.getSiegeManager().isSiegeEnabled(town.getUUID())) {
+                        enableGriefing(town);
+                    } else {
+                        disableGriefing(town);
                     }
                 }
             });
         });
     }
 
-    private void enableGriefing(Town town, Set<Chunk> chunks) {
+    public void enableGriefing(Town town) {
 
-        List<TownBlock> townBlocksInZone = new ArrayList<>();
-        for (Chunk chunk : chunks) {
-            TownBlock townBlock = getTownBlock(chunk);
-            if (townBlock != null) {
-                townBlock.setPermissions(
-                        "residentbuild,residentdestroy,residentswitch,residentitemuse," +
-                                "outsiderbuild,outsiderdestroy,outsiderswitch,outsideritemuse," +
-                                "nationbuild,nationdestroy,nationswitch,nationitemuse," +
-                                "allybuild,allydestroy,allyswitch,allyitemuse," +
-                                "pvp,fire,explosion");
-                townBlocksInZone.add(townBlock);
+        if (!townFortressZones.containsKey(town))
+            return;
+
+        var zones = townFortressZones.get(town);
+        for (var zone : zones) {
+
+            List<TownBlock> townBlocksInZone = new ArrayList<>();
+            for (Chunk chunk : zone.getZoneChunks()) {
+                TownBlock townBlock = getTownBlock(chunk);
+                if (townBlock != null) {
+                    townBlock.setPermissions(
+                            "residentbuild,residentdestroy,residentswitch,residentitemuse," +
+                                    "outsiderbuild,outsiderdestroy," +
+                                    "nationbuild,nationdestroy,nationswitch,nationitemuse," +
+                                    "allybuild,allydestroy,allyswitch,allyitemuse," +
+                                    "pvp,fire,explosion");
+                    townBlocksInZone.add(townBlock);
+                }
             }
         }
-
-        if (!plugin.getChunkBackupManager().sessionFolderExists(town.getUUID()))
-            plugin.getChunkBackupManager().snapshotChunks(townBlocksInZone, town.getUUID());
     }
 
-    private void disableGriefing(Town town, Set<Chunk> chunks) {
-        List<TownBlock> townBlocksInZone = new ArrayList<>();
-        for (Chunk chunk : chunks) {
-            TownBlock townBlock = getTownBlock(chunk);
-            if (townBlock != null) {
-                townBlock.setPermissions("denyall");
-                townBlocksInZone.add(townBlock);
+    public void createSnapshot(Town town) {
+
+        if (!townFortressZones.containsKey(town))
+            return;
+
+        var zones = townFortressZones.get(town);
+        for (var zone : zones) {
+
+            List<TownBlock> townBlocksInZone = new ArrayList<>();
+            for (Chunk chunk : zone.getZoneChunks()) {
+                TownBlock townBlock = getTownBlock(chunk);
+                if (townBlock != null) {
+                    townBlocksInZone.add(townBlock);
+                }
             }
+
+            if (!plugin.getChunkBackupManager().sessionFolderExists(town.getUUID()))
+                plugin.getChunkBackupManager().snapshotChunks(townBlocksInZone, town.getUUID());
+
+        }
+    }
+
+    public void disableGriefing(Town town) {
+        if (!townFortressZones.containsKey(town)) {
+            return;
         }
 
-        if (plugin.getChunkBackupManager().sessionFolderExists(town.getUUID()))
-            plugin.getChunkBackupManager().restoreSnapshots(townBlocksInZone, town.getUUID());
+        var zones = townFortressZones.get(town);
+        for (var zone : zones) {
+            List<TownBlock> townBlocksInZone = new ArrayList<>();
+            for (Chunk chunk : zone.getZoneChunks()) {
+                TownBlock townBlock = getTownBlock(chunk);
+                if (townBlock != null) {
+                    townBlock.setPermissions("residentbuild,residentdestroy,residentswitch,residentitemuse," +
+                            "nationswitch,nationitemuse," +
+                            "allyswitch,allyitemuse,");
+                    townBlocksInZone.add(townBlock);
+                }
+            }
+        }
+    }
+
+    public void restoreSnapshot(Town town) {
+        if (!townFortressZones.containsKey(town)) {
+            return;
+        }
+
+        var zones = townFortressZones.get(town);
+        for (var zone : zones) {
+
+            List<TownBlock> townBlocksInZone = new ArrayList<>();
+            for (Chunk chunk : zone.getZoneChunks()) {
+                TownBlock townBlock = getTownBlock(chunk);
+                if (townBlock != null) {
+                    townBlocksInZone.add(townBlock);
+                }
+            }
+
+            if (plugin.getChunkBackupManager().sessionFolderExists(town.getUUID()))
+                plugin.getChunkBackupManager().restoreSnapshots(townBlocksInZone, town.getUUID());
+
+        }
+
     }
 
     private TownBlock getTownBlock(Chunk chunk) {
@@ -174,12 +236,8 @@ public class FortressManager implements Listener {
         towns.addAll(getTownsFromIds(townsWithoutWar));
 
         for (Town town : towns) {
-            var fortressZones = townFortressZones.get(town);
-            if (fortressZones == null || fortressZones.isEmpty())
-                continue;
-            for (var zone : fortressZones) {
-                disableGriefing(town, zone.getZoneChunks());
-            }
+            disableGriefing(town);
+            restoreSnapshot(town);
         }
 
         if (zoneBlockDropListenerRegistered && !plugin.getWarManager().isAnyWarActive()) {
