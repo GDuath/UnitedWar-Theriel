@@ -72,6 +72,13 @@ public class WarManager implements Listener {
 
     public void handleWars() {
 
+        // Online player check needs to be done before a pending war gets activated
+        Set<UUID> onlinePlayers = Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId)
+                .collect(Collectors.toSet());
+        for (War war : activeWars) {
+            checkOnlinePlayers(war, onlinePlayers);
+        }
+
         Set<War> startedWars = new HashSet<>();
         for (War war : pendingWars) {
             if (warCanBeStarted(war)) {
@@ -87,6 +94,7 @@ public class WarManager implements Listener {
 
         Set<War> endedWars = new HashSet<>();
         for (War war : activeWars) {
+            checkOnlinePlayers(war, onlinePlayers);
             if (warCanBeEnded(war)) {
                 endWar(war);
                 endedWars.add(war);
@@ -95,6 +103,32 @@ public class WarManager implements Listener {
                 saveWarToDatabase(war);
         }
         activeWars.removeAll(endedWars);
+    }
+
+    private void checkOnlinePlayers(War war, Set<UUID> onlinePlayers) {
+        boolean attackerOnline = false;
+        boolean defenderOnline = false;
+
+        var attackingPlayers = war.getAttacking_players();
+        attackingPlayers.addAll(war.getAttacking_mercenaries());
+        for (UUID playerId : onlinePlayers) {
+            if (attackingPlayers.contains(playerId)) {
+                attackerOnline = true;
+                break;
+            }
+        }
+
+        var defendingPlayers = war.getDefending_players();
+        defendingPlayers.addAll(war.getDefending_mercenaries());
+        for (UUID playerId : onlinePlayers) {
+            if (defendingPlayers.contains(playerId)) {
+                defenderOnline = true;
+                break;
+            }
+        }
+
+        plugin.getSiegeManager().toggleSieges(war, WarSide.ATTACKER, attackerOnline);
+        plugin.getSiegeManager().toggleSieges(war, WarSide.DEFENDER, defenderOnline);
     }
 
     private boolean warCanBeStarted(War war) {

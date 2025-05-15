@@ -10,6 +10,7 @@ import org.unitedlands.classes.WarSide;
 
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 
 @DatabaseTable(tableName = "siege_chunks")
@@ -41,6 +42,7 @@ public class SiegeChunk implements Identifiable {
 
     private transient War war;
     private transient TownBlock townBlock;
+    private transient Town town;
 
     private transient Map<WarSide, LinkedHashSet<UUID>> playersInChunk;
 
@@ -148,6 +150,14 @@ public class SiegeChunk implements Identifiable {
 
     public void setTownBlock(TownBlock townBlock) {
         this.townBlock = townBlock;
+    }
+
+    public Town getTown() {
+        return town;
+    }
+
+    public void setTown(Town town) {
+        this.town = town;
     }
 
     public Map<WarSide, LinkedHashSet<UUID>> getPlayersInChunk() {
