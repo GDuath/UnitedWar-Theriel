@@ -2,9 +2,12 @@ package org.unitedlands.commands;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,10 +18,17 @@ import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.models.War;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
+import com.google.common.collect.Sets;
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.exceptions.AlreadyRegisteredException;
+import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.Town;
+import com.palmergames.bukkit.towny.object.TownBlock;
+import com.palmergames.bukkit.towny.object.TownyWorld;
 
 public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
@@ -29,6 +39,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
     }
 
     private List<String> debugSubcommands = Arrays.asList(
+            "createwarcamp",
             "createwar",
             "createwardeclaration",
             "resetevent",
@@ -56,7 +67,8 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 options = debugSubcommands;
                 break;
             case 2:
-                if (args[0].equals("createwar") || args[0].equals("createwardeclaration")) {
+                if (args[0].equals("createwar") || args[0].equals("createwardeclaration")
+                        || args[0].equals("createwarcamp")) {
                     options = TownyAPI.getInstance().getTowns().stream().map(Town::getName)
                             .collect(Collectors.toList());
                 }
@@ -104,6 +116,9 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             case "createwardeclaration":
                 handleCreateWarDeclaration(sender, args);
                 break;
+            case "createwarcamp":
+                handleCreateWarCamp(sender, args);
+                break;
             case "resetevent":
                 handleEventReset(sender);
                 break;
@@ -124,6 +139,43 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
         }
 
         return true;
+    }
+
+    private void handleCreateWarCamp(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            Messenger.sendMessage((Player) sender, "Usage: /wd createwarcamp <townname>",
+                    true);
+            return;
+        }
+
+        Player player = (Player) sender;
+        Coord coord = Coord.parseCoord(player);
+
+        Town town = TownyAPI.getInstance().getTown(args[1]);
+        if (town == null) {
+            Messenger.sendMessage((Player) sender, "Town not found.", true);
+            return;
+        }
+
+        TownyWorld townyWorld = TownyAPI.getInstance().getTownyWorld(player.getLocation().getWorld());
+        if (townyWorld == null)
+            return;
+
+        var existingTownBlock = TownyAPI.getInstance().getTownBlock(player);
+        if (existingTownBlock != null && existingTownBlock.getTownOrNull() != null) {
+            Messenger.sendMessage((Player) sender, "§cThis plot already belongs to a town!", true);
+            return;
+        }
+
+        TownBlock townBlock = new TownBlock(coord.getX(), coord.getZ(), townyWorld);
+        townBlock.setTown(town);
+        townBlock.setType("warcamp");
+        townBlock.save();
+
+        Set<TownBlock> townBlockList = Set.of(townBlock);
+        plugin.getChunkBackupManager().snapshotChunks(townBlockList, town.getUUID(), "warcamp");
+
+        
     }
 
     private void handleChunkrestore(CommandSender sender, String[] args) {

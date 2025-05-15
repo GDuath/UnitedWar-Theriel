@@ -133,7 +133,7 @@ siege-settings:
   fortress-chunk-health: 100
 
   grief-zone-settings:
-    camp:
+    warcamp:
       radius: 0
       war-start-snapshot: false
       war-end-restore: true

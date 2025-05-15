@@ -40,7 +40,7 @@ public class GriefZoneManager implements Listener {
         this.griefZoneBlockDropListener = new GriefZoneBlockDropListener();
     }
 
-    public void registerGriefZonesOnWarStart(List<UUID> townIds) {
+    public void registerGriefZonesOnWarStart(Set<UUID> townIds) {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 
@@ -193,7 +193,7 @@ public class GriefZoneManager implements Listener {
 
     @EventHandler
     public void onWarStart(WarStartEvent event) {
-        List<UUID> townIds = new ArrayList<>();
+        Set<UUID> townIds = new HashSet<>();
         townIds.addAll(event.getWar().getAttacking_towns());
         townIds.addAll(event.getWar().getDefending_towns());
 
