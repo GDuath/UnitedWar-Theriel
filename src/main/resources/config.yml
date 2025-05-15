@@ -117,7 +117,6 @@ default-rewards:
 ###################################################
 
 siege-settings:
-  fortress-zone-radius: 2
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
   # If false, the health decay and restoration only apply once per team in the majority
@@ -132,6 +131,20 @@ siege-settings:
   town-chunk-health: 10
   home-chunk-health: 50
   fortress-chunk-health: 100
+
+  grief-zone-settings:
+    camp:
+      radius: 0
+      war-start-snapshot: false
+      war-end-restore: true
+      griefing-on-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,outsiderbuild,outsiderdestroy,nationbuild,nationdestroy,nationswitch,nationitemuse,allybuild,allydestroy,allyswitch,allyitemuse,pvp,fire,explosion"
+      griefing-off-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,nationswitch,nationitemuse,allyswitch,allyitemuse"
+    fortress:
+      radius: 2
+      war-start-snapshot: true
+      war-end-restore: true
+      griefing-on-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,outsiderbuild,outsiderdestroy,nationbuild,nationdestroy,nationswitch,nationitemuse,allybuild,allydestroy,allyswitch,allyitemuse,pvp,fire,explosion"
+      griefing-off-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,nationswitch,nationitemuse,allyswitch,allyitemuse"
 
 ###################################################
 # +---------------------------------------------+ #
