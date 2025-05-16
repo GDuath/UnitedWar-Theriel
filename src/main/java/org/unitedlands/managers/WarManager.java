@@ -37,16 +37,11 @@ public class WarManager implements Listener {
 
     private final UnitedWar plugin;
 
-    private final TownyEventListener townyEventListener;
-
-    private boolean townyEventListenerRegistered;
-
     private Set<War> pendingWars = new HashSet<>();
     private Set<War> activeWars = new HashSet<>();
 
     public WarManager(UnitedWar plugin) {
         this.plugin = plugin;
-        this.townyEventListener = new TownyEventListener(plugin);
     }
 
     public void loadWars() {
@@ -146,7 +141,6 @@ public class WarManager implements Listener {
         assignWarLivesToParticipants(war);
         (new WarStartEvent(war)).callEvent();
 
-        registerWarListeners();
         sendWarStartNotification(war);
     }
 
@@ -234,7 +228,6 @@ public class WarManager implements Listener {
 
         pendingWars.add(war);
 
-        registerWarListeners();
         sendWarDeclatedNotification(attackingTown, defendingTown, war);
     }
 
@@ -349,7 +342,6 @@ public class WarManager implements Listener {
 
         (new WarEndEvent(war)).callEvent();
 
-        removeWarListeners();
         sendWarEndNotification(war);
     }
 
@@ -737,6 +729,22 @@ public class WarManager implements Listener {
         return false;
     }
 
+    public boolean isTownInPendingWar(UUID townId) {
+        for (War war : pendingWars) {
+            if (war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isTownInActiveWar(UUID townId) {
+        for (War war : activeWars) {
+            if (war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId))
+                return true;
+        }
+        return false;
+    }
+
     //#endregion
 
     //#region Score Listener
@@ -876,21 +884,4 @@ public class WarManager implements Listener {
 
     //#endregion
 
-    //#region Dynamic listeners
-
-    private void registerWarListeners() {
-        if (!townyEventListenerRegistered) {
-            Bukkit.getPluginManager().registerEvents(townyEventListener, plugin);
-            townyEventListenerRegistered = true;
-        }
-    }
-
-    private void removeWarListeners() {
-        if (townyEventListenerRegistered && !isAnyWarActive()) {
-            HandlerList.unregisterAll((Listener) townyEventListener);
-            townyEventListenerRegistered = false;
-        }
-    }
-
-    //#endregion
 }

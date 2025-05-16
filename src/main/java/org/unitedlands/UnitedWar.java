@@ -9,6 +9,7 @@ import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.ContainerPlacementListener;
 import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
+import org.unitedlands.listeners.TownyEventListener;
 import org.unitedlands.managers.ChunkBackupManager;
 import org.unitedlands.managers.DatabaseManager;
 import org.unitedlands.managers.GriefZoneManager;
@@ -89,6 +90,7 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ServerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
         getServer().getPluginManager().registerEvents(new ContainerPlacementListener(this), this);
+        getServer().getPluginManager().registerEvents(new TownyEventListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
         getServer().getPluginManager().registerEvents(siegeManager, this);

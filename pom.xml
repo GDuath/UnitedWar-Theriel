@@ -31,6 +31,10 @@
       <id>glaremasters repo</id>
       <url>https://repo.glaremasters.me/repository/towny/</url>
     </repository>
+    <repository>
+      <id>enginehub</id>
+      <url>https://maven.enginehub.org/repo/</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -66,6 +70,13 @@
       <version>9.2.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.sk89q.worldedit</groupId>
+      <artifactId>worldedit-bukkit</artifactId>
+      <version>7.4.0-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -84,26 +95,26 @@
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.5.0</version>
         <executions>
-            <execution>
-                <phase>package</phase>
-                <goals>
-                    <goal>shade</goal>
-                </goals>
-                <configuration>
-                    <relocations>
-                        <relocation>
-                            <pattern>com.j256.ormlite</pattern>
-                            <shadedPattern>org.unitedlands.libs.ormlite</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.mysql</pattern>
-                            <shadedPattern>org.unitedlands.libs.mysql</shadedPattern>
-                        </relocation>
-                    </relocations>
-                </configuration>
-            </execution>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>com.j256.ormlite</pattern>
+                  <shadedPattern>org.unitedlands.libs.ormlite</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.mysql</pattern>
+                  <shadedPattern>org.unitedlands.libs.mysql</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
         </executions>
-    </plugin>
+      </plugin>
     </plugins>
   </build>
 </project>

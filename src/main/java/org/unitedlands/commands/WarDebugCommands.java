@@ -1,10 +1,17 @@
 package org.unitedlands.commands;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,10 +22,38 @@ import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.models.War;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
+import com.google.common.collect.Sets;
+import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.exceptions.AlreadyRegisteredException;
+import com.palmergames.bukkit.towny.exceptions.TownyException;
+import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.Town;
+import com.palmergames.bukkit.towny.object.TownBlock;
+import com.palmergames.bukkit.towny.object.TownyWorld;
+import com.palmergames.bukkit.towny.object.WorldCoord;
+import com.palmergames.bukkit.towny.tasks.TownClaim;
+import com.palmergames.bukkit.towny.utils.AreaSelectionUtil;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.WorldEditException;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.extent.clipboard.Clipboard;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
+import com.sk89q.worldedit.function.operation.Operation;
+import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.math.transform.AffineTransform;
+import com.sk89q.worldedit.session.ClipboardHolder;
+import com.sk89q.worldedit.session.SessionManager;
+import com.sk89q.worldedit.world.World;
 
 public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
@@ -29,6 +64,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
     }
 
     private List<String> debugSubcommands = Arrays.asList(
+            "createwarcamp",
             "createwar",
             "createwardeclaration",
             "resetevent",
@@ -56,7 +92,8 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 options = debugSubcommands;
                 break;
             case 2:
-                if (args[0].equals("createwar") || args[0].equals("createwardeclaration")) {
+                if (args[0].equals("createwar") || args[0].equals("createwardeclaration")
+                        || args[0].equals("createwarcamp")) {
                     options = TownyAPI.getInstance().getTowns().stream().map(Town::getName)
                             .collect(Collectors.toList());
                 }
@@ -104,6 +141,9 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             case "createwardeclaration":
                 handleCreateWarDeclaration(sender, args);
                 break;
+            case "createwarcamp":
+                handleCreateWarCamp(sender, args);
+                break;
             case "resetevent":
                 handleEventReset(sender);
                 break;
@@ -124,6 +164,106 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
         }
 
         return true;
+    }
+
+    private void handleCreateWarCamp(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            Messenger.sendMessage((Player) sender, "Usage: /wd createwarcamp <townname>",
+                    true);
+            return;
+        }
+
+        Player player = (Player) sender;
+        Coord coord = Coord.parseCoord(player);
+
+        Town town = TownyAPI.getInstance().getTown(args[1]);
+        if (town == null) {
+            Messenger.sendMessage((Player) sender, "Town not found.", true);
+            return;
+        }
+
+        if (!plugin.getWarManager().isTownInPendingWar(town.getUUID())
+                || plugin.getWarManager().isTownInActiveWar(town.getUUID())) {
+            Messenger.sendMessage((Player) sender,
+                    "§cYou can only do this in the warmup phase of a war, with no other wars active.", true);
+            return;
+        }
+
+        TownyWorld townyWorld = TownyAPI.getInstance().getTownyWorld(player.getLocation().getWorld());
+        if (townyWorld == null)
+            return;
+
+        var existingTownBlock = TownyAPI.getInstance().getTownBlock(player);
+        if (existingTownBlock != null && existingTownBlock.getTownOrNull() != null) {
+            Messenger.sendMessage((Player) sender, "§cThis plot already belongs to a town!", true);
+            return;
+        }
+
+        TownBlock townBlock = new TownBlock(coord.getX(), coord.getZ(), townyWorld);
+        townBlock.setTown(town);
+        townBlock.setType("warcamp");
+        townBlock.save();
+
+        Set<TownBlock> townBlockList = Set.of(townBlock);
+        plugin.getChunkBackupManager().snapshotChunks(townBlockList, town.getUUID(), "warcamp");
+
+        // Create the camp itself a bit later to give the ChunkBackupManager enough time to create the snapshot
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+
+            int numTemplates = 5;
+            var rnd = (int) (Math.round(Math.random() * (numTemplates - 1)) + 1);
+
+            String path = plugin.getDataFolder().getPath() + File.separator + "schematics" + File.separator
+                    + "Camp" + rnd + ".schem";
+            File file = new File(path);
+            if (!file.exists()) {
+                Logger.logError("Schematic " + path + " could not be loaded.");
+                return;
+            }
+
+            Clipboard clipboard = null;
+
+            ClipboardFormat format = ClipboardFormats.findByFile(file);
+            try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+                clipboard = reader.read();
+            } catch (IOException ioException) {
+                Logger.logError("Could not read schematic file.");
+                return;
+            }
+
+            if (clipboard == null)
+                return;
+
+            SessionManager manager = WorldEdit.getInstance().getSessionManager();
+            LocalSession localSession = manager.get(BukkitAdapter.adapt(player));
+
+            Chunk chunk = player.getChunk();
+            var pasteLocX = (chunk.getX() * 16) + 8;
+            var pasteLocZ = (chunk.getZ() * 16) + 8;
+            var pasteLocY = player.getWorld().getHighestBlockYAt(pasteLocX, pasteLocZ) + 1;
+
+            World world = BukkitAdapter.adapt(player.getWorld());
+
+            try (EditSession editSession = WorldEdit.getInstance().newEditSession(world)) {
+                ClipboardHolder holder = new ClipboardHolder(clipboard);
+
+                AffineTransform transform = new AffineTransform().rotateY(Math.round(Math.random() * 3) * 90d);
+                holder.setTransform(transform);
+
+                Operation operation = holder.createPaste(editSession)
+                        .to(BlockVector3.at(pasteLocX, pasteLocY, pasteLocZ))
+                        .ignoreAirBlocks(false)
+                        .build();
+
+                Operations.complete(operation);
+                localSession.remember(editSession);
+            } catch (WorldEditException exception) {
+                Logger.logError(exception.getMessage());
+                return;
+            }
+        }, 20);
+
     }
 
     private void handleChunkrestore(CommandSender sender, String[] args) {
