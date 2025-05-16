@@ -7,9 +7,12 @@ import org.unitedlands.UnitedWar;
 import com.palmergames.bukkit.towny.event.CancellableTownyEvent;
 import com.palmergames.bukkit.towny.event.NationPreAddTownEvent;
 import com.palmergames.bukkit.towny.event.NationRemoveAllyEvent;
+import com.palmergames.bukkit.towny.event.PlotPreChangeTypeEvent;
 import com.palmergames.bukkit.towny.event.PreDeleteNationEvent;
 import com.palmergames.bukkit.towny.event.PreDeleteTownEvent;
+import com.palmergames.bukkit.towny.event.TownClaimEvent;
 import com.palmergames.bukkit.towny.event.TownPreAddResidentEvent;
+import com.palmergames.bukkit.towny.event.TownPreClaimEvent;
 import com.palmergames.bukkit.towny.event.economy.NationPreTransactionEvent;
 import com.palmergames.bukkit.towny.event.economy.TownPreTransactionEvent;
 import com.palmergames.bukkit.towny.event.nation.NationPreAddAllyEvent;
@@ -20,6 +23,7 @@ import com.palmergames.bukkit.towny.event.town.TownKickEvent;
 import com.palmergames.bukkit.towny.event.town.TownLeaveEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreInvitePlayerEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreMergeEvent;
+import com.palmergames.bukkit.towny.event.town.TownPreUnclaimEvent;
 
 public class TownyEventListener implements Listener {
 
@@ -138,7 +142,6 @@ public class TownyEventListener implements Listener {
         }
     }
 
-    
     @EventHandler
     public void onResidentInvite(TownPreAddResidentEvent event) {
         var town = event.getTown();
@@ -188,6 +191,34 @@ public class TownyEventListener implements Listener {
         var town = event.getTown();
         if (plugin.getWarManager().isTownInWar(town.getUUID())) {
             cancelEvent(event);
+        }
+    }
+    //#endregion
+
+    //#region Plot events
+
+    @EventHandler
+    public void onClaim(TownPreClaimEvent event) {
+        var town = event.getTown();
+        if (plugin.getWarManager().isTownInWar(town.getUUID())) {
+            cancelEvent(event);
+        }
+    }
+
+    @EventHandler
+    public void onUnclaim(TownPreUnclaimEvent event) {
+        var town = event.getTown();
+        if (plugin.getWarManager().isTownInWar(town.getUUID())) {
+            cancelEvent(event);
+        }
+    }
+
+    @EventHandler
+    public void onPlotTypeChange(PlotPreChangeTypeEvent event) {
+        var type = event.getNewType().getName();
+        if (type.equals("warcamp")) {
+            event.setCancelled(true);
+            event.setCancelMessage("§cWar camp plots cannot be created manually.");
         }
     }
 

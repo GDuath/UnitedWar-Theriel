@@ -106,6 +106,7 @@ public class ChunkBackupManager {
         for (TownBlock block : townBlocks) {
             PlotBlockData data = loadSnapshot(block, townId, snapshotType);
             if (data != null) {
+                Logger.log("Restoring town block at " + block.getWorldCoord());
                 TownyRegenAPI.addToActiveRegeneration(data);
             }
         }

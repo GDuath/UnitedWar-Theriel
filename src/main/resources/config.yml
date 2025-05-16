@@ -132,19 +132,21 @@ siege-settings:
   home-chunk-health: 50
   fortress-chunk-health: 100
 
-  grief-zone-settings:
-    warcamp:
-      radius: 0
-      war-start-snapshot: false
-      war-end-restore: true
-      griefing-on-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,outsiderbuild,outsiderdestroy,nationbuild,nationdestroy,nationswitch,nationitemuse,allybuild,allydestroy,allyswitch,allyitemuse,pvp,fire,explosion"
-      griefing-off-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,nationswitch,nationitemuse,allyswitch,allyitemuse"
-    fortress:
-      radius: 2
-      war-start-snapshot: true
-      war-end-restore: true
-      griefing-on-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,outsiderbuild,outsiderdestroy,nationbuild,nationdestroy,nationswitch,nationitemuse,allybuild,allydestroy,allyswitch,allyitemuse,pvp,fire,explosion"
-      griefing-off-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,nationswitch,nationitemuse,allyswitch,allyitemuse"
+grief-zone-settings:
+  warcamp:
+    radius: 0
+    war-start-snapshot: false
+    war-end-restore: true
+    unclaim-on-war-end: true
+    griefing-on-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,outsiderbuild,outsiderdestroy,nationbuild,nationdestroy,nationswitch,nationitemuse,allybuild,allydestroy,allyswitch,allyitemuse,pvp,fire,explosion"
+    griefing-off-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,nationswitch,nationitemuse,allyswitch,allyitemuse"
+  fortress:
+    radius: 2
+    war-start-snapshot: true
+    war-end-restore: true
+    unclaim-on-war-end: false
+    griefing-on-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,outsiderbuild,outsiderdestroy,nationbuild,nationdestroy,nationswitch,nationitemuse,allybuild,allydestroy,allyswitch,allyitemuse,pvp,fire,explosion"
+    griefing-off-perms: "residentbuild,residentdestroy,residentswitch,residentitemuse,nationswitch,nationitemuse,allyswitch,allyitemuse"
 
 ###################################################
 # +---------------------------------------------+ #
