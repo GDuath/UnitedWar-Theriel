@@ -76,12 +76,44 @@ wars-settings:
 # +---------------------------------------------+ #
 ###################################################
 
-default-rewards:
-  pvp-kill: 10
-  pvp-leader-kill: 50
-  siege-chunk-capture: 10
-  siege-fortress-capture: 100
-  siege-home-capture: 50
+score-settings:
+  activity: 
+    silent: false
+    points: 10
+    message: pvp-kill-default
+    type: ACTIVITY
+  pvp-kill:
+    default:
+      silent: false
+      points: 10
+      message: pvp-kill-default
+      type: PVP_KILL
+    leader:
+      silent: false
+      points: 50
+      message: pvp-kill-leader
+      type: PVP_LEADER_KILL
+  chunk-capture:
+    default:
+      silent: false
+      points: 10
+      message: siege-capture-default
+      type: SIEGE_CAPTURE
+    home:
+      silent: false
+      points: 50
+      message: siege-capture-home
+      type: SIEGE_CAPTURE
+    warcamp:
+      silent: false
+      points: 100
+      message: siege-capture-warcamp
+      type: SIEGE_CAPTURE
+    fortress:
+      silent: false
+      points: 250
+      message: siege-capture-fortress
+      type: SIEGE_CAPTURE
 
 ###################################################
 # +---------------------------------------------+ #
@@ -93,7 +125,7 @@ siege-settings:
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
   # If false, the health decay and restoration only apply once per team in the majority
-  use-superiority-multiplier: true;
+  use-superiority-multiplier: true
   # The starting HP of chunks at the beginning of a war (relative to max health)
   health-start-percentage: 1.0
   # The amount of HP a chunk loses when the attackers are in a majority
@@ -101,9 +133,11 @@ siege-settings:
   # The amount of HP a chunk heals when the defenders are in a majority
   health-restore-rate: 1
   # Initial max health points for chunk types
-  town-chunk-health: 10
-  home-chunk-health: 50
-  fortress-chunk-health: 100
+  chunk-max-health: 
+    default: 10
+    home: 50
+    warcamp: 100
+    fortress: 250
 
 grief-zone-settings:
   warcamp:
@@ -252,9 +286,10 @@ messages:
   # +---------------------------------------------+ #
 
   score-message: "§7You scored §f§l{score} points §7§rfor: §e{action}"
-  score-capture-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
-  score-capture-home-attacker: "§7Your team received §f§l{reward} points §7§rfor bringing down an enemy home chunk!"
-  score-capture-fortress-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
+  score-capture-default: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
+  score-capture-home: "§7Your team received §f§l{reward} points §7§rfor bringing down an enemy home chunk!"
+  score-capture-fortress: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
+  score-capture-warcamp: "§7Your team received §f§l{reward} points §7§rfor razing an enemy war camp!"
 
 
   # +---------------------------------------------+ #

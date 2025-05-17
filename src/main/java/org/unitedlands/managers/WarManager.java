@@ -689,15 +689,13 @@ public class WarManager implements Listener {
             war.setDefender_score(war.getDefender_score() + event.getFinalScore());
         }
 
-        if (!event.getScoreType().isSilent()) {
+        if (!event.isSilent()) {
             var player = Bukkit.getPlayer(event.getPlayer());
 
             if (player != null) {
                 Map<String, String> replacements = new HashMap<>();
                 replacements.put("score", event.getFinalScore().toString());
-                replacements.put("action", event.getScoreType().getDisplayName());
-
-                Messenger.sendMessageTemplate(player, "score-message", replacements, true);
+                Messenger.sendMessageTemplate(player, event.getMessage(), replacements, true);
             }
         }
 
