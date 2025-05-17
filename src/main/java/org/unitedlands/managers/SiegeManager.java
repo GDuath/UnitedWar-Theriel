@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.antlr.v4.parse.ANTLRParser.finallyClause_return;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -42,8 +44,8 @@ public class SiegeManager implements Listener {
     private boolean playerSiegeEventListenerRegistered = false;
 
     private Map<String, SiegeChunk> siegeChunks = new HashMap<String, SiegeChunk>();
-    private Map<String, BossBar> chunkBossBars = new HashMap<String, BossBar>();
-    private Map<String, Set<Player>> chunkBossBarViewers = new HashMap<String, Set<Player>>();
+    private Map<String, BossBar> chunkHealthBars = new HashMap<String, BossBar>();
+    private Map<String, Set<Player>> chunkHealthBarViewers = new HashMap<String, Set<Player>>();
 
     private Map<UUID, Boolean> siegeEnabled = new HashMap<UUID, Boolean>();
 
@@ -53,23 +55,23 @@ public class SiegeManager implements Listener {
     }
 
     public void loadSiegeChunks() {
-        plugin.getDatabaseManager().getSiegeChunkDbService().getAllAsync().thenAccept(chunks -> {
-            for (var chunk : chunks) {
-                var location = new Location(Bukkit.getWorld(chunk.getWorld()), (double) chunk.getX() * 16, 0d,
-                        (double) chunk.getZ() * 16);
+        plugin.getDatabaseManager().getSiegeChunkDbService().getAllAsync().thenAccept(loadedSiegeChunks -> {
+            for (var siegeChunk : loadedSiegeChunks) {
+                var location = new Location(Bukkit.getWorld(siegeChunk.getWorld()), (double) siegeChunk.getX() * 16, 0d,
+                        (double) siegeChunk.getZ() * 16);
                 var townBlock = TownyAPI.getInstance().getTownBlock(location);
                 if (townBlock != null) {
-                    chunk.setTownBlock(townBlock);
-                    chunk.setTown(townBlock.getTownOrNull());
-                    siegeChunks.put(chunk.getChunkKey(), chunk);
-                    createChunkBossBar(chunk);
-                    updateBossBar(chunk);
+                    siegeChunk.setTownBlock(townBlock);
+                    siegeChunk.setTown(townBlock.getTownOrNull());
+                    siegeChunks.put(siegeChunk.getChunkKey(), siegeChunk);
+                    createChunkHealthBar(siegeChunk);
+                    updateHealthBar(siegeChunk);
                 } else {
-                    Logger.logError("Error loading chunk " + chunk.getChunkKey());
+                    Logger.logError("Error loading siege chunk " + siegeChunk.getChunkKey());
                 }
             }
             ;
-            Logger.log("Loaded " + chunks.size() + " siege chunks from database.");
+            Logger.log("Loaded " + loadedSiegeChunks.size() + " siege chunks from database.");
         });
     }
 
@@ -92,15 +94,15 @@ public class SiegeManager implements Listener {
                     continue;
 
                 if (enabled == false) {
-                    Logger.log("Sieges and griefing disabled for " + town.getName());
                     plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "off");
                 } else {
-                    Logger.log("Sieges and griefing enabled for " + town.getName());
                     plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "on");
                 }
             }
         }
     }
+
+    //#region Siege handling
 
     public void handleSiegeChunks() {
         if (!siegeChunks.isEmpty()) {
@@ -110,7 +112,7 @@ public class SiegeManager implements Listener {
                 if (siegeChunk.getOccupied())
                     continue;
 
-                if (!siegeEnabled.get(siegeChunk.getTown().getUUID()))
+                if (!isSiegeEnabled(siegeChunk.getTown().getUUID()))
                     continue;
 
                 // Change health depending on relative player counts
@@ -145,7 +147,6 @@ public class SiegeManager implements Listener {
                             setHealthChange(finalHealthChange);
                         }
                     };
-
                     event.callEvent();
 
                     // Some listener may have cancelled the event
@@ -169,32 +170,34 @@ public class SiegeManager implements Listener {
                         UUID firstAttackingPlayer = siegeChunk.getPlayersInChunk().get(WarSide.ATTACKER).getFirst();
 
                         Integer reward = 0;
-                        WarScoreEvent warScoreEvent = null;
-                        String message = "score-capture-attacker";
+                        String message = "";
+                        Boolean silent = false;
+                        String eventtype = "";
 
-                        if (siegeChunk.getTownBlock().getTypeName().equals("fortress")) {
-                            reward = plugin.getConfig().getInt("default-rewards.siege-fortress-capture", 100);
-                            message = "score-capture-fortress-attacker";
-                            warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
-                                    WarScoreType.SIEGE_FORTRESS_CAPTURE, reward);
-                        } else if (siegeChunk.getTownBlock().isHomeBlock()) {
-                            reward = plugin.getConfig().getInt("default-rewards.siege-home-capture", 50);
-                            message = "score-capture-home-attacker";
-                            warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
-                                    WarScoreType.SIEGE_HOME_CAPTURE, reward);
+                        var chunkTypeRewards = plugin.getConfig()
+                                .getConfigurationSection("score-settings.chunk-capture");
+                        var townBlockType = siegeChunk.getTownBlock().getTypeName().toLowerCase();
+
+                        if (chunkTypeRewards.getKeys(false).contains(townBlockType)) {
+                            reward = chunkTypeRewards.getInt(townBlockType + ".points");
+                            message = chunkTypeRewards.getString(townBlockType + ".message");
+                            silent = chunkTypeRewards.getBoolean(townBlockType + ".silent");
+                            eventtype = chunkTypeRewards.getString(townBlockType + ".type");
                         } else {
-                            reward = plugin.getConfig().getInt("default-rewards.siege-chunk-capture", 10);
-                            warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
-                                    WarScoreType.SIEGE_HOME_CAPTURE, reward);
-                        }
-                        warScoreEvent.callEvent();
+                            reward = chunkTypeRewards.getInt("default.points");
+                            message = chunkTypeRewards.getString("default.message");
+                            silent = chunkTypeRewards.getBoolean("default.silent");
+                            eventtype = chunkTypeRewards.getString("default.type");
 
-                        if (!event.isCancelled())
-                            sendCaptureNotifications(siegeChunk, reward, message);
+                        }
+
+                        WarScoreEvent warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
+                                WarScoreType.valueOf(eventtype), message, silent, reward);
+                        warScoreEvent.callEvent();
                     }
 
                     siegeChunk.setState_changed(true);
-                    updateBossBar(siegeChunk);
+                    updateHealthBar(siegeChunk);
                 }
 
                 if (siegeChunk.getState_changed())
@@ -203,18 +206,7 @@ public class SiegeManager implements Listener {
         }
     }
 
-    private void sendCaptureNotifications(SiegeChunk chunk, Integer reward, String message) {
-        var attackers = chunk.getPlayersInChunk().get(WarSide.ATTACKER);
-        for (var attacker : attackers) {
-            var player = Bukkit.getPlayer(attacker);
-            if (player == null)
-                continue;
-            var replacements = new HashMap<String, String>();
-            replacements.put("reward", reward.toString());
-
-            Messenger.sendMessageTemplate(player, message, replacements, true);
-        }
-    }
+    //#endregion
 
     public void updatePlayerInChunk(Player player, TownBlock previousBlock, TownBlock targetBlock) {
         if (previousBlock != null) {
@@ -248,16 +240,26 @@ public class SiegeManager implements Listener {
         if (town == null)
             return false;
 
+        // Get the chunk health settings
+        ConfigurationSection chunkHealthSettings = plugin.getConfig()
+                .getConfigurationSection("siege-settings.chunk-max-health");
+        if (chunkHealthSettings == null) {
+            Logger.logError("Couldn't find chunk health settings, aborting.");
+            return false;
+        }
+
         // Iterate the active player wars. Only create a siege chunk if the town is participating in it.
         for (var war : activePlayerWars.keySet()) {
             if (war.getTownWarSide(town.getUUID()) != WarSide.NONE) {
 
-                // Give fortress chunks higher health
-                int maxHealth = plugin.getConfig().getInt("siege-settings.town-chunk-health", 10);
-                if (townBlock.getType().getName().equals("fortress")) {
-                    maxHealth = plugin.getConfig().getInt("siege-settings.fortress-chunk-health", 100);
-                } else if (townBlock.isHomeBlock()) {
-                    maxHealth = plugin.getConfig().getInt("siege-settings.home-chunk-health", 50);
+                var maxHealth = 0;
+                var townBlockType = townBlock.getTypeName();
+
+                // Load special health settings (e. g. for fortresses) or revert to default
+                if (chunkHealthSettings.getKeys(false).contains(townBlockType)) {
+                    maxHealth = chunkHealthSettings.getInt(townBlockType);
+                } else {
+                    maxHealth = chunkHealthSettings.getInt("default");
                 }
 
                 // Make sure max health is always 1 or higher
@@ -302,21 +304,19 @@ public class SiegeManager implements Listener {
         }
         for (var key : keysToRemoveFromMemory) {
             siegeChunks.remove(key);
-            var chunkBossBar = chunkBossBars.get(key);
-            var viewers = chunkBossBarViewers.get(key);
+            var chunkHealthBar = chunkHealthBars.get(key);
+            var viewers = chunkHealthBarViewers.get(key);
             if (!viewers.isEmpty()) {
                 for (var viewer : viewers)
-                    chunkBossBar.removeViewer(viewer);
+                    chunkHealthBar.removeViewer(viewer);
             }
-            chunkBossBars.remove(key);
-            chunkBossBarViewers.remove(key);
+            chunkHealthBars.remove(key);
+            chunkHealthBarViewers.remove(key);
         }
 
         for (var id : idsToRemoveFromDatabase) {
             deleteSiegeChunkFromDatabase(id);
         }
-
-        Logger.log("Removed all siege chunk data for war " + war.getTitle());
     }
 
     //#endregion 
@@ -365,7 +365,7 @@ public class SiegeManager implements Listener {
             }
         } else {
             // The player doesn't belong to this war at all. Just add them to the boss bar viewer list.
-            addPlayerToBossBar(player, key);
+            addViewerToHealthBar(player, key);
         }
     }
 
@@ -373,7 +373,7 @@ public class SiegeManager implements Listener {
         var chunkPlayers = siegeChunk.getPlayersInChunk().get(side);
         if (!chunkPlayers.contains(player.getUniqueId())) {
             chunkPlayers.add(player.getUniqueId());
-            addPlayerToBossBar(player, siegeChunk.getChunkKey());
+            addViewerToHealthBar(player, siegeChunk.getChunkKey());
         }
     }
 
@@ -393,73 +393,73 @@ public class SiegeManager implements Listener {
             defendingPlayers.remove(player.getUniqueId());
         }
 
-        removePlayerFromBossBar(player, key);
+        removeViewerFromHealthBar(player, key);
     }
 
     //#endregion
 
-    //#region Boss bar
+    //#region Health bar
 
-    private void createChunkBossBar(String key) {
+    private void createChunkHealthBar(String key) {
         if (!siegeChunks.containsKey(key))
             return;
-        createChunkBossBar(siegeChunks.get(key));
+        createChunkHealthBar(siegeChunks.get(key));
     }
 
-    private void createChunkBossBar(SiegeChunk chunk) {
-        if (!chunkBossBars.containsKey(chunk.getChunkKey())) {
+    private void createChunkHealthBar(SiegeChunk chunk) {
+        if (!chunkHealthBars.containsKey(chunk.getChunkKey())) {
             War war = plugin.getWarManager().getWarById(chunk.getWar_id());
             String warNameDisplay = war.getTitle() + " | ";
-            BossBar chunkBossBar = BossBar.bossBar(
+            BossBar chunkHealthBar = BossBar.bossBar(
                     Component.text(warNameDisplay + "HP: " + chunk.getCurrent_health() + " / "
                             + chunk.getMax_health()),
                     ((float) chunk.getCurrent_health() / (float) chunk.getMax_health()),
-                    BossBar.Color.YELLOW,
+                    BossBar.Color.GREEN,
                     BossBar.Overlay.NOTCHED_10);
-            chunkBossBars.put(chunk.getChunkKey(), chunkBossBar);
-            chunkBossBarViewers.put(chunk.getChunkKey(), new HashSet<>());
+            chunkHealthBars.put(chunk.getChunkKey(), chunkHealthBar);
+            chunkHealthBarViewers.put(chunk.getChunkKey(), new HashSet<>());
         }
     }
 
-    private void addPlayerToBossBar(Player player, String key) {
-        if (!chunkBossBars.containsKey(key))
-            createChunkBossBar(key);
-
-        chunkBossBars.get(key).addViewer(player);
-        chunkBossBarViewers.get(key).add(player);
-    }
-
-    private void updateBossBar(SiegeChunk chunk) {
+    private void updateHealthBar(SiegeChunk chunk) {
         var key = chunk.getChunkKey();
-        if (!chunkBossBars.containsKey(key))
+        if (!chunkHealthBars.containsKey(key))
             return;
 
-        var chunkBossBar = chunkBossBars.get(key);
-        chunkBossBar.progress((float) chunk.getCurrent_health() / (float) chunk.getMax_health());
+        var chunkHealthBar = chunkHealthBars.get(key);
+        chunkHealthBar.progress((float) chunk.getCurrent_health() / (float) chunk.getMax_health());
 
         War war = plugin.getWarManager().getWarById(chunk.getWar_id());
         String warNameDisplay = war.getTitle() + " | ";
         if (chunk.getOccupied()) {
-            chunkBossBar.name(Component.text(warNameDisplay + "§c(Occupied)"));
-            chunkBossBar.overlay(Overlay.PROGRESS);
+            chunkHealthBar.name(Component.text(warNameDisplay + "§c(Occupied)"));
+            chunkHealthBar.overlay(Overlay.PROGRESS);
         } else {
-            chunkBossBar.name(Component
+            chunkHealthBar.name(Component
                     .text(warNameDisplay + "HP: " + chunk.getCurrent_health() + " / " + chunk.getMax_health()));
-            if (chunkBossBar.progress() >= 0.95f) {
-                chunkBossBar.color(Color.GREEN);
-            } else if (chunkBossBar.progress() >= 0.25) {
-                chunkBossBar.color(Color.YELLOW);
+            if (chunkHealthBar.progress() >= 0.95f) {
+                chunkHealthBar.color(Color.GREEN);
+            } else if (chunkHealthBar.progress() >= 0.25) {
+                chunkHealthBar.color(Color.YELLOW);
             } else {
-                chunkBossBar.color(Color.RED);
+                chunkHealthBar.color(Color.RED);
             }
         }
     }
 
-    private void removePlayerFromBossBar(Player player, String key) {
-        if (!chunkBossBars.containsKey(key))
+    private void addViewerToHealthBar(Player player, String key) {
+        if (!chunkHealthBars.containsKey(key))
+            createChunkHealthBar(key);
+
+        chunkHealthBars.get(key).addViewer(player);
+        chunkHealthBarViewers.get(key).add(player);
+    }
+
+    private void removeViewerFromHealthBar(Player player, String key) {
+        if (!chunkHealthBars.containsKey(key))
             return;
-        chunkBossBars.get(key).removeViewer(player);
-        var viewers = chunkBossBarViewers.get(key);
+        chunkHealthBars.get(key).removeViewer(player);
+        var viewers = chunkHealthBarViewers.get(key);
         if (viewers.contains(player))
             viewers.remove(player);
     }
@@ -487,12 +487,10 @@ public class SiegeManager implements Listener {
     @EventHandler
     public void onWarEnd(WarEndEvent event) {
         // If there's no nore wars, stop listening to avoid unnecessary overhead 
-
         if (playerSiegeEventListenerRegistered && !plugin.getWarManager().isAnyWarActive()) {
             HandlerList.unregisterAll((Listener) playerSiegeEventListener);
             playerSiegeEventListenerRegistered = false;
         }
-
         removeSiegeChunks(event.getWar());
     }
 
@@ -527,8 +525,9 @@ public class SiegeManager implements Listener {
         return block.getWorld().getName() + ":" + block.getCoord().getX() + ":" + block.getCoord().getZ();
     }
 
-    public boolean isSiegeEnabled(UUID townId)
-    {
+    public boolean isSiegeEnabled(UUID townId) {
+        if (plugin.getConfig().getBoolean("siege-settings.override-activity-requirement", false))
+            return true;
         return siegeEnabled.computeIfAbsent(townId, k -> false);
     }
 

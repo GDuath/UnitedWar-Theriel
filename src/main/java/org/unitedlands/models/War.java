@@ -3,12 +3,16 @@ package org.unitedlands.models;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.bukkit.configuration.ConfigurationSection;
+import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
@@ -18,6 +22,10 @@ import org.unitedlands.util.Formatter;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import com.mysql.cj.x.protobuf.MysqlxCrud.Collection;
+import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.Resident;
+import com.palmergames.bukkit.towny.object.Town;
 
 @DatabaseTable(tableName = "war")
 public class War implements Identifiable {
@@ -610,6 +618,84 @@ public class War implements Identifiable {
         this.state_changed = state_changed;
     }
 
+    //#region War Chests generation
+
+    public void buildWarChests() {
+
+        var wargoalSettings = UnitedWar.getInstance().getConfig()
+                .getConfigurationSection("wars-settings." + getWar_goal().toString().toLowerCase());
+
+        buildSideWarChest(
+                getAttacking_towns(),
+                this::setAttacker_money_warchest,
+                this::setAttacker_claims_warchest,
+                wargoalSettings.getDouble("warchest.attacker-money-contribution", 0.1),
+                wargoalSettings.getDouble("warchest.attacker-claims-contribution", 0.1));
+
+        buildSideWarChest(
+                getDefending_towns(),
+                this::setDefender_money_warchest,
+                this::setDefender_claims_warchest,
+                wargoalSettings.getDouble("warchest.defender-money-contribution", 0.1),
+                wargoalSettings.getDouble("warchest.defender-claims-contribution", 0.1));
+    }
+
+    private void buildSideWarChest(
+            Set<UUID> townIds,
+            Consumer<Map<UUID, Double>> setMoneyWarchest,
+            Consumer<Map<UUID, Integer>> setClaimsWarchest,
+            double moneyContributionRate,
+            double claimsContributionRate) {
+        Map<UUID, Double> moneyContributions = new HashMap<>();
+        Map<UUID, Integer> claimsContributions = new HashMap<>();
+
+        for (UUID townId : townIds) {
+            Town town = TownyAPI.getInstance().getTown(townId);
+            if (town == null)
+                continue;
+
+            double balance = town.getAccount().getCachedBalance(true);
+            double money = Math.round(balance * moneyContributionRate);
+            town.getAccount().withdraw(money, "War contribution to " + getTitle());
+            moneyContributions.put(townId, money);
+
+            int bonusBlocks = town.getBonusBlocks();
+            if (bonusBlocks > 0) {
+                int claims = (int) Math.round(bonusBlocks * claimsContributionRate);
+                claimsContributions.put(townId, claims);
+            }
+        }
+
+        setMoneyWarchest.accept(moneyContributions);
+        setClaimsWarchest.accept(claimsContributions);
+    }
+
+    //#endregion
+
+    //#region Player lists
+
+    public void buildPlayerLists() {
+        setAttacking_players(collectResidentsFromTowns(getAttacking_towns()));
+        setDefending_players(collectResidentsFromTowns(getDefending_towns()));
+    }
+
+    private Set<UUID> collectResidentsFromTowns(Set<UUID> townIds) {
+        Set<UUID> residentIds = new HashSet<>();
+        for (UUID townId : townIds) {
+            Town town = TownyAPI.getInstance().getTown(townId);
+            if (town != null) {
+                for (Resident resident : town.getResidents()) {
+                    residentIds.add(resident.getUUID());
+                }
+            }
+        }
+        return residentIds;
+    }
+
+    //#endregion
+
+    //#region Public utility methods
+
     public WarSide getPlayerWarSide(UUID playerId) {
         if (getAttacking_players().contains(playerId) || getAttacking_mercenaries().contains(playerId))
             return WarSide.ATTACKER;
@@ -628,6 +714,8 @@ public class War implements Identifiable {
             return WarSide.NONE;
     }
 
+    //#endregion
+
     public Map<String, String> getMessagePlaceholders() {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("war-name", getCleanTitle());
@@ -637,13 +725,13 @@ public class War implements Identifiable {
         replacements.put("defender", getTarget_town_name());
         replacements.put("attacker-nation", "(" + getDeclaring_nation_name() + ")");
         replacements.put("defender-nation", "(" + getTarget_nation_name() + ")");
-        replacements.put("attacker-ally-info",
-                war_goal.callAttackerAllies() ? "The attacker has called allies into the war."
-                        : "The attacker has not called allies into the war.");
-        replacements.put("defender-ally-info",
-                war_goal.callAttackerAllies() ? "The defender has called allies into the war."
-                        : "The defender has not called allies into the war.");
-        replacements.put("war-goal", war_goal.getDisplayName());
+        // replacements.put("attacker-ally-info",
+        //         war_goal.callAttackerAllies() ? "The attacker has called allies into the war."
+        //                 : "The attacker has not called allies into the war.");
+        // replacements.put("defender-ally-info",
+        //         war_goal.callAttackerAllies() ? "The defender has called allies into the war."
+        //                 : "The defender has not called allies into the war.");
+        //replacements.put("war-goal", war_goal.getDisplayName());
         replacements.put("attacker-score", getAttacker_score().toString());
         replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
         replacements.put("defender-score", getDefender_score().toString());

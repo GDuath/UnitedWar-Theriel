@@ -55,47 +55,20 @@ wars-settings:
   default:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1 # in percentage of town balance
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
+    attacker-call-nation: true
+    attacker-call-allies: false
+    defender-call-nation: true
+    defender-call-allies: true
+    warchest:
+      attacker-money-contribution: 0.1 # in percentage of town balance
+      defender-money-contribution: 0.1
+      attacker-claims-contribution: 0.1 # in percentage of town bonus claims
+      defender-claims-contribution: 0.1
+      additional-bonus-claims: 20
+    scorecaps:
+      attacker: 500
+      defender: 500
 
-  town-town:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
-
-  town-nation:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
-
-  nation-nation:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
-
-  nation-town:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
 
 ###################################################
 # +---------------------------------------------+ #
@@ -103,12 +76,44 @@ wars-settings:
 # +---------------------------------------------+ #
 ###################################################
 
-default-rewards:
-  pvp-kill: 10
-  pvp-leader-kill: 50
-  siege-chunk-capture: 10
-  siege-fortress-capture: 100
-  siege-home-capture: 50
+score-settings:
+  activity: 
+    silent: false
+    points: 10
+    message: score-activity
+    type: ACTIVITY
+  pvp-kill:
+    default:
+      silent: false
+      points: 10
+      message: score-pvp-kill-default
+      type: PVP_KILL
+    leader:
+      silent: false
+      points: 50
+      message: score-pvp-kill-leader
+      type: PVP_LEADER_KILL
+  chunk-capture:
+    default:
+      silent: false
+      points: 10
+      message: score-siege-capture-default
+      type: SIEGE_CAPTURE
+    home:
+      silent: false
+      points: 50
+      message: score-siege-capture-home
+      type: SIEGE_CAPTURE
+    warcamp:
+      silent: false
+      points: 100
+      message: score-siege-capture-warcamp
+      type: SIEGE_CAPTURE
+    fortress:
+      silent: false
+      points: 250
+      message: score-siege-capture-fortress
+      type: SIEGE_CAPTURE
 
 ###################################################
 # +---------------------------------------------+ #
@@ -117,10 +122,13 @@ default-rewards:
 ###################################################
 
 siege-settings:
+  # If true, sieges and griefing will always be active regardless of whether players of a particular
+  # war side are online or not
+  override-activity-requirement: false
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
   # If false, the health decay and restoration only apply once per team in the majority
-  use-superiority-multiplier: true;
+  use-superiority-multiplier: true
   # The starting HP of chunks at the beginning of a war (relative to max health)
   health-start-percentage: 1.0
   # The amount of HP a chunk loses when the attackers are in a majority
@@ -128,9 +136,11 @@ siege-settings:
   # The amount of HP a chunk heals when the defenders are in a majority
   health-restore-rate: 1
   # Initial max health points for chunk types
-  town-chunk-health: 10
-  home-chunk-health: 50
-  fortress-chunk-health: 100
+  chunk-max-health: 
+    default: 10
+    home: 50
+    warcamp: 100
+    fortress: 250
 
 grief-zone-settings:
   warcamp:
@@ -278,11 +288,13 @@ messages:
   # |                  Scores                     | #
   # +---------------------------------------------+ #
 
-  score-message: "§7You scored §f§l{score} points §7§rfor: §e{action}"
-  score-capture-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
-  score-capture-home-attacker: "§7Your team received §f§l{reward} points §7§rfor bringing down an enemy home chunk!"
-  score-capture-fortress-attacker: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
-
+  score-ativity: "§7You scored §f§l{score} points for being online."
+  score-pvp-kill-default: "§7You scored §f§l{score} points §7§rfor killing an enemy!"
+  score-pvp-kill-leader: "§7You scored §f§l{score} points §7§rfor killing an enemy leader!"
+  score-siege-capture-default: "§7Your team received §f§l{score} points §7§rfor capturing a chunk in an enemy town!"
+  score-siege-capture-home: "§7Your team received §f§l{score} points §7§rfor bringing down an enemy home chunk!"
+  score-siege-capture-warcamp: "§7Your team received §f§l{score} points §7§rfor razing an enemy war camp!"
+  score-siege-capture-fortress: "§7Your team received §f§l{score} points §7§rfor capturing a chunk in an enemy town!"
 
   # +---------------------------------------------+ #
   # |                 War Lives                   | #

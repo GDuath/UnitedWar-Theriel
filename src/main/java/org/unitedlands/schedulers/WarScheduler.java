@@ -20,7 +20,8 @@ public class WarScheduler {
     public void initialize() {
 
         Long checkInterval = plugin.getConfig().getInt("warscheduler.check-interval", 15) * 20L;
-        warSchedulerTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::run, checkInterval, checkInterval);
+        warSchedulerTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::run, checkInterval,
+                checkInterval);
 
         Logger.log("War scheduler set to running with interval: " + checkInterval + " ticks.");
         Logger.log("War scheduler initialized");
@@ -34,14 +35,24 @@ public class WarScheduler {
     }
 
     private void awardActivityScores() {
+
+        if (!plugin.getWarManager().isAnyWarActive())
+            return;
+
         var onlinePlayers = Bukkit.getOnlinePlayers();
+
+        var reward = plugin.getConfig().getInt("score-settings.activity.points");
+        var message = plugin.getConfig().getString("score-settings.activity.message");
+        var silent = plugin.getConfig().getBoolean("score-settings.activity.silent");
+        var eventtype = plugin.getConfig().getString("score-settings.activity.type");
+
         for (var player : onlinePlayers) {
             var playerWars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
             if (!playerWars.isEmpty()) {
-                for (var war : playerWars.keySet()) 
-                {
+                for (var war : playerWars.keySet()) {
                     var side = playerWars.get(war);
-                    var scoreEvent = new WarScoreEvent(war, player.getUniqueId(), side, WarScoreType.ACTIVITY, 1);
+                    var scoreEvent = new WarScoreEvent(war, player.getUniqueId(), side, WarScoreType.valueOf(eventtype),
+                            message, silent, reward);
                     scoreEvent.callEvent();
                 }
             }

@@ -55,21 +55,24 @@ public class PlayerDeathListener implements Listener {
             return;
         }
 
-        var reward = plugin.getConfig().getInt("default-rewards.pvp-kill", 10);
-        var warScoreType = WarScoreType.PVP_KILL;
-
         // If this player is not tracked by Towny, don't continue
         var victimRes = TownyAPI.getInstance().getResident(victim);
         if (victimRes == null)
             return;
 
+        String killtype = "default";
+
         // See if the victim is a mayor or general in their town.
         // If so, prepare a higher reward.
         if (victimRes.isMayor() || victimRes.getTownRanks().contains("co-mayor")
                 || victimRes.getTownRanks().contains("general")) {
-            reward = plugin.getConfig().getInt("default-rewards.pvp-leader-kill", 50);
-            warScoreType = WarScoreType.PVP_LEADER_KILL;
+            killtype = "leader";
         }
+
+        Integer reward = plugin.getConfig().getInt("score-settings.pvp-kill." + killtype + ".points");
+        String message = plugin.getConfig().getString("score-settings.pvp-kill." + killtype + ".message");
+        Boolean silent = plugin.getConfig().getBoolean("score-settings.pvp-kill." + killtype + ".silent");
+        String eventType = plugin.getConfig().getString("score-settings.pvp-kill." + killtype + ".type");
 
         for (var victimWar : victimWars.entrySet()) {
             var victimWarSide = victimWar.getValue();
@@ -93,11 +96,12 @@ public class PlayerDeathListener implements Listener {
             }
 
             // Determine scores.
-
             if (victimWarSide == WarSide.ATTACKER && killerWarSide == WarSide.DEFENDER) {
-                new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, warScoreType, reward).callEvent();
+                new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, WarScoreType.valueOf(eventType), message, silent,
+                        reward).callEvent();
             } else if (victimWarSide == WarSide.DEFENDER && killerWarSide == WarSide.ATTACKER) {
-                new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, warScoreType, reward).callEvent();
+                new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, WarScoreType.valueOf(eventType), message, silent,
+                        reward).callEvent();
             }
 
             // Decrease victim lives.
@@ -109,16 +113,14 @@ public class PlayerDeathListener implements Listener {
 
             if (currentLives == 0) {
                 // Already out of lives.
-                Messenger.sendMessageTemplate
-                        (victim, "warlives-gone", Map.of("0", warName), true);
+                Messenger.sendMessageTemplate(victim, "warlives-gone", Map.of("0", warName), true);
             } else if (newLives == 0) {
                 // This death eliminated them.
-                Messenger.sendMessageTemplate
-                        (victim, "warlives-final", Map.of("0", warName), true);
+                Messenger.sendMessageTemplate(victim, "warlives-final", Map.of("0", warName), true);
             } else {
                 // Lives still remaining.
-                Messenger.sendMessageTemplate
-                        (victim, "warlives-lost", Map.of("0", String.valueOf(newLives), "1", warName), true);
+                Messenger.sendMessageTemplate(victim, "warlives-lost",
+                        Map.of("0", String.valueOf(newLives), "1", warName), true);
             }
         }
     }

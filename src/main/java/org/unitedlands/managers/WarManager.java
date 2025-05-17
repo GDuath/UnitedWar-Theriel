@@ -12,7 +12,6 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.unitedlands.UnitedWar;
@@ -22,7 +21,6 @@ import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
-import org.unitedlands.listeners.TownyEventListener;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
 import org.unitedlands.util.Logger;
@@ -54,7 +52,7 @@ public class WarManager implements Listener {
                 } else {
                     pendingWars.add(war);
                 }
-                buildPlayerLists(war);
+                war.buildPlayerLists();
             }
             Logger.log("Loaded " + wars.size() + " war(s) from the database.");
         }).exceptionally(e -> {
@@ -166,69 +164,79 @@ public class WarManager implements Listener {
     public void createWar(String title, String description, UUID attackingTownId, UUID defendingTownId,
             WarGoal warGoal) {
 
-        var fileConfig = plugin.getConfig();
-
-        Town attackingTown = TownyAPI.getInstance().getTown(attackingTownId);
-        Town defendingTown = TownyAPI.getInstance().getTown(defendingTownId);
-
-        War war = new War();
-        war.setTimestamp(System.currentTimeMillis());
-
-        war.setTitle(title.replace(" ", "_"));
-        war.setDescription(description);
-        war.setWar_goal(warGoal);
-
-        war.setDeclaring_town_id(attackingTownId);
-        war.setDeclaring_town_name(attackingTown.getName());
-        war.setTarget_town_id(defendingTownId);
-        war.setTarget_town_name(defendingTown.getName());
-
-        if (warGoal.callAttackerNation()) {
-            Nation nation = attackingTown.getNationOrNull();
-            if (nation != null) {
-                war.setDeclaring_nation_id(nation.getUUID());
-                war.setDeclaring_nation_name(nation.getName());
-            }
-        }
-        if (warGoal.callDefenderNation()) {
-            Nation nation = defendingTown.getNationOrNull();
-            if (nation != null) {
-                war.setTarget_nation_id(nation.getUUID());
-                war.setTarget_nation_name(nation.getName());
-            }
+        var wargoalSettings = plugin.getConfig()
+                .getConfigurationSection("wars-settings." + warGoal.toString().toLowerCase());
+        if (wargoalSettings == null) {
+            Logger.logError("Settings for war goal " + warGoal.toString() + " could not be found, aborting.");
+            return;
         }
 
-        Long warmupTime = fileConfig.getLong("wars-settings.default.warmup-time", 60L);
-        Long warDuration = fileConfig.getLong("wars-settings.default.duration", 60L);
+        try {
 
-        war.setScheduled_begin_time(System.currentTimeMillis() + (warmupTime * 1000L));
-        war.setScheduled_end_time(System.currentTimeMillis() + (warmupTime * 1000L) + (warDuration * 1000L));
+            Town attackingTown = TownyAPI.getInstance().getTown(attackingTownId);
+            Town defendingTown = TownyAPI.getInstance().getTown(defendingTownId);
 
-        Integer attackerCap = fileConfig.getInt("wars-settings.default.attacker-score-cap", 500);
-        Integer defenderCap = fileConfig.getInt("wars-settings.default.defender-score-cap", 500);
+            War war = new War();
+            war.setTimestamp(System.currentTimeMillis());
 
-        war.setAttacker_score_cap(attackerCap);
-        war.setDefender_score_cap(defenderCap);
+            war.setTitle(title.replace(" ", "_"));
+            war.setDescription(description);
+            war.setWar_goal(warGoal);
 
-        war.setAttacking_towns(
-                getFactionTownIds(war, attackingTown, warGoal.callAttackerNation(), warGoal.callAttackerAllies()));
-        war.setDefending_towns(
-                getFactionTownIds(war, defendingTown, warGoal.callDefenderNation(), warGoal.callDefenderAllies()));
+            war.setDeclaring_town_id(attackingTownId);
+            war.setDeclaring_town_name(attackingTown.getName());
+            war.setTarget_town_id(defendingTownId);
+            war.setTarget_town_name(defendingTown.getName());
 
-        war.setWar_result(WarResult.UNDECIDED);
-        war.setAdditional_claims_payout(fileConfig.getInt("wars-settings.default.additional-bonus-claims", 0));
+            if (wargoalSettings.getBoolean("attacker-call-nation")) {
+                Nation nation = attackingTown.getNationOrNull();
+                if (nation != null) {
+                    war.setDeclaring_nation_id(nation.getUUID());
+                    war.setDeclaring_nation_name(nation.getName());
+                }
+            }
+            if (wargoalSettings.getBoolean("defender-call-nation")) {
+                Nation nation = defendingTown.getNationOrNull();
+                if (nation != null) {
+                    war.setTarget_nation_id(nation.getUUID());
+                    war.setTarget_nation_name(nation.getName());
+                }
+            }
 
-        war.setAttacking_mercenaries(new HashSet<UUID>());
-        war.setDefending_mercenaries(new HashSet<UUID>());
+            Long warmupTime = wargoalSettings.getLong("warmup-time");
+            Long warDuration = wargoalSettings.getLong("duration");
 
-        buildWarChests(war);
-        buildPlayerLists(war);
+            war.setScheduled_begin_time(System.currentTimeMillis() + (warmupTime * 1000L));
+            war.setScheduled_end_time(System.currentTimeMillis() + (warmupTime * 1000L) + (warDuration * 1000L));
 
-        saveWarToDatabase(war);
+            war.setAttacker_score_cap(wargoalSettings.getInt("scorecaps.attacker"));
+            war.setDefender_score_cap(wargoalSettings.getInt("scorecaps.defender"));
 
-        pendingWars.add(war);
+            war.setAttacking_towns(
+                    getFactionTownIds(war, attackingTown, wargoalSettings.getBoolean("attacker-call-nation"),
+                            wargoalSettings.getBoolean("attacker-call-allies")));
+            war.setDefending_towns(
+                    getFactionTownIds(war, defendingTown, wargoalSettings.getBoolean("defender-call-nation"),
+                            wargoalSettings.getBoolean("defender-call-allies")));
 
-        sendWarDeclatedNotification(attackingTown, defendingTown, war);
+            war.setWar_result(WarResult.UNDECIDED);
+            war.setAdditional_claims_payout(wargoalSettings.getInt("warchest.additional-bonus-claims"));
+
+            war.setAttacking_mercenaries(new HashSet<UUID>());
+            war.setDefending_mercenaries(new HashSet<UUID>());
+
+            war.buildWarChests();
+            war.buildPlayerLists();
+
+            saveWarToDatabase(war);
+
+            pendingWars.add(war);
+
+            sendWarDeclatedNotification(attackingTown, defendingTown, war);
+        } catch (Exception exception) {
+            Logger.logError("The war could not be created: " + exception.getMessage());
+            return;
+        }
     }
 
     private Set<UUID> getFactionTownIds(War war, Town town, Boolean includeNation, Boolean includeAllies) {
@@ -255,76 +263,6 @@ public class WarManager implements Listener {
             }
         }
         return townIds;
-    }
-
-    private void buildWarChests(War war) {
-        Double attackerContribution = plugin.getConfig()
-                .getDouble("wars-settings.default.attacker-warchest-contribution", 0.1);
-        Double defenderContribution = plugin.getConfig()
-                .getDouble("wars-settings.default.defender-warchest-contribution", 0.1);
-
-        Map<UUID, Double> attackerMoneyContributions = new HashMap<>();
-        Map<UUID, Integer> attackerClaimsContributions = new HashMap<>();
-        for (UUID townId : war.getAttacking_towns()) {
-            Town town = TownyAPI.getInstance().getTown(townId);
-            if (town != null) {
-                var money = (double) Math.round(town.getAccount().getCachedBalance(true) * attackerContribution);
-                town.getAccount().withdraw(money, "War contribution to " + war.getTitle());
-                attackerMoneyContributions.put(townId, money);
-
-                if (town.getBonusBlocks() > 0) {
-                    var claims = (int) Math.round((double) town.getBonusBlocks() * attackerContribution);
-                    attackerClaimsContributions.put(townId, claims);
-                }
-            }
-        }
-        war.setAttacker_money_warchest(attackerMoneyContributions);
-        war.setAttacker_claims_warchest(attackerClaimsContributions);
-
-        Map<UUID, Double> defenderMoneyContributions = new HashMap<>();
-        Map<UUID, Integer> defenderClaimsContributions = new HashMap<>();
-        for (UUID townId : war.getDefending_towns()) {
-            Town town = TownyAPI.getInstance().getTown(townId);
-            if (town != null) {
-                var amount = (double) Math.round(town.getAccount().getCachedBalance(true) * defenderContribution);
-                town.getAccount().withdraw(amount, "War contribution to " + war.getTitle());
-                defenderMoneyContributions.put(townId, amount);
-
-                if (town.getBonusBlocks() > 0) {
-                    var claims = (int) Math.round((double) town.getBonusBlocks() * attackerContribution);
-                    defenderClaimsContributions.put(townId, claims);
-                }
-            }
-        }
-        war.setDefender_money_warchest(defenderMoneyContributions);
-        war.setDefender_claims_warchest(defenderClaimsContributions);
-    }
-
-    private void buildPlayerLists(War war) {
-
-        Set<UUID> attackerResidentIds = new HashSet<>();
-        for (UUID townId : war.getAttacking_towns()) {
-            Town town = TownyAPI.getInstance().getTown(townId);
-            if (town != null) {
-                var residents = town.getResidents();
-                for (var resident : residents) {
-                    attackerResidentIds.add(resident.getUUID());
-                }
-            }
-        }
-        war.setAttacking_players(attackerResidentIds);
-
-        Set<UUID> defenderResidentIds = new HashSet<>();
-        for (UUID townId : war.getDefending_towns()) {
-            Town town = TownyAPI.getInstance().getTown(townId);
-            if (town != null) {
-                var residents = town.getResidents();
-                for (var resident : residents) {
-                    defenderResidentIds.add(resident.getUUID());
-                }
-            }
-        }
-        war.setDefending_players(defenderResidentIds);
     }
 
     //#endregion
@@ -440,10 +378,6 @@ public class WarManager implements Listener {
                     sideToLoseClaims = WarSide.ATTACKER;
                 }
 
-                plugin.getLogger()
-                        .info("Distribution: attacker " + attackerPayoutRatio + ", defender " + defenderPayoutRatio);
-                Logger.log("Side to lose claims: " + sideToLoseClaims.toString());
-
                 var attackerMoneyWarchest = war.getAttacker_total_money_warchest();
                 var defenderMoneyWarchest = war.getDefender_total_money_warchest();
                 var totalMoneyAmount = attackerMoneyWarchest + defenderMoneyWarchest;
@@ -519,9 +453,6 @@ public class WarManager implements Listener {
         for (var set : townContributions.entrySet()) {
             Integer share = (int) Math.round(amount * set.getValue());
             remainder -= share;
-            plugin.getLogger()
-                    .info("Giving " + share + " claims to " + set.getKey() + " for " + set.getValue()
-                            + " contribution.");
             addClaimsToTown(set.getKey(), share);
         }
         return remainder;
@@ -535,8 +466,6 @@ public class WarManager implements Listener {
         for (var set : townContributions.entrySet()) {
             Double share = (double) Math.round(amount * set.getValue());
             remainder -= share;
-            plugin.getLogger()
-                    .info("Paying " + share + "G to " + set.getKey() + " for " + set.getValue() + " contribution.");
             payMoneyToTown(set.getKey(), share, "Share of war chest payout");
         }
         return remainder;
@@ -760,15 +689,13 @@ public class WarManager implements Listener {
             war.setDefender_score(war.getDefender_score() + event.getFinalScore());
         }
 
-        if (!event.getScoreType().isSilent()) {
+        if (!event.isSilent()) {
             var player = Bukkit.getPlayer(event.getPlayer());
 
             if (player != null) {
                 Map<String, String> replacements = new HashMap<>();
                 replacements.put("score", event.getFinalScore().toString());
-                replacements.put("action", event.getScoreType().getDisplayName());
-
-                Messenger.sendMessageTemplate(player, "score-message", replacements, true);
+                Messenger.sendMessageTemplate(player, event.getMessage(), replacements, true);
             }
         }
 
@@ -824,7 +751,7 @@ public class WarManager implements Listener {
                     WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), 5); // default lives
                 }
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to assign war lives to " + uuid + ": " + e.getMessage());
+                Logger.logError("Failed to assign war lives to " + uuid + ": " + e.getMessage());
             }
         }
     }
@@ -841,7 +768,7 @@ public class WarManager implements Listener {
                     WarLivesMetadata.removeWarLivesMetaData(resident, war.getId());
                 }
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to remove war lives from " + uuid + ": " + e.getMessage());
+                Logger.logError("Failed to remove war lives from " + uuid + ": " + e.getMessage());
             }
         }
     }
