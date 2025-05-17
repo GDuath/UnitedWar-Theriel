@@ -80,39 +80,39 @@ score-settings:
   activity: 
     silent: false
     points: 10
-    message: pvp-kill-default
+    message: score-activity
     type: ACTIVITY
   pvp-kill:
     default:
       silent: false
       points: 10
-      message: pvp-kill-default
+      message: score-pvp-kill-default
       type: PVP_KILL
     leader:
       silent: false
       points: 50
-      message: pvp-kill-leader
+      message: score-pvp-kill-leader
       type: PVP_LEADER_KILL
   chunk-capture:
     default:
       silent: false
       points: 10
-      message: siege-capture-default
+      message: score-siege-capture-default
       type: SIEGE_CAPTURE
     home:
       silent: false
       points: 50
-      message: siege-capture-home
+      message: score-siege-capture-home
       type: SIEGE_CAPTURE
     warcamp:
       silent: false
       points: 100
-      message: siege-capture-warcamp
+      message: score-siege-capture-warcamp
       type: SIEGE_CAPTURE
     fortress:
       silent: false
       points: 250
-      message: siege-capture-fortress
+      message: score-siege-capture-fortress
       type: SIEGE_CAPTURE
 
 ###################################################
@@ -122,6 +122,9 @@ score-settings:
 ###################################################
 
 siege-settings:
+  # If true, sieges and griefing will always be active regardless of whether players of a particular
+  # war side are online or not
+  override-activity-requirement: false
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
   # If false, the health decay and restoration only apply once per team in the majority
@@ -285,12 +288,13 @@ messages:
   # |                  Scores                     | #
   # +---------------------------------------------+ #
 
-  score-message: "§7You scored §f§l{score} points §7§rfor: §e{action}"
-  score-capture-default: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
-  score-capture-home: "§7Your team received §f§l{reward} points §7§rfor bringing down an enemy home chunk!"
-  score-capture-fortress: "§7Your team received §f§l{reward} points §7§rfor capturing a chunk in an enemy town!"
-  score-capture-warcamp: "§7Your team received §f§l{reward} points §7§rfor razing an enemy war camp!"
-
+  score-ativity: "§7You scored §f§l{score} points for being online."
+  score-pvp-kill-default: "§7You scored §f§l{score} points §7§rfor killing an enemy!"
+  score-pvp-kill-leader: "§7You scored §f§l{score} points §7§rfor killing an enemy leader!"
+  score-siege-capture-default: "§7Your team received §f§l{score} points §7§rfor capturing a chunk in an enemy town!"
+  score-siege-capture-home: "§7Your team received §f§l{score} points §7§rfor bringing down an enemy home chunk!"
+  score-siege-capture-warcamp: "§7Your team received §f§l{score} points §7§rfor razing an enemy war camp!"
+  score-siege-capture-fortress: "§7Your team received §f§l{score} points §7§rfor capturing a chunk in an enemy town!"
 
   # +---------------------------------------------+ #
   # |                 War Lives                   | #

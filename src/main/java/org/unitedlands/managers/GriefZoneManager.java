@@ -24,13 +24,11 @@ import org.unitedlands.util.Logger;
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownyUniverse;
-import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 import com.palmergames.bukkit.towny.tasks.TownClaim;
-import com.palmergames.bukkit.towny.utils.AreaSelectionUtil;
 
 public class GriefZoneManager implements Listener {
 
@@ -150,10 +148,6 @@ public class GriefZoneManager implements Listener {
             // Get the zone type settings
             boolean restoreOnWarEnd = griefSettings.getBoolean(set.getKey() + ".war-end-restore", false);
             boolean unclaimOnWarEnd = griefSettings.getBoolean(set.getKey() + ".unclaim-on-war-end", false);
-
-            Logger.log("Type: " + set.getKey());
-            Logger.log("restoreOnWarEnd: " + restoreOnWarEnd);
-            Logger.log("unclaimOnWarEnd: " + unclaimOnWarEnd);
 
             // Accumulate all town blocks of this type from all zones
             Set<TownBlock> townBlocksInZones = new HashSet<>();
