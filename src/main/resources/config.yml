@@ -55,47 +55,20 @@ wars-settings:
   default:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1 # in percentage of town balance
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
+    attacker-call-nation: true
+    attacker-call-allies: false
+    defender-call-nation: true
+    defender-call-allies: true
+    warchest:
+      attacker-money-contribution: 0.1 # in percentage of town balance
+      defender-money-contribution: 0.1
+      attacker-claims-contribution: 0.1 # in percentage of town bonus claims
+      defender-claims-contribution: 0.1
+      additional-bonus-claims: 20
+    scorecaps:
+      attacker: 500
+      defender: 500
 
-  town-town:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
-
-  town-nation:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
-
-  nation-nation:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
-
-  nation-town:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
-    attacker-warchest-contribution: 0.1
-    defender-warchest-contribution: 0.1
-    attacker-score-cap: 500
-    defender-score-cap: 500
-    additional-bonus-claims: 20
 
 ###################################################
 # +---------------------------------------------+ #
