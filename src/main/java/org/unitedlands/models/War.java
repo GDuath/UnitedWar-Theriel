@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import org.bukkit.configuration.ConfigurationSection;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
@@ -22,7 +20,6 @@ import org.unitedlands.util.Formatter;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import com.mysql.cj.x.protobuf.MysqlxCrud.Collection;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
@@ -723,15 +720,11 @@ public class War implements Identifiable {
         replacements.put("war-active", getIs_active() ? "§cACTIVE" : getIs_ended() ? "§8ENDED" : "§eWARMUP");
         replacements.put("attacker", getDeclaring_town_name());
         replacements.put("defender", getTarget_town_name());
-        replacements.put("attacker-nation", "(" + getDeclaring_nation_name() + ")");
-        replacements.put("defender-nation", "(" + getTarget_nation_name() + ")");
-        // replacements.put("attacker-ally-info",
-        //         war_goal.callAttackerAllies() ? "The attacker has called allies into the war."
-        //                 : "The attacker has not called allies into the war.");
-        // replacements.put("defender-ally-info",
-        //         war_goal.callAttackerAllies() ? "The defender has called allies into the war."
-        //                 : "The defender has not called allies into the war.");
-        //replacements.put("war-goal", war_goal.getDisplayName());
+        replacements.put("attacker-nation",
+                getDeclaring_nation_name() != null ? "(" + getDeclaring_nation_name() + ")" : null);
+        replacements.put("defender-nation",
+                getTarget_nation_name() != null ? "(" + getTarget_nation_name() + ")" : null);
+        replacements.put("war-goal", war_goal.getDisplayName());
         replacements.put("attacker-score", getAttacker_score().toString());
         replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
         replacements.put("defender-score", getDefender_score().toString());

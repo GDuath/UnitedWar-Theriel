@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -61,6 +62,14 @@ public class PlayerSiegeEventListener implements Listener {
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, toPlot);
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        if (!plugin.getWarManager().isPlayerInActiveWar(event.getPlayer().getUniqueId()))
+            return;
+        var fromPlot = TownyAPI.getInstance().getTownBlock(event.getPlayer().getLocation());
+        plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, null);
     }
 
     @EventHandler
