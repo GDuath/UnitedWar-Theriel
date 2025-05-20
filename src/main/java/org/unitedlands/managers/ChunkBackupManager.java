@@ -5,15 +5,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.zip.*;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
-import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.util.Logger;
 
-import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.regen.PlotBlockData;
@@ -23,6 +20,7 @@ import com.palmergames.util.FileMgmt;
 
 public class ChunkBackupManager {
 
+    @SuppressWarnings(value = { "unused" })
     private final UnitedWar plugin;
     private final String baseFolder;
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
