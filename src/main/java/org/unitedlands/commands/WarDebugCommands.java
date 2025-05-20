@@ -19,13 +19,16 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarGoal;
+import org.unitedlands.classes.WarSide;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Coord;
+import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.TownyWorld;
@@ -58,6 +61,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             "createwarcamp",
             "createwar",
             "createwardeclaration",
+            "createcalltowar",
             "resetevent",
             "forceevent",
             "addwarscore",
@@ -95,14 +99,27 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 if (args[0].equals("addwarscore") || args[0].equals("endwar")) {
                     options = plugin.getWarManager().getWars().stream().map(War::getTitle).collect(Collectors.toList());
                 }
+                if (args[0].equals("createcalltowar")) {
+                    options = plugin.getWarManager().getWars().stream().map(War::getTitle).collect(Collectors.toList());
+                }
                 break;
             case 3:
                 if (args[0].equals("createwar") || args[0].equals("createwardeclaration")) {
                     options = TownyAPI.getInstance().getTowns().stream().map(Town::getName)
                             .collect(Collectors.toList());
                 }
+                if (args[0].equals("createcalltowar")) {
+                    options = TownyAPI.getInstance().getNations().stream().map(Nation::getName)
+                            .collect(Collectors.toList());
+                }
                 if (args[0].equals("addwarscore")) {
                     options = warscoreSubcommands;
+                }
+                break;
+            case 4:
+                if (args[0].equals("createcalltowar")) {
+                    options = TownyAPI.getInstance().getNations().stream().map(Nation::getName)
+                            .collect(Collectors.toList());
                 }
                 break;
             default:
@@ -135,6 +152,9 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             case "createwarcamp":
                 handleCreateWarCamp(sender, args);
                 break;
+            case "createcalltowar":
+                handleCreateCallToWar(sender, args);
+                break;
             case "resetevent":
                 handleEventReset(sender);
                 break;
@@ -155,6 +175,87 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
         }
 
         return true;
+    }
+
+    private void handleCreateCallToWar(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            Messenger.sendMessage((Player) sender, "Usage: /wd <war_name> <caller_nation> <target_nation>",
+                    true);
+            return;
+        }
+
+        War war = plugin.getWarManager().getWarByName(args[1]);
+        if (war == null) {
+            Messenger.sendMessage((Player) sender, "§cWar not found.", true);
+            return;
+        }
+
+        if (war.getIs_active() || war.getIs_ended()) {
+            Messenger.sendMessage((Player) sender, "§cWar is not pending.", true);
+            return;
+        }
+
+        var callerNation = TownyAPI.getInstance().getNation(args[2]);
+        if (callerNation == null) {
+            Messenger.sendMessage((Player) sender, "§cCaller nation not found.", true);
+            return;
+        }
+
+        var targetNation = TownyAPI.getInstance().getNation(args[3]);
+        if (targetNation == null) {
+            Messenger.sendMessage((Player) sender, "§cTarget nation not found.", true);
+            return;
+        }
+
+        if (callerNation == targetNation) {
+            Messenger.sendMessage((Player) sender, "§cCaller and target nation can't be the same.", true);
+            return;
+        }
+
+        var callerAllies = callerNation.getAllies();
+        if (!callerAllies.contains(targetNation)) {
+            Messenger.sendMessage((Player) sender, "§cThe target nation is not allied to the caller nation.", true);
+            return;
+        }
+
+        var callerCapital = callerNation.getCapital();
+        if (!war.getAttacking_towns().contains(callerCapital.getUUID())
+                && !war.getDefending_towns().contains(callerCapital.getUUID())) {
+            Messenger.sendMessage((Player) sender, "§cThe caller nation is not part of the war.", true);
+            return;
+        }
+
+        var targetCapital = targetNation.getCapital();
+        if (war.getAttacking_towns().contains(targetCapital.getUUID())
+                || war.getDefending_towns().contains(targetCapital.getUUID())) {
+            Messenger.sendMessage((Player) sender, "§cThe target nation is already part of the war.", true);
+            return;
+        }
+
+        WarSide warSide = WarSide.NONE;
+        if (war.getAttacking_towns().contains(callerCapital.getUUID()))
+            warSide = WarSide.ATTACKER;
+        else if (war.getDefending_towns().contains(callerCapital.getUUID()))
+            warSide = WarSide.DEFENDER;
+
+        CallToWar ctw = new CallToWar();
+        ctw.setWarId(war.getId());
+        ctw.setSendingNationId(callerNation.getUUID());
+        ctw.setTargetNationId(targetNation.getUUID());
+        ctw.setWarSide(warSide);
+
+        plugin.getWarManager().addCallToWar(ctw);
+
+        Player callerKing = callerNation.getKing().getPlayer();
+        if (callerKing != null)
+            Messenger.sendMessage(callerKing,
+                    "§bCall to War sent to ally. The call will automatically expire in 5 minutes.",
+                    true);
+        Player allyKing = targetNation.getKing().getPlayer();
+        if (allyKing != null)
+            Messenger.sendMessage(allyKing,
+                    "§bYou received a Call to War. Use /t war acceptcall <war_name> to accept. The call will automatically expire in 5 minutes.",
+                    true);
     }
 
     private void handleCreateWarCamp(CommandSender sender, String[] args) {

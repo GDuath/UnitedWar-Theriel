@@ -15,6 +15,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarSide;
@@ -37,6 +38,8 @@ public class WarManager implements Listener {
 
     private Set<War> pendingWars = new HashSet<>();
     private Set<War> activeWars = new HashSet<>();
+
+    private Set<CallToWar> callsToWar = new HashSet<>();
 
     public WarManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -672,6 +675,21 @@ public class WarManager implements Listener {
                 return true;
         }
         return false;
+    }
+
+    public void addCallToWar(CallToWar ctw) {
+        callsToWar.add(ctw);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            callsToWar.remove(ctw);
+        }, 300 * 20);
+    }
+
+    public List<CallToWar> getNationCallsToWar(UUID targetNationId) {
+        return callsToWar.stream().filter(c -> c.getTargetNationId().equals(targetNationId)).collect(Collectors.toList());
+    }
+
+    public CallToWar getCallToWar(UUID warId, UUID targetNationId) {
+        return callsToWar.stream().filter(c -> c.getWarId().equals(warId) && c.getTargetNationId().equals(targetNationId)).findAny().orElse(null);
     }
 
     //#endregion
