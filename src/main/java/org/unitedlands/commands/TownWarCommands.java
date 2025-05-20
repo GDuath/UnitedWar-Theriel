@@ -3,10 +3,13 @@ package org.unitedlands.commands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.maven.artifact.repository.metadata.Plugin;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -17,14 +20,17 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.models.War;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
 import com.palmergames.bukkit.towny.object.AddonCommand;
+import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
 
 public class TownWarCommands implements CommandExecutor, TabCompleter {
@@ -37,7 +43,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
     }
 
     private List<String> warSubcommands = Arrays.asList("list", "info", "scores", "declare", "surrender", "event",
-            "addmercenary", "removemercenary");
+            "callally", "acceptcall", "addmercenary", "removemercenary");
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, String alias,
@@ -49,6 +55,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         List<String> options = null;
         String input = args[args.length - 1];
 
+        Player player = (Player) sender;
         switch (args.length) {
             case 1:
                 options = warSubcommands;
@@ -66,6 +73,29 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
                 } else if (args[0].equals("removemercenary")) {
                     options = plugin.getWarManager().getAllPlayerWars(((Player) sender).getUniqueId()).keySet().stream()
                             .map(War::getTitle).collect(Collectors.toList());
+                } else if (args[0].equals("callally")) {
+                    var nation = TownyAPI.getInstance().getNation(player);
+                    var resident = TownyAPI.getInstance().getResident(player);
+                    if (nation != null && resident != null) {
+                        if (resident.isKing()) {
+                            options = nation.getAllies().stream().map(Nation::getName).collect(Collectors.toList());
+                        }
+                    }
+                } else if (args[0].equals("acceptcall")) {
+                    var nation = TownyAPI.getInstance().getNation(player);
+                    var resident = TownyAPI.getInstance().getResident(player);
+                    if (nation != null && resident != null) {
+                        if (resident.isKing()) {
+                            var callsToWar = plugin.getWarManager().getNationCallsToWar(nation.getUUID());
+                            if (callsToWar != null & !callsToWar.isEmpty()) {
+                                options = new ArrayList<>();
+                                for (var ctw : callsToWar) {
+                                    War war = plugin.getWarManager().getWarById(ctw.getWarId());
+                                    options.add(war.getTitle());
+                                }
+                            }
+                        }
+                    }
                 }
                 break;
             case 3:
@@ -78,18 +108,21 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
                         WarSide warSide = war.getPlayerWarSide(((Player) sender).getUniqueId());
                         if (warSide == WarSide.ATTACKER) {
                             for (UUID playerId : war.getAttacking_mercenaries()) {
-                                var player = Bukkit.getPlayer(playerId);
-                                if (player != null && !options.contains(player.getName()))
-                                    options.add(player.getName());
+                                var mercPlayer = Bukkit.getPlayer(playerId);
+                                if (mercPlayer != null && !options.contains(mercPlayer.getName()))
+                                    options.add(mercPlayer.getName());
                             }
                         } else if (warSide == WarSide.DEFENDER) {
                             for (UUID playerId : war.getDefending_mercenaries()) {
-                                var player = Bukkit.getPlayer(playerId);
-                                if (player != null && !options.contains(player.getName()))
-                                    options.add(player.getName());
+                                var mercPlayer = Bukkit.getPlayer(playerId);
+                                if (mercPlayer != null && !options.contains(mercPlayer.getName()))
+                                    options.add(mercPlayer.getName());
                             }
                         }
                     }
+                } else if (args[0].equals("callally")) {
+                    options = plugin.getWarManager().getPendingPlayerWars(player.getUniqueId()).keySet().stream()
+                            .map(War::getTitle).collect(Collectors.toList());
                 }
                 break;
         }
@@ -135,11 +168,158 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
             case "removemercenary":
                 handleRemoveMercenary(sender, args);
                 break;
+            case "callally":
+                handleCallAlly(sender, args);
+                break;
+            case "acceptcall":
+                handleCallAccept(sender, args);
+                break;
             default:
                 break;
         }
 
         return true;
+    }
+
+    private void handleCallAccept(CommandSender sender, String[] args) {
+        if (args.length != 2) {
+            Messenger.sendMessage((Player) sender, "Usage: /t war acceptcall <war_name>", true);
+            return;
+        }
+
+        Player player = (Player) sender;
+
+        War war = plugin.getWarManager().getWarByName(args[1]);
+        if (war == null) {
+            Messenger.sendMessage(player, "§cCould not find war " + args[1], true);
+            return;
+        }
+
+        if (war.getIs_active() || war.getIs_ended()) {
+            Messenger.sendMessage(player, "§cYou can't join a war that is not pending.", true);
+            return;
+        }
+
+        var resident = TownyAPI.getInstance().getResident(player);
+        if (resident == null) {
+            Messenger.sendMessage(player,
+                    "§cError retrieving Towny resident data. Please contact an admin to look into this.", true);
+            return;
+        }
+        if (!resident.isKing()) {
+            Messenger.sendMessage(player, "§cOnly nation leaders can accept Calls to War!", true);
+            return;
+        }
+
+        var nation = resident.getNationOrNull();
+        if (nation == null) {
+            Messenger.sendMessage(player,
+                    "§cError retrieving Towny nation data. Please contact an admin to look into this.", true);
+            return;
+        }
+
+        var ctw = plugin.getWarManager().getCallToWar(war.getId(), nation.getUUID());
+        if (ctw == null) {
+            Messenger.sendMessage(player,
+                    "§cCall to War not found. It may have already expired.", true);
+            return;
+        }
+
+        if (ctw.getWarSide() == WarSide.ATTACKER) {
+            var attackingTowns = war.getAttacking_towns();
+            for (var town : nation.getTowns()) {
+                attackingTowns.add(town.getUUID());
+            }
+            war.setAttacking_towns(attackingTowns);
+        } else if (ctw.getWarSide() == WarSide.DEFENDER) {
+            var defendingTowns = war.getDefending_towns();
+            for (var town : nation.getTowns()) {
+                defendingTowns.add(town.getUUID());
+            }
+            war.setDefending_towns(defendingTowns);
+        }
+        war.setState_changed(true);
+        war.buildPlayerLists();
+
+        Messenger.sendMessage(player,
+                "§bYour nation has joined the war!", true);
+    }
+
+    private void handleCallAlly(CommandSender sender, String[] args) {
+        if (args.length != 3) {
+            Messenger.sendMessage((Player) sender, "Usage: /t war callally <ally_name> <war_name>", true);
+            return;
+        }
+
+        Player player = (Player) sender;
+
+        Nation ally = TownyAPI.getInstance().getNation(args[1]);
+        if (ally == null) {
+            Messenger.sendMessage(player, "§cCould not find nation " + args[1], true);
+            return;
+        }
+
+        War war = plugin.getWarManager().getWarByName(args[2]);
+        if (war == null) {
+            Messenger.sendMessage(player, "§cCould not find war " + args[2], true);
+            return;
+        }
+
+        if (war.getIs_active() || war.getIs_ended()) {
+            Messenger.sendMessage(player, "§cYou can only call allies into pending wars!", true);
+            return;
+        }
+
+        var allyCapital = ally.getCapital();
+        if (war.getAttacking_towns().contains(allyCapital.getUUID())
+                || war.getDefending_towns().contains(allyCapital.getUUID())) {
+            Messenger.sendMessage(player, "§cThis nation is already part of the war!", true);
+            return;
+        }
+
+        var playerTown = TownyAPI.getInstance().getTown(player);
+        if (playerTown == null) {
+            Messenger.sendMessage(player, "§cError retrieving your town. Please contact an admin to look into this.",
+                    true);
+            return;
+        }
+
+        WarSide warSide = WarSide.NONE;
+        if (war.getAttacking_towns().contains(playerTown.getUUID()))
+            warSide = WarSide.ATTACKER;
+        else if (war.getDefending_towns().contains(playerTown.getUUID()))
+            warSide = WarSide.DEFENDER;
+
+        if (warSide == WarSide.NONE) {
+            Messenger.sendMessage(player,
+                    "§cError retrieving your war side. Please contact an admin to look into this.",
+                    true);
+            return;
+        }
+
+        var playerNation = playerTown.getNationOrNull();
+        if (playerNation == null) {
+            Messenger.sendMessage(player, "§cError retrieving your nation. Please contact an admin to look into this.",
+                    true);
+            return;
+        }
+
+        CallToWar ctw = new CallToWar();
+        ctw.setWarId(war.getId());
+        ctw.setSendingNationId(playerNation.getUUID());
+        ctw.setTargetNationId(ally.getUUID());
+        ctw.setWarSide(warSide);
+
+        plugin.getWarManager().addCallToWar(ctw);
+
+        Messenger.sendMessage(player, "§bCall to War sent to ally. The call will automatically expire in 5 minutes.",
+                true);
+        Player allyKing = ally.getKing().getPlayer();
+        if (allyKing != null)
+            Messenger.sendMessage(allyKing,
+                    "§bYou received a Call to War. Use /t war acceptcall <war_name> to accept. The call will automatically expire in 5 minutes.",
+                    true);
+
     }
 
     private void handleAddMercenary(CommandSender sender, String[] args) {
