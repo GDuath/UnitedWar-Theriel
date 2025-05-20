@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.antlr.v4.parse.ANTLRParser.finallyClause_return;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -25,7 +24,6 @@ import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
-import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;

@@ -11,6 +11,7 @@ import net.kyori.adventure.text.Component;
 
 public class WarDeclarationManager implements Listener {
 
+    @SuppressWarnings(value = { "unused" })
     private final UnitedWar plugin;
 
     public WarDeclarationManager(UnitedWar plugin) {
