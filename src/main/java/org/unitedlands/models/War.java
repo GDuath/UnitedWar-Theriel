@@ -344,10 +344,20 @@ public class War implements Identifiable {
     }
 
     public Set<UUID> getAttacking_mercenaries() {
-        if (attacking_mercenaries == null && attacking_mercenaries_serialized != null) {
-            attacking_mercenaries = Arrays.stream(attacking_mercenaries_serialized.split("#"))
-                    .map(UUID::fromString)
-                    .collect(Collectors.toSet());
+        if (attacking_mercenaries == null) {
+            attacking_mercenaries = new HashSet<>();
+
+            if (attacking_mercenaries_serialized != null && !attacking_mercenaries_serialized.isBlank()) {
+                String[] ids = attacking_mercenaries_serialized.split("#");
+
+                for (String id : ids) {
+                    try {
+                        attacking_mercenaries.add(UUID.fromString(id));
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("[War] Skipping invalid attacking mercenary UUID: '" + id + "'");
+                    }
+                }
+            }
         }
 
         return attacking_mercenaries;
@@ -361,10 +371,20 @@ public class War implements Identifiable {
     }
 
     public Set<UUID> getDefending_mercenaries() {
-        if (defending_mercenaries == null && defending_mercenaries_serialized != null) {
-            defending_mercenaries = Arrays.stream(defending_mercenaries_serialized.split("#"))
-                    .map(UUID::fromString)
-                    .collect(Collectors.toSet());
+        if (defending_mercenaries == null) {
+            defending_mercenaries = new HashSet<>();
+
+            if (defending_mercenaries_serialized != null && !defending_mercenaries_serialized.isBlank()) {
+                String[] ids = defending_mercenaries_serialized.split("#");
+
+                for (String id : ids) {
+                    try {
+                        defending_mercenaries.add(UUID.fromString(id));
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("[War] Skipping invalid defending mercenary UUID: '" + id + "'");
+                    }
+                }
+            }
         }
 
         return defending_mercenaries;

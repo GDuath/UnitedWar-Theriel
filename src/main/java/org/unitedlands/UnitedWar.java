@@ -10,14 +10,7 @@ import org.unitedlands.listeners.ContainerPlacementListener;
 import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.listeners.TownyEventListener;
-import org.unitedlands.managers.ChunkBackupManager;
-import org.unitedlands.managers.DatabaseManager;
-import org.unitedlands.managers.GriefZoneManager;
-import org.unitedlands.managers.MobilisationManager;
-import org.unitedlands.managers.SiegeManager;
-import org.unitedlands.managers.WarDeclarationManager;
-import org.unitedlands.managers.WarEventManager;
-import org.unitedlands.managers.WarManager;
+import org.unitedlands.managers.*;
 import org.unitedlands.schedulers.WarScheduler;
 import org.unitedlands.util.MobilisationMetadata;
 
@@ -96,6 +89,7 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(siegeManager, this);
         getServer().getPluginManager().registerEvents(griefZoneManager, this);
         getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
+        getServer().getPluginManager().registerEvents(new GraveManager(this), this);
     }
 
     private void registerCommands() {

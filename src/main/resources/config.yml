@@ -225,6 +225,27 @@ warzone-pvp:
 
 ###################################################
 # +---------------------------------------------+ #
+# |                   Graves                    | #
+# +---------------------------------------------+ #
+###################################################
+
+# Should the plugin interact with graves?
+# NOTE: Only supports AngelChests.
+enable-war-grave-control: true
+
+# Grave-spawning situations.
+# Mercenaries included.
+# TRUE to create a grave, FALSE to drop items to floor.
+war-graves:
+  # Die in your team's land.
+  in-friendly-land: true
+  # Die in the enemy team's land.
+  in-hostile-land: false
+  # Die in wilderness (third-party towns or unclaimed land).
+  in-wild-land: false
+
+###################################################
+# +---------------------------------------------+ #
 # |                  Messages                   | #
 # +---------------------------------------------+ #
 ###################################################
