@@ -17,7 +17,5 @@ public class ServerEventListener implements Listener {
     public void onServerLoad(ServerLoadEvent event) {
         plugin.getWarScheduler().initialize();
         plugin.getWarManager().loadWars();
-        plugin.getWarEventManager().loadEventRecord();
-        plugin.getSiegeManager().loadSiegeChunks();
     }
 }

@@ -55,6 +55,7 @@ public class WarEventManager {
     }
 
     public void loadEventRecord() {
+        Logger.log("War event records...");
         var warEvenRecordDbService = plugin.getDatabaseManager().getWarEventRecordDbService();
         warEvenRecordDbService.getIncompleteAsync().thenAccept(record -> {
             if (record != null) {
@@ -76,7 +77,10 @@ public class WarEventManager {
                             "No event found for the loaded ongoing record. Event type: " + record.getEvent_type());
                 }
             }
-        });
+        }).exceptionally(ex -> {
+            Logger.logError("Failed to load war event records: " + ex.getMessage());
+            return null;
+        });;
     }
 
     public void handleEvents() {
