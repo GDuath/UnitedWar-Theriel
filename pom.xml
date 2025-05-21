@@ -6,7 +6,7 @@
 
   <groupId>org.unitedlands</groupId>
   <artifactId>UnitedWar</artifactId>
-  <version>0.1</version>
+  <version>0.1-GRAVES-SNAPSHOT1</version>
   <name>UnitedWar</name>
 
   <properties>
@@ -19,22 +19,32 @@
       <id>papermc-repo</id>
       <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>
+
     <repository>
       <id>towny</id>
       <url>https://repo.codemc.org/repository/maven-public/</url>
     </repository>
+
     <repository>
       <id>ebean</id>
       <url>https://repo.maven.apache.org/maven2/</url>
     </repository>
+
     <repository>
       <id>glaremasters repo</id>
       <url>https://repo.glaremasters.me/repository/towny/</url>
     </repository>
+
     <repository>
       <id>enginehub</id>
       <url>https://maven.enginehub.org/repo/</url>
     </repository>
+
+    <repository>
+      <id>jeff-media-public</id>
+      <url>https://repo.jeff-media.com/public/</url>
+    </repository>
+
   </repositories>
 
   <dependencies>
@@ -74,6 +84,13 @@
       <groupId>com.sk89q.worldedit</groupId>
       <artifactId>worldedit-bukkit</artifactId>
       <version>7.4.0-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>de.jeff_media</groupId>
+      <artifactId>AngelChestAPI</artifactId>
+      <version>13.6.1</version>
       <scope>provided</scope>
     </dependency>
 
