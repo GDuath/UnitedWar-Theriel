@@ -58,6 +58,11 @@ public class WarManager implements Listener {
                 war.buildPlayerLists();
             }
             Logger.log("Loaded " + wars.size() + " war(s) from the database.");
+
+            // Once the wars have loaded, proceed to load the other database entities
+            plugin.getSiegeManager().loadSiegeChunks();
+            plugin.getWarEventManager().loadEventRecord();
+
         }).exceptionally(e -> {
             Logger.logError("Failed to load wars from the database: " + e.getMessage());
             return null;
@@ -150,13 +155,35 @@ public class WarManager implements Listener {
         if (!war.getIs_active())
             return false;
         var currentTime = System.currentTimeMillis();
+
+        // See if time has run out
         if (war.getScheduled_end_time() <= currentTime) {
             return true;
         }
+
+        // See if a side has reached the points cap
         if (war.getAttacker_score() >= war.getAttacker_score_cap() ||
                 war.getDefender_score() >= war.getDefender_score_cap()) {
             return true;
         }
+
+        // See if one side has lost all towns
+        boolean allAttackingCitiesOccupied = true;
+        for (UUID townId : war.getAttacking_towns()) {
+            if (!plugin.getSiegeManager().isTownOccupied(townId))
+                allAttackingCitiesOccupied = false;
+        }
+        if (allAttackingCitiesOccupied)
+            return true;
+
+        boolean allDefendingTownsOccupied = true;
+        for (UUID townId : war.getDefending_towns()) {
+            if (!plugin.getSiegeManager().isTownOccupied(townId))
+                allDefendingTownsOccupied = false;
+        }
+        if (allDefendingTownsOccupied)
+            return true;
+
         return false;
     }
 
@@ -685,11 +712,14 @@ public class WarManager implements Listener {
     }
 
     public List<CallToWar> getNationCallsToWar(UUID targetNationId) {
-        return callsToWar.stream().filter(c -> c.getTargetNationId().equals(targetNationId)).collect(Collectors.toList());
+        return callsToWar.stream().filter(c -> c.getTargetNationId().equals(targetNationId))
+                .collect(Collectors.toList());
     }
 
     public CallToWar getCallToWar(UUID warId, UUID targetNationId) {
-        return callsToWar.stream().filter(c -> c.getWarId().equals(warId) && c.getTargetNationId().equals(targetNationId)).findAny().orElse(null);
+        return callsToWar.stream()
+                .filter(c -> c.getWarId().equals(warId) && c.getTargetNationId().equals(targetNationId)).findAny()
+                .orElse(null);
     }
 
     //#endregion

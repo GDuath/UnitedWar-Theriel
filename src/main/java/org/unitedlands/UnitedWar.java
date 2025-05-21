@@ -6,7 +6,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.unitedlands.commands.WarAdminCommands;
 import org.unitedlands.commands.TownWarCommands;
 import org.unitedlands.commands.WarDebugCommands;
-import org.unitedlands.listeners.ContainerPlacementListener;
 import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.listeners.TownyEventListener;
@@ -89,7 +88,6 @@ public class UnitedWar extends JavaPlugin {
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new ServerEventListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
-        getServer().getPluginManager().registerEvents(new ContainerPlacementListener(this), this);
         getServer().getPluginManager().registerEvents(new TownyEventListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);

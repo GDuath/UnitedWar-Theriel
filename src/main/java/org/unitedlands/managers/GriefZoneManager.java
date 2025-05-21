@@ -73,7 +73,7 @@ public class GriefZoneManager implements Listener {
                         griefZone.setTownId(id);
                         griefZone.setType(townBlockType);
                         griefZone.setWorld(townBlock.getWorldCoord().getWorldName());
-                        griefZone.setCenterTownBlockCoord(townBlock.getCoord());
+                        griefZone.setCenterTownBlockCoord(townBlock.getWorldCoord());
 
                         // Get the town blocks around the grief zone as defined by the zone radius of this type
                         var surroundingTownBlocks = getTownBlocksInRadius(townBlock, griefZoneRadius);
@@ -87,7 +87,7 @@ public class GriefZoneManager implements Listener {
                                 validTownBlocks.add(surroundingTownBlock);
                             }
                             griefZone.setTownBlockCoords(
-                                    validTownBlocks.stream().map(TownBlock::getCoord).collect(Collectors.toSet()));
+                                    validTownBlocks.stream().map(TownBlock::getWorldCoord).collect(Collectors.toSet()));
                         }
 
                         griefZones.add(griefZone);
@@ -234,6 +234,10 @@ public class GriefZoneManager implements Listener {
                     return true;
         }
         return false;
+    }
+
+    public Set<GriefZone> getFortressGriefZones(UUID townId) {
+        return griefZones.stream().filter(z -> z.getTownId().equals(townId) && z.getType().equals("fortress")).collect(Collectors.toSet());
     }
 
     private boolean isGriefZoneAlreadyRegistered(Coord centerCoord) {
