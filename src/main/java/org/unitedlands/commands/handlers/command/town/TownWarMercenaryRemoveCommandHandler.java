@@ -1,10 +1,12 @@
-package org.unitedlands.commands.handlers.command;
+package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
@@ -15,9 +17,9 @@ import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 
-public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
+public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
 
-    public TownWarMercenaryAddCommandHandler(UnitedWar plugin) {
+    public TownWarMercenaryRemoveCommandHandler(UnitedWar plugin) {
         super(plugin);
     }
 
@@ -33,7 +35,23 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
                         .map(War::getTitle).collect(Collectors.toList());
                 break;
             case 2:
-                options = Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+                var war = plugin.getWarManager().getWarByName(args[1]);
+                if (war != null) {
+                    WarSide warSide = war.getPlayerWarSide(((Player) sender).getUniqueId());
+                    if (warSide == WarSide.ATTACKER) {
+                        for (UUID playerId : war.getAttacking_mercenaries()) {
+                            var mercPlayer = Bukkit.getPlayer(playerId);
+                            if (mercPlayer != null && !options.contains(mercPlayer.getName()))
+                                options.add(mercPlayer.getName());
+                        }
+                    } else if (warSide == WarSide.DEFENDER) {
+                        for (UUID playerId : war.getDefending_mercenaries()) {
+                            var mercPlayer = Bukkit.getPlayer(playerId);
+                            if (mercPlayer != null && !options.contains(mercPlayer.getName()))
+                                options.add(mercPlayer.getName());
+                        }
+                    }
+                }
                 break;
         }
 
@@ -44,7 +62,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war addmercenary <war_name> <player_name>", true);
+            Messenger.sendMessage((Player) sender, "Usage: /t war removemercenary <war_name> <player_name>", true);
             return;
         }
 
@@ -57,7 +75,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
         }
 
         if (!resident.isMayor() && !resident.getTownRanks().contains("co-mayor")) {
-            Messenger.sendMessage(player, "§cOnly mayors and co-mayors are allowed to recruit mercenaries for a war.",
+            Messenger.sendMessage(player, "§cOnly mayors and co-mayors are allowed to remove mercenaries from a war.",
                     true);
             return;
         }
@@ -69,7 +87,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
         }
 
         if (war.getIs_ended()) {
-            Messenger.sendMessage(player, "§cYou cannot add mercenaries to a war that is already over.", true);
+            Messenger.sendMessage(player, "§cYou cannot remove mercenaries from a war that is already over.", true);
             return;
         }
 
@@ -79,43 +97,42 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        Player mercenary = Bukkit.getPlayer(args[1]);
+        OfflinePlayer mercenary = Bukkit.getOfflinePlayer(args[1]);
         if (mercenary == null) {
-            Messenger.sendMessage(player, "§cPlayer " + args[1] + " is not online or doesn't exist.",
-                    true);
-            return;
-        }
-        if (mercenary == player) {
-            Messenger.sendMessage((Player) sender, "§eYou can't add yourself as a mercenary :facepalm:", true);
+            Messenger.sendMessage(player, "§cPlayer " + args[1] + " doesn't exist.", true);
             return;
         }
 
         var attackingMercenaryList = war.getAttacking_mercenaries();
         var defendingMercenaryList = war.getDefending_mercenaries();
 
-        if (attackingMercenaryList.contains(mercenary.getUniqueId())
-                || defendingMercenaryList.contains(mercenary.getUniqueId())) {
-            Messenger.sendMessage(player, "§eThat player has already been hired as a mercenary for this war.",
+        if (!attackingMercenaryList.contains(mercenary.getUniqueId())
+                && !defendingMercenaryList.contains(mercenary.getUniqueId())) {
+            Messenger.sendMessage(player, "§eThat player is not a mercenary in this war.",
                     true);
             return;
         }
 
         if (playerWarSide == WarSide.ATTACKER) {
-            attackingMercenaryList.add(mercenary.getUniqueId());
+            attackingMercenaryList.remove(mercenary.getUniqueId());
             war.setAttacking_mercenaries(attackingMercenaryList);
             war.setState_changed(true);
         } else if (playerWarSide == WarSide.DEFENDER) {
-            defendingMercenaryList.add(mercenary.getUniqueId());
+            defendingMercenaryList.remove(mercenary.getUniqueId());
             war.setDefending_mercenaries(defendingMercenaryList);
             war.setState_changed(true);
         }
 
-        Messenger.sendMessage(player, "§a" + mercenary.getName() + " has been added as a mercenary for your side.",
+        Messenger.sendMessage(player, "§a" + mercenary.getName() + " has been removed as a mercenary for your side.",
                 true);
-        Messenger.sendMessage(mercenary,
-                "§bYou've been added as a mercenary on the " + playerWarSide.toString().toLowerCase() + " side of "
-                        + war.getTitle(),
-                true);
+
+        if (mercenary.isOnline()) {
+            Player onlineMercenary = Bukkit.getPlayer(mercenary.getUniqueId());
+            Messenger.sendMessage(onlineMercenary,
+                    "§eYou've been removed as a mercenary on the " + playerWarSide.toString().toLowerCase()
+                            + " side of " + war.getTitle(),
+                    true);
+        }
     }
 
 }

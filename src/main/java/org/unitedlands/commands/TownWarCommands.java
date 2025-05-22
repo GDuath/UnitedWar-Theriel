@@ -13,11 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.commands.handlers.ICommandHandler;
-import org.unitedlands.commands.handlers.command.TownWarCallAcceptCommandHandler;
-import org.unitedlands.commands.handlers.command.TownWarCallAllyCommandHandler;
-import org.unitedlands.commands.handlers.command.TownWarInfoCommandHandler;
-import org.unitedlands.commands.handlers.command.TownWarMercenaryAddCommandHandler;
-import org.unitedlands.commands.handlers.command.TownWarMercenaryRemoveCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarCallAcceptCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarCallAllyCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarInfoCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarMercenaryAddCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarMercenaryRemoveCommandHandler;
 import org.unitedlands.util.Formatter;
 import org.unitedlands.util.Messenger;
 

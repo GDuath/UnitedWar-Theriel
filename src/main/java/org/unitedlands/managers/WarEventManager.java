@@ -98,7 +98,7 @@ public class WarEventManager {
         if (currentEvent != null) {
             removeCurrentEvent();
         }
-        Logger.log("Event reset.");
+        Messenger.broadCastMessage("An admin has cleared the current war event.", true);
     }
 
     private void handleCurrentEvent() {
