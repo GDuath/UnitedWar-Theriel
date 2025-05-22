@@ -1,5 +1,10 @@
 package org.unitedlands.util;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class Formatter {
 
     public static String formatDuration(long millis) {
@@ -19,5 +24,15 @@ public class Formatter {
 
         return sb.toString().trim();
     }
-    
+
+    public static List<String> getSortedCompletions(String input, List<String> options) {
+        List<String> completions = Arrays.asList("");
+        if (options != null) {
+            completions = options.stream().filter(s -> s.toLowerCase().startsWith(input.toLowerCase()))
+                    .collect(Collectors.toList());
+            Collections.sort(completions);
+        }
+        return completions;
+    }
+
 }

@@ -2,12 +2,9 @@ package org.unitedlands.commands;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,6 +18,8 @@ import org.unitedlands.commands.handlers.command.TownWarCallAllyCommandHandler;
 import org.unitedlands.commands.handlers.command.TownWarInfoCommandHandler;
 import org.unitedlands.commands.handlers.command.TownWarMercenaryAddCommandHandler;
 import org.unitedlands.commands.handlers.command.TownWarMercenaryRemoveCommandHandler;
+import org.unitedlands.util.Formatter;
+import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
@@ -68,23 +67,14 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
             }
         }
 
-        return getSortedCompletions(input, options);
-    }
-
-    private List<String> getSortedCompletions(String input, List<String> options) {
-        List<String> completions = Arrays.asList("");
-        if (options != null) {
-            completions = options.stream().filter(s -> s.toLowerCase().startsWith(input.toLowerCase()))
-                    .collect(Collectors.toList());
-            Collections.sort(completions);
-        }
-        return completions;
+        return Formatter.getSortedCompletions(input, options);
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
             String[] args) {
 
+        // TODO: Send help message
         if (args.length == 0)
             return false;
 
@@ -92,13 +82,12 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         ICommandHandler handler = handlers.get(subcommand);
 
         if (handler == null) {
-            sender.sendMessage("§cUnknown subcommand.");
+            Messenger.sendMessage(sender, "invalid-command", true);
             return false;
         }
 
         handler.handleCommand(sender, Arrays.copyOfRange(args, 1, args.length));
         return true;
-        
     }
 
 }
