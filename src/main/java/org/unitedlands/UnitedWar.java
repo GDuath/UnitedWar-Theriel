@@ -102,7 +102,7 @@ public class UnitedWar extends JavaPlugin {
         Objects.requireNonNull(getCommand("wardebug")).setTabCompleter(debugCommands);
         new TownWarCommands(this);
 
-        var warAdminCommands = new WarAdminCommands();
+        var warAdminCommands = new WarAdminCommands(this);
         Objects.requireNonNull(getCommand("waradmin")).setExecutor(warAdminCommands);
         Objects.requireNonNull(getCommand("waradmin")).setTabCompleter(warAdminCommands);
     }

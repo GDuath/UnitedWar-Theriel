@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
 public class GriefZone {
