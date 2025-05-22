@@ -1,4 +1,4 @@
-package org.unitedlands.commands.handlers.command;
+package org.unitedlands.commands.handlers.command.waradmin.mobilisation;
 
 import java.util.ArrayList;
 import java.util.List;
