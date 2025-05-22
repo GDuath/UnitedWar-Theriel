@@ -47,7 +47,7 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
         // /wa mobilisation [Town | Nation] set [Value]
         // /wa mobilisation [Town | Nation] delete
         if (args.length < 2) {
-            Messenger.sendMessage(sender, "mobilisation-usage", true);
+            Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
             return;
         }
 
@@ -63,8 +63,8 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
 
         // DELETE command branch.
         if (action.equalsIgnoreCase("delete")) {
-            if (args.length != 3) {
-                Messenger.sendMessage(sender, "mobilisation-usage", true);
+            if (args.length != 2) {
+                Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
                 return;
             }
 
@@ -86,16 +86,16 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
 
         // SET command branch.
         if (action.equalsIgnoreCase("set")) {
-            if (args.length != 4) {
-                Messenger.sendMessage(sender, "mobilisation-usage", true);
+            if (args.length != 3) {
+                Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
                 return;
             }
 
             int val;
             try {
-                val = Integer.parseInt(args[3]);
+                val = Integer.parseInt(args[2]);
             } catch (NumberFormatException ex) {
-                Messenger.sendMessageTemplate(sender, "not-a-number", Map.of("0", args[3]), true);
+                Messenger.sendMessageTemplate(sender, "not-a-number", Map.of("0", args[2]), true);
                 return;
             }
             if (val < 0 || val > 100) {
@@ -120,7 +120,7 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
         }
 
         // Fallback message.
-        Messenger.sendMessage(sender, "mobilisation-usage", true);
+        Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
     }
 
 }

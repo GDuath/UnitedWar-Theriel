@@ -44,12 +44,13 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
                         .map(War::getTitle).collect(Collectors.toList());
                 break;
         }
-        
+
         return options;
     }
 
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
+
         if (args.length != 2) {
             Messenger.sendMessage((Player) sender, "Usage: /t war callally <ally_name> <war_name>", true);
             return;

@@ -1,7 +1,5 @@
 package org.unitedlands.events;
 
-import java.util.UUID;
-
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
