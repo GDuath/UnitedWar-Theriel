@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.CallToWar;
-import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
@@ -59,14 +58,11 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
     private List<String> debugSubcommands = Arrays.asList(
             "createwarcamp",
-            "createwar",
             "createwardeclaration",
             "createcalltowar",
             "resetevent",
             "forceevent",
-            "addwarscore",
-            "endwar",
-            "restorechunkbackup");
+            "addwarscore");
 
     private List<String> warscoreSubcommands = Arrays.asList(
             "attacker",
@@ -143,9 +139,6 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
             return false;
 
         switch (args[0]) {
-            case "createwar":
-                handleCreateWar(sender, args);
-                break;
             case "createwardeclaration":
                 handleCreateWarDeclaration(sender, args);
                 break;
@@ -163,12 +156,6 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 break;
             case "addwarscore":
                 handleAddWarScore(sender, args);
-                break;
-            case "endwar":
-                handleEndWar(sender, args);
-                break;
-            case "restorechunkbackup":
-                handleChunkrestore(sender, args);
                 break;
             default:
                 break;
@@ -358,33 +345,6 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
     }
 
-    private void handleChunkrestore(CommandSender sender, String[] args) {
-        // if (args.length < 2) {
-        //     Messenger.sendMessage((Player) sender, "Usage: /wd restorechunkbackup <foldername>",
-        //             true);
-        //     return;
-        // }
-
-        // plugin.getChunkBackupManager().startRegenerationFromFolder(args[1]);
-        // Messenger.sendMessage((Player) sender, "§7Chunk backup started.", true);
-    }
-
-    private void handleEndWar(CommandSender sender, String[] args) {
-        if (args.length < 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /wd endwar <warname>",
-                    true);
-            return;
-        }
-
-        War war = plugin.getWarManager().getWarByName(args[1]);
-        if (war == null) {
-            Messenger.sendMessage((Player) sender, "War not found.", true);
-            return;
-        }
-
-        plugin.getWarManager().forceEndWar(war);
-    }
-
     private void handleAddWarScore(CommandSender sender, String[] args) {
         if (args.length < 4) {
             Messenger.sendMessage((Player) sender, "Usage: /wd addwarscore <warname> [attacker|defender] <points>",
@@ -437,33 +397,6 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
     private void handleEventReset(CommandSender sender) {
         plugin.getWarEventManager().resetEvent();
         Messenger.sendMessage((Player) sender, "Event reset", true);
-    }
-
-    private void handleCreateWar(CommandSender sender, String[] args) {
-        if (args.length < 3) {
-            Messenger.sendMessage((Player) sender, "Usage: /wardebug createwar <attacker> <defender>", true);
-            return;
-        }
-
-        var attackerTown = TownyAPI.getInstance().getTown(args[1]);
-        if (attackerTown == null) {
-            Messenger.sendMessage((Player) sender, "Attacker town not found.", true);
-            return;
-        }
-        var defenderTown = TownyAPI.getInstance().getTown(args[2]);
-        if (defenderTown == null) {
-            Messenger.sendMessage((Player) sender, "Defender town not found.", true);
-            return;
-        }
-        if (attackerTown.equals(defenderTown)) {
-            Messenger.sendMessage((Player) sender, "Attacker and defender towns cannot be the same.", true);
-            return;
-        }
-
-        int random = (int) (Math.random() * 10000);
-        String title = "Debug_War_" + random;
-        plugin.getWarManager().createWar(title, "Debug War Description",
-                attackerTown.getUUID(), defenderTown.getUUID(), WarGoal.DEFAULT);
     }
 
     private void handleCreateWarDeclaration(CommandSender sender, String[] args) {

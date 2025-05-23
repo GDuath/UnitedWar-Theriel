@@ -299,6 +299,7 @@ public class War implements Identifiable {
 
     public void setAttacking_mercenaries_serialized(String attacking_mercenaries_serialized) {
         this.attacking_mercenaries_serialized = attacking_mercenaries_serialized;
+        this.attacking_mercenaries = null; // reset cache
     }
 
     public String getDefending_mercenaries_serialized() {
@@ -307,6 +308,7 @@ public class War implements Identifiable {
 
     public void setDefending_mercenaries_serialized(String defending_mercenaries_serialized) {
         this.defending_mercenaries_serialized = defending_mercenaries_serialized;
+        this.defending_mercenaries = null; // reset cache
     }
 
     public Set<UUID> getAttacking_towns() {
@@ -359,15 +361,15 @@ public class War implements Identifiable {
                 }
             }
         }
-
         return attacking_mercenaries;
     }
 
     public void setAttacking_mercenaries(Set<UUID> attacking_mercenaries) {
         this.attacking_mercenaries = attacking_mercenaries;
-        this.attacking_mercenaries_serialized = attacking_mercenaries.stream()
-                .map(UUID::toString)
-                .collect(Collectors.joining("#"));
+        this.attacking_mercenaries_serialized = attacking_mercenaries == null ? null
+                : attacking_mercenaries.stream()
+                        .map(UUID::toString)
+                        .collect(Collectors.joining("#"));
     }
 
     public Set<UUID> getDefending_mercenaries() {
@@ -386,15 +388,15 @@ public class War implements Identifiable {
                 }
             }
         }
-
         return defending_mercenaries;
     }
 
     public void setDefending_mercenaries(Set<UUID> defending_mercenaries) {
         this.defending_mercenaries = defending_mercenaries;
-        this.defending_mercenaries_serialized = defending_mercenaries.stream()
-                .map(UUID::toString)
-                .collect(Collectors.joining("#"));
+        this.defending_mercenaries_serialized = defending_mercenaries == null ? null
+                : defending_mercenaries.stream()
+                        .map(UUID::toString)
+                        .collect(Collectors.joining("#"));
     }
 
     public String getAttacker_money_warchest_serialized() {
@@ -489,6 +491,7 @@ public class War implements Identifiable {
 
     public void setAttacker_claims_warchest_serialized(String attacker_claims_warchest_serialized) {
         this.attacker_claims_warchest_serialized = attacker_claims_warchest_serialized;
+        this.attacker_claims_warchest = null; // Reset cache
     }
 
     public String getDefender_claims_warchest_serialized() {
@@ -497,6 +500,7 @@ public class War implements Identifiable {
 
     public void setDefender_claims_warchest_serialized(String defender_claims_warchest_serialized) {
         this.defender_claims_warchest_serialized = defender_claims_warchest_serialized;
+        this.defender_claims_warchest = null; // Reset cache
     }
 
     public Integer getAdditional_claims_payout() {
@@ -508,15 +512,17 @@ public class War implements Identifiable {
     }
 
     public Map<UUID, Integer> getAttacker_claims_warchest() {
-        if (attacker_claims_warchest == null && attacker_claims_warchest_serialized != null) {
-            attacker_claims_warchest = new HashMap<>();
-            String[] sets = attacker_claims_warchest_serialized.split("#");
-            for (String set : sets) {
-                String[] values = set.split(":");
-                if (values.length == 2) {
-                    UUID uuid = UUID.fromString(values[0]);
-                    int value = Integer.parseInt(values[1]);
-                    attacker_claims_warchest.putIfAbsent(uuid, value);
+        if (attacker_claims_warchest == null) {
+            attacker_claims_warchest = new HashMap<UUID, Integer>();
+            if (attacker_claims_warchest_serialized != null && !attacker_claims_warchest_serialized.isEmpty()) {
+                String[] sets = attacker_claims_warchest_serialized.split("#");
+                for (String set : sets) {
+                    String[] values = set.split(":");
+                    if (values.length == 2) {
+                        UUID uuid = UUID.fromString(values[0]);
+                        int value = Integer.parseInt(values[1]);
+                        attacker_claims_warchest.putIfAbsent(uuid, value);
+                    }
                 }
             }
         }
@@ -538,15 +544,17 @@ public class War implements Identifiable {
     }
 
     public Map<UUID, Integer> getDefender_claims_warchest() {
-        if (defender_claims_warchest == null && defender_claims_warchest_serialized != null) {
-            defender_claims_warchest = new HashMap<>();
-            String[] sets = defender_claims_warchest_serialized.split("#");
-            for (String set : sets) {
-                String[] values = set.split(":");
-                if (values.length == 2) {
-                    UUID uuid = UUID.fromString(values[0]);
-                    int value = Integer.parseInt(values[1]);
-                    defender_claims_warchest.putIfAbsent(uuid, value);
+        if (defender_claims_warchest == null) {
+            defender_claims_warchest = new HashMap<UUID, Integer>();
+            if (defender_claims_warchest_serialized != null && !defender_claims_warchest_serialized.isEmpty()) {
+                String[] sets = defender_claims_warchest_serialized.split("#");
+                for (String set : sets) {
+                    String[] values = set.split(":");
+                    if (values.length == 2) {
+                        UUID uuid = UUID.fromString(values[0]);
+                        int value = Integer.parseInt(values[1]);
+                        defender_claims_warchest.putIfAbsent(uuid, value);
+                    }
                 }
             }
         }

@@ -299,6 +299,7 @@ messages:
     - "§f§lDefender: §r{defender} | §lFinal score: §r{defender-score} / {defender-score-cap}"
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§c§m+|✦                  +✦+                  |✦+"
+  town-captured: "§e{war-name}: The town of {town-name} succumbed to the siege of the attacking armies and was captured!"
     
   # +---------------------------------------------+ #
   # |                War Events                   | #

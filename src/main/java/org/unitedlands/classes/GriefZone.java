@@ -4,14 +4,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.palmergames.bukkit.towny.object.Coord;
+import com.palmergames.bukkit.towny.object.WorldCoord;
 
 public class GriefZone {
     private UUID townId;
     private String type;
     private String world;
-    private Coord centerTownBlockCoord;
-    private Set<Coord> townBlockCoords = new HashSet<>();
+    private WorldCoord centerTownBlockCoord;
+    private Set<WorldCoord> townBlockCoords = new HashSet<>();
 
     public UUID getTownId() {
         return townId;
@@ -37,19 +37,19 @@ public class GriefZone {
         this.world = world;
     }
 
-    public Coord getCenterTownBlockCoord() {
+    public WorldCoord getCenterTownBlockCoord() {
         return centerTownBlockCoord;
     }
 
-    public void setCenterTownBlockCoord(Coord centerTownBlockCoord) {
+    public void setCenterTownBlockCoord(WorldCoord centerTownBlockCoord) {
         this.centerTownBlockCoord = centerTownBlockCoord;
     }
 
-    public Set<Coord> getTownBlockCoords() {
+    public Set<WorldCoord> getTownBlockCoords() {
         return townBlockCoords;
     }
 
-    public void setTownBlockCoords(Set<Coord> townBlockCoords) {
+    public void setTownBlockCoords(Set<WorldCoord> townBlockCoords) {
         this.townBlockCoords = townBlockCoords;
     }
 }

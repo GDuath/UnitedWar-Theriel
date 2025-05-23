@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -17,6 +16,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.SiegeChunkHealthChangeEvent;
+import org.unitedlands.events.TownOccupationEvent;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
@@ -24,10 +24,12 @@ import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
+import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
+import com.palmergames.bukkit.towny.object.WorldCoord;
 
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.bossbar.BossBar.Color;
@@ -46,6 +48,7 @@ public class SiegeManager implements Listener {
     private Map<String, Set<Player>> chunkHealthBarViewers = new HashMap<String, Set<Player>>();
 
     private Map<UUID, Boolean> siegeEnabled = new HashMap<UUID, Boolean>();
+    private Map<UUID, Boolean> townOccupied = new HashMap<UUID, Boolean>();
 
     public SiegeManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -53,23 +56,45 @@ public class SiegeManager implements Listener {
     }
 
     public void loadSiegeChunks() {
-        plugin.getDatabaseManager().getSiegeChunkDbService().getAllAsync().thenAccept(loadedSiegeChunks -> {
+        Logger.log("Loading siege chunks...");
+        var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
+
+        siegeChunkDbService.getAllAsync().thenAccept(loadedSiegeChunks -> {
+            Set<Town> towns = new HashSet<>();
             for (var siegeChunk : loadedSiegeChunks) {
-                var location = new Location(Bukkit.getWorld(siegeChunk.getWorld()), (double) siegeChunk.getX() * 16, 0d,
-                        (double) siegeChunk.getZ() * 16);
-                var townBlock = TownyAPI.getInstance().getTownBlock(location);
-                if (townBlock != null) {
-                    siegeChunk.setTownBlock(townBlock);
-                    siegeChunk.setTown(townBlock.getTownOrNull());
-                    siegeChunks.put(siegeChunk.getChunkKey(), siegeChunk);
-                    createChunkHealthBar(siegeChunk);
-                    updateHealthBar(siegeChunk);
-                } else {
-                    Logger.logError("Error loading siege chunk " + siegeChunk.getChunkKey());
+                var world = Bukkit.getWorld(siegeChunk.getWorld());
+                if (world == null) {
+                    Logger.logError("World not found for siege chunk: " + siegeChunk.getChunkKey());
+                    continue;
+                }
+
+                var coord = new WorldCoord(world, siegeChunk.getX(), siegeChunk.getZ());
+                var townBlock = TownyAPI.getInstance().getTownBlock(coord);
+                if (townBlock == null) {
+                    Logger.logError("TownBlock not found for siege chunk: " + siegeChunk.getChunkKey());
+                    continue;
+                }
+                siegeChunk.setTownBlock(townBlock);
+
+                var town = townBlock.getTownOrNull();
+                siegeChunk.setTown(town);
+
+                siegeChunks.put(siegeChunk.getChunkKey(), siegeChunk);
+                
+                createChunkHealthBar(siegeChunk);
+                updateHealthBar(siegeChunk);
+
+                if (town != null) {
+                    towns.add(town);
                 }
             }
-            ;
+
+            towns.forEach(town -> calculateTownOccupation(town.getUUID()));
             Logger.log("Loaded " + loadedSiegeChunks.size() + " siege chunks from database.");
+        }).exceptionally(ex -> {
+            Logger.logError("Failed to load siege chunks: " + ex.getMessage());
+            ex.printStackTrace();
+            return null;
         });
     }
 
@@ -83,6 +108,10 @@ public class SiegeManager implements Listener {
             towns = war.getDefending_towns();
 
         for (UUID townId : towns) {
+
+            if (isTownOccupied(townId))
+                enabled = false;
+
             var currentStatus = siegeEnabled.computeIfAbsent(townId, k -> true);
             if (!currentStatus.equals(enabled)) {
                 siegeEnabled.put(townId, enabled);
@@ -151,15 +180,12 @@ public class SiegeManager implements Listener {
                     if (event.isCancelled())
                         return;
 
-                    // Set new health, but not higher than the max health
-                    siegeChunk.setCurrent_health(
-                            Math.min(siegeChunk.getMax_health(),
-                                    siegeChunk.getCurrent_health() + event.getHealthChange()));
+                    // Calculate the new health. Can't be lower than 0 or higher than max health and
+                    int newHealth = Math.clamp(siegeChunk.getCurrent_health() + event.getHealthChange(), 0,
+                            siegeChunk.getMax_health());
 
-                    if (siegeChunk.getCurrent_health() <= 0) {
-                        siegeChunk.setCurrent_health(0);
-                        siegeChunk.setOccupied(true);
-                        siegeChunk.setOccupation_time(System.currentTimeMillis());
+                    // If the siege chunk will be at 0 HP or less, do the capture.                                    
+                    if (newHealth == 0) {
 
                         War war = plugin.getWarManager().getWarById(siegeChunk.getWar_id());
 
@@ -174,7 +200,16 @@ public class SiegeManager implements Listener {
 
                         var chunkTypeRewards = plugin.getConfig()
                                 .getConfigurationSection("score-settings.chunk-capture");
-                        var townBlockType = siegeChunk.getTownBlock().getTypeName().toLowerCase();
+
+                        var townBlockType = "default";
+                        var townBlock = siegeChunk.getTownBlock();
+
+                        // Special handling for home blocks
+                        if (townBlock.isHomeBlock()) {
+                            townBlockType = "home";
+                        } else {
+                            townBlockType = townBlock.getTypeName().toLowerCase();
+                        }
 
                         if (chunkTypeRewards.getKeys(false).contains(townBlockType)) {
                             reward = chunkTypeRewards.getInt(townBlockType + ".points");
@@ -192,6 +227,37 @@ public class SiegeManager implements Listener {
                         WarScoreEvent warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
                                 WarScoreType.valueOf(eventtype), message, silent, reward);
                         warScoreEvent.callEvent();
+
+                        // Some listener may have cancelled the event.
+                        if (warScoreEvent.isCancelled())
+                            return;
+
+                        siegeChunk.setCurrent_health(0);
+                        siegeChunk.setOccupied(true);
+                        siegeChunk.setOccupation_time(System.currentTimeMillis());
+
+                        var town = townBlock.getTownOrNull();
+                        if (town == null)
+                            return;
+
+                        calculateTownOccupation(town.getUUID());
+                        if (isTownOccupied(town.getUUID())) {
+                            TownOccupationEvent townOccupationEvent = new TownOccupationEvent() {
+                                {
+                                    setTown(town);
+                                }
+                            };
+                            townOccupationEvent.callEvent();
+
+                            Map<String, String> replacements = new HashMap<>();
+                            replacements.put("war-name", war.getCleanTitle());
+                            replacements.put("town-name", town.getName());
+                            Messenger.broadcastMessageTemplate("town-captured", replacements, true);
+                        }
+
+                    } else {
+                        // The chunk was not captured, just set the new health
+                        siegeChunk.setCurrent_health(newHealth);
                     }
 
                     siegeChunk.setState_changed(true);
@@ -251,7 +317,14 @@ public class SiegeManager implements Listener {
             if (war.getTownWarSide(town.getUUID()) != WarSide.NONE) {
 
                 var maxHealth = 0;
-                var townBlockType = townBlock.getTypeName();
+                var townBlockType = "default";
+
+                // Special handling for home blocks
+                if (townBlock.isHomeBlock()) {
+                    townBlockType = "home";
+                } else {
+                    townBlockType = townBlock.getTypeName().toLowerCase();
+                }
 
                 // Load special health settings (e. g. for fortresses) or revert to default
                 if (chunkHealthSettings.getKeys(false).contains(townBlockType)) {
@@ -523,10 +596,64 @@ public class SiegeManager implements Listener {
         return block.getWorld().getName() + ":" + block.getCoord().getX() + ":" + block.getCoord().getZ();
     }
 
+    public String getChunkKey(WorldCoord coord) {
+        return coord.getWorldName() + ":" + coord.getX() + ":" + coord.getZ();
+    }
+
     public boolean isSiegeEnabled(UUID townId) {
+        if (isTownOccupied(townId))
+            return false;
         if (plugin.getConfig().getBoolean("siege-settings.override-activity-requirement", false))
             return true;
         return siegeEnabled.computeIfAbsent(townId, k -> false);
+    }
+
+    public void calculateTownOccupation(UUID townId) {
+        var town = TownyAPI.getInstance().getTown(townId);
+        if (town == null)
+            return;
+
+        // Inspect the home block
+        var homeblock = town.getHomeBlockOrNull();
+        boolean homeBlockOccupied = false;
+        if (homeblock == null) {
+            // Towns without a valid homeblock could never be occupied, so we consider them  
+            // occupied by default.
+            homeBlockOccupied = true;
+        } else {
+            var homeblockKey = getChunkKey(homeblock);
+            var homeblockSiegeChunk = siegeChunks.getOrDefault(homeblockKey, null);
+            if (homeblockSiegeChunk != null) {
+                homeBlockOccupied = homeblockSiegeChunk.getOccupied();
+            }
+        }
+
+        // Inspect fortresses. We consider all fortresses occupied unless we find at least one that isn't.
+        // If a town doesn't have any fortresses, we consider them occupied by default.
+        boolean allFortressesOccupied = true;
+        var fortressZones = plugin.getGriefZoneManager().getFortressGriefZones(townId);
+        if (fortressZones != null && !fortressZones.isEmpty()) {
+            for (var zone : fortressZones) {
+                var fortressChunkCoords = zone.getCenterTownBlockCoord();
+                var fortressChunkKey = getChunkKey(fortressChunkCoords);
+                var fortressSiegeChunk = siegeChunks.getOrDefault(fortressChunkKey, null);
+                if (fortressSiegeChunk != null) {
+                    if (!fortressSiegeChunk.getOccupied())
+                        allFortressesOccupied = false;
+                } else {
+                    // The siege chunk doesn't exist because no one has been there yet, so it
+                    // must be unoccupied.
+                    allFortressesOccupied = false;
+
+                }
+            }
+        }
+
+        townOccupied.put(townId, homeBlockOccupied && allFortressesOccupied);
+    }
+
+    public boolean isTownOccupied(UUID townId) {
+        return townOccupied.computeIfAbsent(townId, k -> false);
     }
 
     //#endregion
