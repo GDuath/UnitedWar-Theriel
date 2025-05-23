@@ -125,7 +125,7 @@ public class PlayerDeathListener implements Listener {
         }
     }
 
-    private Player findKillingPlayer(Player deceased, EntityDamageByEntityEvent damageEvent) {
+    public static Player findKillingPlayer(Player deceased, EntityDamageByEntityEvent damageEvent) {
         Entity damager = damageEvent.getDamager();
         Player killer = null;
 

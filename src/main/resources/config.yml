@@ -225,6 +225,33 @@ warzone-pvp:
 
 ###################################################
 # +---------------------------------------------+ #
+# |                   Graves                    | #
+# +---------------------------------------------+ #
+###################################################
+
+# Should the plugin interact with graves?
+# NOTE: Only supports AngelChests.
+enable-war-grave-control: true
+
+# Grave-spawning situations.
+# Only works if enable-war-grave-control is TRUE.
+# Mercenaries included.
+# TRUE to create a grave, FALSE to drop items to floor.
+war-graves:
+  # Die in your team's land.
+  in-friendly-land: true
+  # Die in the enemy team's land.
+  in-hostile-land: false
+  # Die in wilderness (third-party towns or unclaimed land).
+  in-wild-land: false
+
+# Should neutral players (uninvolved in a war) be punished for interfering?
+# When TRUE, if killing a war participant they always create a grave and dying in a warzone that isn't theirs never creates a grave.
+# Only works if enable-war-grave-control is TRUE.
+punish-third-party-interference: true
+
+###################################################
+# +---------------------------------------------+ #
 # |                  Messages                   | #
 # +---------------------------------------------+ #
 ###################################################
