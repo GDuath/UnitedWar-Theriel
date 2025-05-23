@@ -18,6 +18,8 @@ import org.unitedlands.models.War;
 import org.unitedlands.util.WarLivesMetadata;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 public class GraveManager implements Listener {
 
@@ -47,6 +49,32 @@ public class GraveManager implements Listener {
         }
 
         Map<War, WarSide> killerWars = plugin.getWarManager().getActivePlayerWars(killer.getUniqueId());
+
+        boolean punishThirdParty = plugin.getConfig().getBoolean("punish-third-party-interference", true);
+        boolean victimInWar = !victimWars.isEmpty();
+        boolean killerInWar = killerWars != null && !killerWars.isEmpty();
+
+        // If a third party kills a war participant, force grave creation.
+        if (punishThirdParty && victimInWar && !killerInWar) {
+            plugin.getLogger().info(String.format(
+                    "[GraveManager] %s (neutral) killed %s (war participant). Creating grave.",
+                    killer.getName(), victim.getName()
+            ));
+            return;
+        }
+
+        // If a war participant kills a third party, force items to floor.
+        if (punishThirdParty && !victimInWar && killerInWar) {
+            Pair<WarSide, String> land = getLandSideAndTownName(victim.getLocation(), null);
+            if (land.getLeft() != null) {
+                plugin.getLogger().info(String.format(
+                        "[GraveManager] %s (neutral) was killed by %s (war participant) in warzone (%s). Dropping items.",
+                        victim.getName(), killer.getName(), land.getRight()
+                ));
+                event.setCancelled(true);
+                return;
+            }
+        }
 
         for (var entry : victimWars.entrySet()) {
             War war = entry.getKey();
@@ -78,7 +106,7 @@ public class GraveManager implements Listener {
                 return;
             }
 
-            boolean killerInSameWar = killerWars.containsKey(war)
+            boolean killerInSameWar = Objects.requireNonNull(killerWars).containsKey(war)
                     || war.getAttacking_mercenaries().contains(killer.getUniqueId())
                     || war.getDefending_mercenaries().contains(killer.getUniqueId());
 
@@ -146,14 +174,26 @@ public class GraveManager implements Listener {
         ));
     }
 
-    private Pair<WarSide, String> getLandSideAndTownName(Location location, War war) {
+    private Pair<WarSide, String> getLandSideAndTownName(Location location, War optionalWarContext) {
         TownBlock block = TownyAPI.getInstance().getTownBlock(location);
         if (block == null || !block.hasTown()) return new ImmutablePair<>(null, "wilderness");
 
         var town = block.getTownOrNull();
         if (town == null) return new ImmutablePair<>(null, "wilderness");
 
-        return new ImmutablePair<>(war.getTownWarSide(town.getUUID()), town.getName());
+        UUID townId = town.getUUID();
+
+        // If a specific war is passed, use its context to find land ownership side.
+        if (optionalWarContext != null) {
+            WarSide side = optionalWarContext.getTownWarSide(townId);
+            return new ImmutablePair<>(side, town.getName());
+        }
+
+        // Otherwise, check all active wars and flag it as war land (no specific side).
+        boolean isWarLand = plugin.getWarManager().getActiveWars().stream()
+                .anyMatch(war -> war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId));
+
+        return new ImmutablePair<>(isWarLand ? WarSide.NONE : null, town.getName());
     }
 
 }
