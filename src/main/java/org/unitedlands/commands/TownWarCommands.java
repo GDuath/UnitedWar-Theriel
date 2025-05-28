@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.commands.handlers.ICommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWaDeclareCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarBookCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarCallAcceptCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarCallAllyCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarInfoCommandHandler;
@@ -39,6 +41,8 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
     }
 
     private void registerHandlers() {
+        handlers.put("book", new TownWarBookCommandHandler(plugin));
+        handlers.put("declare", new TownWaDeclareCommandHandler(plugin));
         handlers.put("info", new TownWarInfoCommandHandler(plugin));
         handlers.put("callally", new TownWarCallAllyCommandHandler(plugin));
         handlers.put("acceptcall", new TownWarCallAcceptCommandHandler(plugin));
