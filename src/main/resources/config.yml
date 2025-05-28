@@ -376,3 +376,16 @@ messages:
   # {0} is the name of the war.
   warlives-final: "§cYou died and lost your final war life! You have been removed from §e§l{0}§c."
   warlives-gone: "§cYou died but have already lost your final war life!"
+
+  # +---------------------------------------------+ #
+  # |                  War Books                  | #
+  # +---------------------------------------------+ #
+
+  war-book-name: 'War against '
+  war-book-lore:
+  - ''
+  - '§eRename §7this book to set the'
+  - '§7name of the war.'
+  - '§eRight-click §7this book to write'
+  - '§7your reasoning behind the §ewar.'
+  - ''
