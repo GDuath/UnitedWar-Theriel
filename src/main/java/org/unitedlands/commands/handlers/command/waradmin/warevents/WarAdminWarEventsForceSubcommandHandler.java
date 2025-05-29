@@ -32,12 +32,22 @@ public class WarAdminWarEventsForceSubcommandHandler extends BaseCommandHandler 
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length < 1) {
             Messenger.sendMessage((Player) sender,
-                    "Usage: /wa warevents force <event_type>",
+                    "Usage: /wa warevents force <event_type> [warmup_in_minutes]",
                     true);
             return;
         }
 
-        plugin.getWarEventManager().forceEvent((Player) sender, args[0]);
+        Integer warmup = 0;
+        if (args.length == 2) {
+            try {
+                warmup = Integer.parseInt(args[1]);
+            } catch (Exception ex) {
+                Messenger.sendMessage((Player) sender,
+                    "§cInvalid optional warmup time, must be a number.", true);
+                return;
+            }
+        }
+        plugin.getWarEventManager().forceEvent((Player) sender, args[0], warmup);
     }
 
 }

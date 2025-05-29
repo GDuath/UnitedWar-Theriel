@@ -83,13 +83,8 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 options = debugSubcommands;
                 break;
             case 2:
-                if (args[0].equals("createwar") || args[0].equals("createwardeclaration")
-                        || args[0].equals("createwarcamp")) {
+                if (args[0].equals("createwardeclaration")  || args[0].equals("createwarcamp")) {
                     options = TownyAPI.getInstance().getTowns().stream().map(Town::getName)
-                            .collect(Collectors.toList());
-                }
-                if (args[0].equals("forceevent")) {
-                    options = plugin.getWarEventManager().getEventRegister().keySet().stream()
                             .collect(Collectors.toList());
                 }
                 if (args[0].equals("addwarscore") || args[0].equals("endwar")) {
@@ -100,7 +95,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 }
                 break;
             case 3:
-                if (args[0].equals("createwar") || args[0].equals("createwardeclaration")) {
+                if (args[0].equals("createwardeclaration")) {
                     options = TownyAPI.getInstance().getTowns().stream().map(Town::getName)
                             .collect(Collectors.toList());
                 }
@@ -147,12 +142,6 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 break;
             case "createcalltowar":
                 handleCreateCallToWar(sender, args);
-                break;
-            case "resetevent":
-                handleEventReset(sender);
-                break;
-            case "forceevent":
-                handleForceEvent(sender, args);
                 break;
             case "addwarscore":
                 handleAddWarScore(sender, args);
@@ -383,20 +372,6 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                 Messenger.sendMessage((Player) sender, "Side must be attacker or defender.", true);
                 break;
         }
-    }
-
-    private void handleForceEvent(CommandSender sender, String[] args) {
-        if (args.length < 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /wd forcevent <eventname>", true);
-            return;
-        }
-
-        plugin.getWarEventManager().forceEvent((Player) sender, args[1]);
-    }
-
-    private void handleEventReset(CommandSender sender) {
-        plugin.getWarEventManager().resetEvent();
-        Messenger.sendMessage((Player) sender, "Event reset", true);
     }
 
     private void handleCreateWarDeclaration(CommandSender sender, String[] args) {

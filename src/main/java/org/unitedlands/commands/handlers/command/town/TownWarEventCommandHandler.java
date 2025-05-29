@@ -1,17 +1,16 @@
-package org.unitedlands.commands.handlers.command.waradmin.warevents;
+package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.util.Messenger;
 
-public class WarAdminWarEventsClearSubcommandHandler extends BaseCommandHandler {
+public class TownWarEventCommandHandler extends BaseCommandHandler {
 
-    public WarAdminWarEventsClearSubcommandHandler(UnitedWar plugin) {
+    public TownWarEventCommandHandler(UnitedWar plugin) {
         super(plugin);
     }
 
@@ -22,14 +21,13 @@ public class WarAdminWarEventsClearSubcommandHandler extends BaseCommandHandler 
 
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
-        if (args.length != 0) {
-            Messenger.sendMessage((Player) sender,
-                    "Usage: /wa warevents clear",
-                    true);
+        var event = plugin.getWarEventManager().getCurrentEvent();
+        if (event == null) {
+            Messenger.sendMessageTemplate(sender, "event-info-no-event", null, true);
             return;
+        } else {
+            Messenger.sendMessageListTemplate(sender, "event-info-active", event.getMessagePlaceholders(), false);
         }
-
-        plugin.getWarEventManager().resetEvent();
     }
 
 }

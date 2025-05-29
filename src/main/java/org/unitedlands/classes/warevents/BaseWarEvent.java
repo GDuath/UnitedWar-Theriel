@@ -1,9 +1,13 @@
 package org.unitedlands.classes.warevents;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.annotation.Nullable;
 
 import org.bukkit.event.Listener;
 import org.unitedlands.events.WarScoreEvent;
+import org.unitedlands.util.Formatter;
 
 public abstract class BaseWarEvent implements Listener {
 
@@ -80,4 +84,18 @@ public abstract class BaseWarEvent implements Listener {
         this.isActive = isActive;
     }
 
+    public Map<String, String> getMessagePlaceholders() {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("event-name", getDisplayname());
+        replacements.put("event-description", getDescription());
+        replacements.put("event-duration", Formatter.formatDuration(getDuration()));
+        if (!isActive) {
+            replacements.put("timer-info", "Event will start in in §e"
+                    + Formatter.formatDuration(scheduledStartTime - System.currentTimeMillis()) + " §7and last §e" + Formatter.formatDuration(getDuration() * 1000) + ".");
+        } else {
+            replacements.put("timer-info",
+                    "Event will end in §e" + Formatter.formatDuration(scheduledEndTime - System.currentTimeMillis()) + ".");
+        }
+        return replacements;
+    }
 }

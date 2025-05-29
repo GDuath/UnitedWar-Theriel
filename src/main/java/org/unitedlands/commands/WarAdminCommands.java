@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.commands.handlers.ICommandHandler;
+import org.unitedlands.commands.handlers.command.waradmin.WarAdminReloadCommandHandler;
 import org.unitedlands.commands.handlers.command.waradmin.mobilisation.WarAdminMobilisationCommandHandler;
 import org.unitedlands.commands.handlers.command.waradmin.war.WarAdminWarCommandHandler;
 import org.unitedlands.commands.handlers.command.waradmin.warevents.WarAdminWarEventsCommandHandler;
@@ -27,6 +28,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
     }
 
     private void registerHandlers() {
+        handlers.put("reload", new WarAdminReloadCommandHandler(plugin));
         handlers.put("mobilisation", new WarAdminMobilisationCommandHandler(plugin));
         handlers.put("warlives", new WarAdminWarLivesCommandHandler(plugin));
         handlers.put("war", new WarAdminWarCommandHandler(plugin));
