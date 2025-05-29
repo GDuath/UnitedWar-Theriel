@@ -97,7 +97,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        var warGoal = WarGoal.DEFAULT;
+        var warGoal = WarGoal.SUPERIORITY;
         try {
             warGoal = WarGoal.valueOf(args[1]);
         } catch (Exception ex) {
@@ -106,7 +106,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         }
 
         switch (warGoal) {
-            case DEFAULT:
+            case SUPERIORITY:
                 handleDefaultWar(player, playerTown, targetTown);
                 break;
             default:
@@ -139,7 +139,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         // TODO: War cooldown checks
         // TODO: Mobilisation checks
 
-        createDeclarationBook(player, playerTown, targetTown, WarGoal.DEFAULT);
+        createDeclarationBook(player, playerTown, targetTown, WarGoal.SUPERIORITY);
 
     }
 

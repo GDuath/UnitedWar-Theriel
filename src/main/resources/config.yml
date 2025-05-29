@@ -52,7 +52,7 @@ mobilisation:
 
 wars-settings:
 
-  default:
+  superiotity:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
     attacker-call-nation: true
