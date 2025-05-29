@@ -63,7 +63,7 @@ public class WarAdminWarCreateSubcommandHandler extends BaseCommandHandler {
             return;
         }
 
-        WarGoal warGoal = WarGoal.DEFAULT;
+        WarGoal warGoal = WarGoal.SUPERIORITY;
         try {
             warGoal = WarGoal.valueOf(args[2]);
         } catch (Exception ex) {

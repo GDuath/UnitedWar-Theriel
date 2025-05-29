@@ -1,10 +1,9 @@
 package org.unitedlands.classes;
 
 public enum WarGoal {
-    DEFAULT("Superiority"),
+    SUPERIORITY("Superiority"),
     SKIRMISH("Skirmish"),
-    PLUNDER("Plunder"),
-    INDEPENDENCE("War for Independence");
+    PLUNDER("Plunder");
 
     private final String displayName;
 
