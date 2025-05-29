@@ -30,7 +30,6 @@ public class WarAdminWarEventsClearSubcommandHandler extends BaseCommandHandler 
         }
 
         plugin.getWarEventManager().resetEvent();
-        Messenger.sendMessage((Player) sender, "Event reset", true);
     }
 
 }

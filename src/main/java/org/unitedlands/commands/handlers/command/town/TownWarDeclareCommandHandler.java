@@ -17,9 +17,9 @@ import org.unitedlands.util.Messenger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class TownWaDeclareCommandHandler extends BaseCommandHandler {
+public class TownWarDeclareCommandHandler extends BaseCommandHandler {
 
-    public TownWaDeclareCommandHandler(UnitedWar plugin) {
+    public TownWarDeclareCommandHandler(UnitedWar plugin) {
         super(plugin);
     }
 

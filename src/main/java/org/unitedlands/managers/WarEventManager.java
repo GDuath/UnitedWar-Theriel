@@ -102,7 +102,6 @@ public class WarEventManager {
         if (currentEvent != null) {
             removeCurrentEvent();
         }
-        Messenger.broadCastMessage("An admin has cleared the current war event.", true);
     }
 
     private void handleCurrentEvent() {
