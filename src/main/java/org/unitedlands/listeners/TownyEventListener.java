@@ -2,10 +2,18 @@ package org.unitedlands.listeners;
 
 import java.util.Map.Entry;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerEditBookEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarSide;
+import org.unitedlands.util.Logger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.event.CancellableTownyEvent;
@@ -31,6 +39,8 @@ import com.palmergames.bukkit.towny.event.town.TownPreMergeEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreUnclaimEvent;
 import com.palmergames.bukkit.towny.object.TownBlockType;
 import com.palmergames.bukkit.towny.object.TownBlockTypeCache.CacheType;
+
+import net.kyori.adventure.text.Component;
 
 public class TownyEventListener implements Listener {
 
@@ -333,6 +343,47 @@ public class TownyEventListener implements Listener {
                 }
             }
         }
+    }
+
+    //#endregion
+
+    //#region Special listeners
+
+    // Handle BookEditEvents manually because ItemsAdder interferes with
+    // book metadata, making it impossible to use books for war declarations
+    // otherwise.
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBookEdit(PlayerEditBookEvent event) {
+
+        var item = event.getPlayer().getInventory().getItemInMainHand();
+        if (!item.getType().equals(Material.WRITABLE_BOOK))
+            return;
+
+        WarBookData warBookData = new WarBookData(item);
+        if (!warBookData.isWarBook()) {
+            return;
+        }
+
+        event.setCancelled(true);
+
+        if (event.isSigning()) {
+
+            var newMeta = (BookMeta)event.getNewBookMeta();
+            newMeta.displayName(Component.text(newMeta.getTitle()));
+            
+            var signedBook = ItemStack.of(Material.WRITTEN_BOOK, 1);
+            signedBook.setItemMeta(newMeta);
+
+            // Swap the book a tick later, otherwise Minecraft will overwrite
+            // the slot with the old book.
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                event.getPlayer().getInventory().setItemInMainHand(signedBook);
+            }, 1);
+
+        } else {
+            item.setItemMeta(event.getNewBookMeta());
+        }
+
     }
 
     //#endregion

@@ -19,13 +19,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class WarBookData {
-    private final UUID attackerTownId;
-    private final String attackerTownName;
-    private final UUID targetTownId;
-    private final String targetTownName;
-    private final WarGoal warGoal;
+    private UUID attackerTownId;
+    private String attackerTownName;
+    private UUID targetTownId;
+    private String targetTownName;
+    private WarGoal warGoal;
 
-    private final ItemStack warBook;
+    private ItemStack warBook;
 
     public WarBookData(UUID attackerTownId, String attackerTownName, UUID targetTownId, String targetTownName,
             WarGoal warGoal) {
@@ -41,11 +41,15 @@ public class WarBookData {
     public WarBookData(ItemStack book) {
         this.warBook = book;
 
-        this.attackerTownId = UUID.fromString(getItemMeta("book.attackerId"));
-        this.attackerTownName = getItemMeta("book.attackerName");
-        this.targetTownId = UUID.fromString(getItemMeta("book.targetId"));
-        this.targetTownName = getItemMeta("book.targetName");
-        this.warGoal = WarGoal.valueOf(getItemMeta("book.goal"));
+        try {
+            this.attackerTownId = UUID.fromString(getItemMeta("book.attackerId"));
+            this.attackerTownName = getItemMeta("book.attackerName");
+            this.targetTownId = UUID.fromString(getItemMeta("book.targetId"));
+            this.targetTownName = getItemMeta("book.targetName");
+            this.warGoal = WarGoal.valueOf(getItemMeta("book.goal"));
+        } catch (Exception ignored) {
+            
+        }
     }
 
     public UUID getAttackerTownId() {
@@ -142,7 +146,7 @@ public class WarBookData {
     }
 
     public String getWarDescription() {
-        var bookMeta =  (BookMeta)warBook.getItemMeta();
+        var bookMeta = (BookMeta) warBook.getItemMeta();
 
         var description = "";
         var pages = bookMeta.pages();
