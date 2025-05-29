@@ -51,8 +51,7 @@ mobilisation:
 ###################################################
 
 wars-settings:
-
-  superiotity:
+  superiority:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
     attacker-call-nation: true
@@ -305,21 +304,22 @@ messages:
   # |                War Events                   | #
   # +---------------------------------------------+ #
 
+  event-info-no-event: "§7There is currently no event scheduled or active." 
   event-info-scheduled: 
     - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
     - "§7A new war event will will begin soon! It will have the following effects:"
     - "§f{event-description}"
-    - "§7The event will start in §e{event-relative-start} §7and last for §e{event-duration}§7."
+    - "§7{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
   event-info-active: 
     - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
     - "§f{event-description}"
-    - "§7This event will end in §e{event-remaining-duration}."
+    - "§7{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
   event-info-ended:
     - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
     - "§f{event-description}"
-    - "§7This event has now ended and all effects have been removed"
+    - "§7This event has now ended and all effects have been removed."
     - "§c§m+|✦                  +✦+                  |✦+"
 
   # +---------------------------------------------+ #

@@ -13,7 +13,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.warevents.BaseWarEvent;
 import org.unitedlands.classes.warevents.SampleEvent;
 import org.unitedlands.models.WarEventRecord;
-import org.unitedlands.util.Formatter;
+
 import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 import org.bukkit.event.HandlerList;
@@ -36,7 +36,7 @@ public class WarEventManager {
     }
 
     private void buildEventRegister() {
-        eventRegister.put("SAMPLE", new SampleEvent("SAMPLE", "Defenders’ Fury", "§oValiant strikes burn twice as bright — each foe felled counts double in the name of home and honor! §r(All defender pvp kills give double points)", 120L));
+        eventRegister.put("SAMPLE", new SampleEvent("SAMPLE", "Defenders’ Fury", "All defender PvP kills give double points.", 60L));
 
         var pickTable = plugin.getConfig().getConfigurationSection("war-events.pick-table");
         for (String key : pickTable.getKeys(false)) {
@@ -94,6 +94,10 @@ public class WarEventManager {
         return currentEvent != null;
     }
 
+    public BaseWarEvent getCurrentEvent() {
+        return currentEvent;
+    }
+
     public void resetEvent() {
         if (currentEvent != null) {
             removeCurrentEvent();
@@ -113,7 +117,6 @@ public class WarEventManager {
             }
         } else {
             if (currentTime >= currentEvent.getScheduledEndTime()) {
-                sendEventEndNotification();
                 removeCurrentEvent();
             }
         }
@@ -167,7 +170,7 @@ public class WarEventManager {
         }
     }
 
-    public void forceEvent(Player sender, String eventName)
+    public void forceEvent(Player sender, String eventName, Integer warmup)
     {
         if (!eventRegister.containsKey(eventName)) {
             Messenger.sendMessage(sender, "This internal event name is not registered", true);
@@ -178,7 +181,7 @@ public class WarEventManager {
             removeCurrentEvent();
 
         currentEvent = eventRegister.get(eventName);
-        currentEvent.setScheduledStartTime(System.currentTimeMillis());
+        currentEvent.setScheduledStartTime(System.currentTimeMillis() + (warmup * 60000)); // warmup is in minutes
         currentEvent.setScheduledEndTime(currentEvent.getScheduledStartTime() + (currentEvent.getDuration() * 1000L));
         currentEvent.setActive(false);
 
@@ -186,7 +189,7 @@ public class WarEventManager {
 
         saveCurrentEventToDatabase();
 
-        Messenger.broadCastMessage("An admin forced the start of a new war event.", true);
+        sendEventPickNotification();
     }
 
     private void saveCurrentEventToDatabase() {
@@ -202,27 +205,15 @@ public class WarEventManager {
     }
 
     private void sendEventPickNotification() {
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("event-name", currentEvent.getDisplayname());
-        placeholders.put("event-description", currentEvent.getDescription());
-        placeholders.put("event-duration", String.valueOf(currentEvent.getDuration()));
-        placeholders.put("event-relative-start", Formatter.formatDuration(currentEvent.getScheduledStartTime() - System.currentTimeMillis()));
-        placeholders.put("event-duration", Formatter.formatDuration(currentEvent.getScheduledEndTime() - currentEvent.getScheduledStartTime()));
-        Messenger.broadcastMessageListTemplate("event-info-scheduled", placeholders, false);
+        Messenger.broadcastMessageListTemplate("event-info-scheduled", currentEvent.getMessagePlaceholders(), false);
     }
 
     private void sendEventStartNotification() {
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("event-name", currentEvent.getDisplayname());
-        placeholders.put("event-description", currentEvent.getDescription());
-        placeholders.put("event-remaining-duration", Formatter.formatDuration(currentEvent.getScheduledEndTime() - System.currentTimeMillis()));
-        Messenger.broadcastMessageListTemplate("event-info-active", placeholders, false);
+        Messenger.broadcastMessageListTemplate("event-info-active", currentEvent.getMessagePlaceholders(), false);
     }
 
     private void sendEventEndNotification() {
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("event-name", currentEvent.getDisplayname());
-        Messenger.broadcastMessageListTemplate("event-info-ended", placeholders, false);
+        Messenger.broadcastMessageListTemplate("event-info-ended", currentEvent.getMessagePlaceholders(), false);
     }
 
     private BaseWarEvent doWeightedRandomSelection() {
@@ -249,6 +240,8 @@ public class WarEventManager {
     private void removeCurrentEvent() {
         if (currentEvent == null)
             return;
+
+        sendEventEndNotification();
 
         // Unregister the current event listener
         HandlerList.unregisterAll((Listener) currentEvent);

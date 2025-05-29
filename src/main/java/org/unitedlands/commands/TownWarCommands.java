@@ -17,6 +17,7 @@ import org.unitedlands.commands.handlers.command.town.TownWaDeclareCommandHandle
 import org.unitedlands.commands.handlers.command.town.TownWarBookCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarCallAcceptCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarCallAllyCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarEventCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarInfoCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarMercenaryAddCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarMercenaryRemoveCommandHandler;
@@ -41,6 +42,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
     }
 
     private void registerHandlers() {
+        handlers.put("event", new TownWarEventCommandHandler(plugin));
         handlers.put("book", new TownWarBookCommandHandler(plugin));
         handlers.put("declare", new TownWaDeclareCommandHandler(plugin));
         handlers.put("info", new TownWarInfoCommandHandler(plugin));
