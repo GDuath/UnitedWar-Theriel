@@ -267,7 +267,7 @@ messages:
   not-a-number: "§e§l{0} §2is not a number."
   # {0} is the player username.
   player-not-found: "§e§l{0} is not a recognised username or not online."
-  info-not-in-war: "§cYou are not in a war!"
+  info-not-in-war: "§7You are not in a war! Use §e/t war info <war_name> §7to view the details of wars you are not part of."
 
   # +---------------------------------------------+ #
   # |               War Messages                  | #
@@ -384,8 +384,8 @@ messages:
   war-book-name: 'War against '
   war-book-lore:
   - ''
-  - '§eRename §7this book to set the'
-  - '§7name of the war.'
+  - '§eRename §7this book at an anvil'
+  - '§7to set the name of the war.'
   - '§eRight-click §7this book to write'
   - '§7your reasoning behind the §ewar.'
   - ''

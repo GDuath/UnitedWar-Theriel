@@ -30,6 +30,7 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
         return options;
     }
 
+    
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
 
@@ -38,13 +39,17 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
             return;
         }
 
+        Logger.log("Test1");
+
         Player player = (Player) sender;
         Resident resident = TownyAPI.getInstance().getResident(player);
+        Logger.log("Test2");
 
         if (!resident.isMayor()) {
             Messenger.sendMessage(sender, "§cOnly mayors can declare wars.", true);
             return;
         }
+        Logger.log("Test3");
 
         var heldItem = player.getInventory().getItemInMainHand();
         if (heldItem == null || !heldItem.getType().equals(Material.WRITTEN_BOOK)) {
@@ -52,6 +57,7 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
             Messenger.sendMessage(sender, "§cYou must hold a signed war book in your hand.", true);
             return;
         }
+        Logger.log("Test4");
 
         WarBookData warBookData = new WarBookData(heldItem);
         if (!warBookData.isWarBook()) {
@@ -61,6 +67,12 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
 
         // TODO: Further validation checks, e.g. if the towns still exists
 
+        Logger.log(warBookData.getWarName());
+        Logger.log(warBookData.getWarDescription());
+        Logger.log(warBookData.getAttackerTownId().toString());
+        Logger.log(warBookData.getTargetTownId().toString());
+        Logger.log(warBookData.getWarGoal().toString());
+        Logger.log(warBookData.isWarBook() + "");
 
         plugin.getWarManager().createWar(warBookData.getWarName(), warBookData.getWarDescription(),
                 warBookData.getAttackerTownId(), warBookData.getTargetTownId(), warBookData.getWarGoal());
