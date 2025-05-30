@@ -1,10 +1,7 @@
 package org.unitedlands.schedulers;
 
-import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.classes.WarScoreType;
-import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.util.Logger;
 
 public class WarScheduler {
@@ -31,32 +28,6 @@ public class WarScheduler {
         plugin.getWarManager().handleWars();
         plugin.getWarEventManager().handleEvents();
         plugin.getSiegeManager().handleSiegeChunks();
-        awardActivityScores();
-    }
-
-    private void awardActivityScores() {
-
-        if (!plugin.getWarManager().isAnyWarActive())
-            return;
-
-        var onlinePlayers = Bukkit.getOnlinePlayers();
-
-        var reward = plugin.getConfig().getInt("score-settings.activity.points");
-        var message = plugin.getConfig().getString("score-settings.activity.message");
-        var silent = plugin.getConfig().getBoolean("score-settings.activity.silent");
-        var eventtype = plugin.getConfig().getString("score-settings.activity.type");
-
-        for (var player : onlinePlayers) {
-            var playerWars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
-            if (!playerWars.isEmpty()) {
-                for (var war : playerWars.keySet()) {
-                    var side = playerWars.get(war);
-                    var scoreEvent = new WarScoreEvent(war, player.getUniqueId(), side, WarScoreType.valueOf(eventtype),
-                            message, silent, reward);
-                    scoreEvent.callEvent();
-                }
-            }
-        }
     }
 
     public void shutdown() {

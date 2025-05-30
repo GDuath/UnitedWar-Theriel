@@ -13,7 +13,6 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.util.Logger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.event.CancellableTownyEvent;
