@@ -6,7 +6,6 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import org.bukkit.event.Listener;
-import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.util.Formatter;
 
 public abstract class BaseWarEvent implements Listener {
@@ -25,8 +24,6 @@ public abstract class BaseWarEvent implements Listener {
         this.description = description;
         this.duration = duration;
     }
-
-    public abstract void onScoreEvent(WarScoreEvent event);
 
     public String getInternalName() {
         return internalName;

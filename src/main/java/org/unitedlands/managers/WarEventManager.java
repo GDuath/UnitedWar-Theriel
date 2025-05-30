@@ -12,6 +12,8 @@ import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.warevents.BaseWarEvent;
 import org.unitedlands.classes.warevents.SampleEvent;
+import org.unitedlands.classes.warevents.WarLivesNoDeathWarEvent;
+import org.unitedlands.classes.warevents.WarLivesSuddenDeathWarEvent;
 import org.unitedlands.models.WarEventRecord;
 
 import org.unitedlands.util.Logger;
@@ -35,8 +37,14 @@ public class WarEventManager {
         buildEventRegister();
     }
 
-    private void buildEventRegister() {
-        eventRegister.put("SAMPLE", new SampleEvent("SAMPLE", "Defenders’ Fury", "All defender PvP kills give double points.", 60L));
+    public void buildEventRegister() {
+
+        eventRegister = new HashMap<>();
+        eventChances = new HashMap<>();
+
+        eventRegister.put("SAMPLE", new SampleEvent("SAMPLE", "Defenders’ Fury", "All defender PvP kills give double points.", 7200L));
+        eventRegister.put("SUDDENDEATH", new WarLivesSuddenDeathWarEvent("SUDDENDEATH", "Death is Working Overtime", "Players instantly lose all remaining war lives when they die.", 7200L));
+        eventRegister.put("NODEATH", new WarLivesNoDeathWarEvent("NODEATH", "Death is on Vacation", "Players don't lose any war lives when dying.", 7200L));
 
         var pickTable = plugin.getConfig().getConfigurationSection("war-events.pick-table");
         for (String key : pickTable.getKeys(false)) {

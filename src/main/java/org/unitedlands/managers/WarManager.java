@@ -96,7 +96,7 @@ public class WarManager implements Listener {
 
         Set<War> endedWars = new HashSet<>();
         for (War war : activeWars) {
-            checkOnlinePlayers(war, onlinePlayers);
+            //checkOnlinePlayers(war, onlinePlayers, true);
             if (warCanBeEnded(war)) {
                 endWar(war);
                 endedWars.add(war);

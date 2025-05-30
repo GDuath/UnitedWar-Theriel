@@ -12,7 +12,6 @@ public class SampleEvent extends BaseWarEvent {
         super(internalName, displayname, description, duration);
     }
 
-    @Override
     @EventHandler(priority = EventPriority.HIGH)
     public void onScoreEvent(WarScoreEvent event) {
         if (!isActive())

@@ -17,6 +17,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
+import org.unitedlands.events.WarLivesUpdateEvent;
 import org.unitedlands.events.WarScoreEvent;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -97,30 +98,42 @@ public class PlayerDeathListener implements Listener {
 
             // Determine scores.
             if (victimWarSide == WarSide.ATTACKER && killerWarSide == WarSide.DEFENDER) {
-                new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, WarScoreType.valueOf(eventType), message, silent,
+                new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, WarScoreType.valueOf(eventType), message,
+                        silent,
                         reward).callEvent();
             } else if (victimWarSide == WarSide.DEFENDER && killerWarSide == WarSide.ATTACKER) {
-                new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, WarScoreType.valueOf(eventType), message, silent,
+                new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, WarScoreType.valueOf(eventType), message,
+                        silent,
                         reward).callEvent();
             }
 
             // Decrease victim lives.
             int currentLives = WarLivesMetadata.getWarLivesMetaData(victimRes, warId);
             int newLives = Math.max(0, currentLives - 1);
-            WarLivesMetadata.setWarLivesMetaData(victimRes, warId, newLives);
 
-            String warName = plugin.getWarManager().getWarTitle(warId);
+            // Call update event in case war lives are influenced by an ongoing WarEvent
+            WarLivesUpdateEvent warLivesUpdateEvent = new WarLivesUpdateEvent(victim, war, victimWarSide, currentLives, newLives);
+            warLivesUpdateEvent.callEvent();
 
-            if (currentLives == 0) {
-                // Already out of lives.
-                Messenger.sendMessageTemplate(victim, "warlives-gone", Map.of("0", warName), true);
-            } else if (newLives == 0) {
-                // This death eliminated them.
-                Messenger.sendMessageTemplate(victim, "warlives-final", Map.of("0", warName), true);
-            } else {
-                // Lives still remaining.
-                Messenger.sendMessageTemplate(victim, "warlives-lost",
-                        Map.of("0", String.valueOf(newLives), "1", warName), true);
+            // Only adjust and inform if the update event wasn't cancelled
+            if (!warLivesUpdateEvent.isCancelled()) {
+
+                var adjustedNewLives = warLivesUpdateEvent.getNewLives();
+
+                WarLivesMetadata.setWarLivesMetaData(victimRes, warId, adjustedNewLives);
+                String warName = plugin.getWarManager().getWarTitle(warId);
+
+                if (currentLives == 0) {
+                    // Already out of lives.
+                    Messenger.sendMessageTemplate(victim, "warlives-gone", Map.of("0", warName), true);
+                } else if (adjustedNewLives == 0) {
+                    // This death eliminated them.
+                    Messenger.sendMessageTemplate(victim, "warlives-final", Map.of("0", warName), true);
+                } else {
+                    // Lives still remaining.
+                    Messenger.sendMessageTemplate(victim, "warlives-lost",
+                            Map.of("0", String.valueOf(adjustedNewLives), "1", warName), true);
+                }
             }
         }
     }
