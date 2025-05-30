@@ -18,6 +18,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
+import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
@@ -112,24 +113,45 @@ public class WarManager implements Listener {
 
         var attackingPlayers = war.getAttacking_players();
         attackingPlayers.addAll(war.getAttacking_mercenaries());
+        var defendingPlayers = war.getDefending_players();
+        defendingPlayers.addAll(war.getDefending_mercenaries());
+
         for (UUID playerId : onlinePlayers) {
             if (attackingPlayers.contains(playerId)) {
                 attackerOnline = true;
-                break;
+                awardActivityScore(playerId, war, WarSide.ATTACKER);
             }
-        }
-
-        var defendingPlayers = war.getDefending_players();
-        defendingPlayers.addAll(war.getDefending_mercenaries());
-        for (UUID playerId : onlinePlayers) {
             if (defendingPlayers.contains(playerId)) {
                 defenderOnline = true;
-                break;
+                awardActivityScore(playerId, war, WarSide.DEFENDER);
             }
         }
 
         plugin.getSiegeManager().toggleSieges(war, WarSide.ATTACKER, attackerOnline);
         plugin.getSiegeManager().toggleSieges(war, WarSide.DEFENDER, defenderOnline);
+    }
+
+    private void awardActivityScore(UUID playerId, War war, WarSide warSide) {
+
+        var towny = TownyAPI.getInstance();
+
+        var resident = towny.getResident(playerId);
+        if (resident == null)
+            return;
+
+        var warLivesCount = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+        if (warLivesCount == 0)
+            return;
+
+        var reward = plugin.getConfig().getInt("score-settings.activity.points");
+        var message = plugin.getConfig().getString("score-settings.activity.message");
+        var silent = plugin.getConfig().getBoolean("score-settings.activity.silent");
+        var eventtype = plugin.getConfig().getString("score-settings.activity.type");
+
+        var scoreEvent = new WarScoreEvent(war, playerId, warSide, WarScoreType.valueOf(eventtype),
+                message, silent, reward);
+
+        scoreEvent.callEvent();
     }
 
     private boolean warCanBeStarted(War war) {
