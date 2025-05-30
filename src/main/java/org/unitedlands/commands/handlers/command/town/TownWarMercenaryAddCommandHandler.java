@@ -79,6 +79,21 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
 
+        Integer maxMercenaryCount = 0;
+        var currentMercenaryCount = 0;
+        if (playerWarSide == WarSide.ATTACKER) {
+            maxMercenaryCount = plugin.getConfig().getInt("war-settings." + war.getWar_goal().toString().toLowerCase() + ".max-attacker-mercenaries", 0);
+            currentMercenaryCount = war.getAttacking_mercenaries().size();
+        } else if (playerWarSide == WarSide.DEFENDER) {
+            maxMercenaryCount = plugin.getConfig().getInt("war-settings." + war.getWar_goal().toString().toLowerCase() + ".max-defender-mercenaries", 0);
+            currentMercenaryCount = war.getDefending_mercenaries().size();
+        }
+
+        if (currentMercenaryCount >= maxMercenaryCount) {
+            Messenger.sendMessage(player, "§cYou cannot add another mercenary, maximum is " + maxMercenaryCount, true);
+            return;
+        }
+
         Player mercenary = Bukkit.getPlayer(args[1]);
         if (mercenary == null) {
             Messenger.sendMessage(player, "§cPlayer " + args[1] + " is not online or doesn't exist.",
