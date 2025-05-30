@@ -58,6 +58,8 @@ wars-settings:
     attacker-call-allies: false
     defender-call-nation: true
     defender-call-allies: true
+    max-attacker-mercenaries: 5
+    max-defender-mercenaries: 5
     warchest:
       attacker-money-contribution: 0.1 # in percentage of town balance
       defender-money-contribution: 0.1
@@ -74,6 +76,8 @@ wars-settings:
     attacker-call-allies: false
     defender-call-nation: false
     defender-call-allies: false
+    max-attacker-mercenaries: 5
+    max-defender-mercenaries: 5
     warchest:
       attacker-money-contribution: 0.1 # in percentage of town balance
       defender-money-contribution: 0.1
@@ -90,6 +94,8 @@ wars-settings:
     attacker-call-allies: false
     defender-call-nation: false
     defender-call-allies: false
+    max-attacker-mercenaries: 5
+    max-defender-mercenaries: 5
     warchest:
       attacker-money-contribution: 0.5 # in percentage of town balance
       defender-money-contribution: 0.25
