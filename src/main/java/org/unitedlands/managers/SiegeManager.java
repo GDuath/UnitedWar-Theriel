@@ -80,7 +80,7 @@ public class SiegeManager implements Listener {
                 siegeChunk.setTown(town);
 
                 siegeChunks.put(siegeChunk.getChunkKey(), siegeChunk);
-                
+
                 createChunkHealthBar(siegeChunk);
                 updateHealthBar(siegeChunk);
 
@@ -654,6 +654,17 @@ public class SiegeManager implements Listener {
 
     public boolean isTownOccupied(UUID townId) {
         return townOccupied.computeIfAbsent(townId, k -> false);
+    }
+
+    public boolean isChunkOccupied(TownBlock townBlock) {
+        return isChunkOccupied(townBlock.getWorldCoord());
+    }
+
+    public boolean isChunkOccupied(WorldCoord worldCoord) {
+        var siegeChunk = siegeChunks.get(getChunkKey(worldCoord));
+        if (siegeChunk == null)
+            return false;
+        return siegeChunk.getOccupied();        
     }
 
     //#endregion

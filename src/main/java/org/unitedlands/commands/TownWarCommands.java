@@ -22,6 +22,7 @@ import org.unitedlands.commands.handlers.command.town.TownWarInfoCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarMercenaryAddCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarMercenaryRemoveCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarParticipantsCommandHandler;
+import org.unitedlands.commands.handlers.command.town.warcamps.TownWarWarCampCommandHandler;
 import org.unitedlands.util.Formatter;
 import org.unitedlands.util.Messenger;
 
@@ -52,6 +53,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         handlers.put("acceptcall", new TownWarCallAcceptCommandHandler(plugin));
         handlers.put("addmercenary", new TownWarMercenaryAddCommandHandler(plugin));
         handlers.put("removemercenary", new TownWarMercenaryRemoveCommandHandler(plugin));
+        handlers.put("warcamp", new TownWarWarCampCommandHandler(plugin));
     }
 
     @Override
