@@ -1,5 +1,6 @@
 package org.unitedlands.managers;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class GriefZoneManager implements Listener {
     private final UnitedWar plugin;
 
     private Set<GriefZone> griefZones = new HashSet<>();
+    private HashMap<UUID, TownBlock> warCamps = new HashMap<>();
 
     private final GriefZoneBlockDropListener griefZoneBlockDropListener;
     private boolean listenersRegistered = false;
@@ -91,6 +93,9 @@ public class GriefZoneManager implements Listener {
                         }
 
                         griefZones.add(griefZone);
+
+                        if (townBlockType == "warcamp")
+                            addWarcampBlock(townBlock);
                     }
                 }
 
@@ -167,7 +172,7 @@ public class GriefZoneManager implements Listener {
                             set.getKey());
                 }
             }
-            
+
             // Unclaim in bulk
             if (unclaimOnWarEnd) {
                 for (TownBlock townBlock : townBlocksInZones) {
@@ -237,7 +242,20 @@ public class GriefZoneManager implements Listener {
     }
 
     public Set<GriefZone> getFortressGriefZones(UUID townId) {
-        return griefZones.stream().filter(z -> z.getTownId().equals(townId) && z.getType().equals("fortress")).collect(Collectors.toSet());
+        return griefZones.stream().filter(z -> z.getTownId().equals(townId) && z.getType().equals("fortress"))
+                .collect(Collectors.toSet());
+    }
+
+    public Set<GriefZone> getWarcampGriefZones(UUID townId) {
+        return griefZones.stream().filter(z -> z.getTownId().equals(townId) && z.getType().equals("warcamp"))
+                .collect(Collectors.toSet());
+    }
+
+    public void addWarcampBlock(TownBlock townBlock) {
+        warCamps.putIfAbsent(townBlock.getTownOrNull().getUUID(), townBlock);
+    }
+        public TownBlock getWarcampBlock(UUID townId) {
+        return warCamps.getOrDefault(townId, null);
     }
 
     private boolean isGriefZoneAlreadyRegistered(Coord centerCoord) {
@@ -294,6 +312,7 @@ public class GriefZoneManager implements Listener {
                 .collect(Collectors.toList());
 
         griefZones.removeAll(townGriefZones);
+        warCamps.remove(townId);
     }
 
 }
