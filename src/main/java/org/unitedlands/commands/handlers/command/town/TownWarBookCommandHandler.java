@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarGoal;
+import org.unitedlands.classes.WarSide;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.util.Messenger;
 
@@ -133,6 +134,13 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         if (playerNation != null && targetNation != null && targetNation.getUUID().equals(playerNation.getUUID())) {
             Messenger.sendMessage(player,
                     "§cYou can't declare a war against a town in your own nation with this war goal.", true);
+            return;
+        }
+
+        var targetTownWars = plugin.getWarManager().getAllTownWars(targetTown.getUUID());
+        if (targetTownWars.values().stream().anyMatch(w -> w.equals(WarSide.DEFENDER))) {
+            Messenger.sendMessage(player,
+                    "§cYou can't declare a war against a town that is already in a defensive war.", true);
             return;
         }
 

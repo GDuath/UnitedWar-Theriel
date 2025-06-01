@@ -698,6 +698,26 @@ public class WarManager implements Listener {
         return getActivePlayerWars(playerId).size() > 0;
     }
 
+    public Map<War, WarSide> getAllTownWars(UUID townId) {
+        Map<War, WarSide> allWars = new HashMap<>();
+
+        for (War war : activeWars) {
+            WarSide warSide = war.getTownWarSide(townId);
+            if (warSide != WarSide.NONE) {
+                allWars.put(war, warSide);
+            }
+        }
+
+        for (War war : pendingWars) {
+            WarSide warSide = war.getTownWarSide(townId);
+            if (warSide != WarSide.NONE) {
+                allWars.put(war, warSide);
+            }
+        }
+
+        return allWars;
+    }
+
     public boolean isTownInWar(UUID townId) {
         for (War war : activeWars) {
             if (war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId))
@@ -816,12 +836,13 @@ public class WarManager implements Listener {
         allPlayers.addAll(war.getDefending_players());
         allPlayers.addAll(war.getDefending_mercenaries());
 
-        int warLives = plugin.getConfig().getInt("wars-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
+        int warLives = plugin.getConfig()
+                .getInt("wars-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
         for (UUID uuid : allPlayers) {
             try {
                 Resident resident = TownyUniverse.getInstance().getResident(uuid);
                 if (resident != null) {
-                    WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), warLives); 
+                    WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), warLives);
                 }
             } catch (Exception e) {
                 Logger.logError("Failed to assign war lives to " + uuid + ": " + e.getMessage());
