@@ -25,6 +25,7 @@ import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
+import org.unitedlands.util.WarLivesMetadata;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
@@ -418,6 +419,14 @@ public class SiegeManager implements Listener {
         WarSide playerWarSide = war.getPlayerWarSide(playerId);
         WarSide townWarSide = war.getTownWarSide(townId);
 
+        // Players without war lives don't count
+        var resident = TownyAPI.getInstance().getResident(playerId);
+        if (resident == null)
+            playerWarSide = WarSide.NONE;
+        int currentLives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+        if (currentLives <= 0)
+            playerWarSide = WarSide.NONE;
+
         if (playerWarSide == WarSide.ATTACKER) {
             if (townWarSide == WarSide.ATTACKER) {
                 // Player is a town on his own side and should be defending
@@ -664,7 +673,7 @@ public class SiegeManager implements Listener {
         var siegeChunk = siegeChunks.get(getChunkKey(worldCoord));
         if (siegeChunk == null)
             return false;
-        return siegeChunk.getOccupied();        
+        return siegeChunk.getOccupied();
     }
 
     //#endregion
