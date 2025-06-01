@@ -8,7 +8,7 @@ import java.util.*;
 
 
 public class WarLivesMetadata {
-    private static final int DEFAULT_LIVES = 5;
+    private static final int DEFAULT_LIVES = 0;
 
     // Generate a unique metadata key per war.
     private static String getMetaKey(UUID warId) {

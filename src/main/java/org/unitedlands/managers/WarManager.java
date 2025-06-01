@@ -812,13 +812,16 @@ public class WarManager implements Listener {
     private void assignWarLivesToParticipants(War war) {
         Set<UUID> allPlayers = new HashSet<>();
         allPlayers.addAll(war.getAttacking_players());
+        allPlayers.addAll(war.getAttacking_mercenaries());
         allPlayers.addAll(war.getDefending_players());
+        allPlayers.addAll(war.getDefending_mercenaries());
 
+        int warLives = plugin.getConfig().getInt("wars-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
         for (UUID uuid : allPlayers) {
             try {
                 Resident resident = TownyUniverse.getInstance().getResident(uuid);
                 if (resident != null) {
-                    WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), 5); // default lives
+                    WarLivesMetadata.setWarLivesMetaData(resident, war.getId(), warLives); 
                 }
             } catch (Exception e) {
                 Logger.logError("Failed to assign war lives to " + uuid + ": " + e.getMessage());
