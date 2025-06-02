@@ -192,7 +192,7 @@ public class SiegeManager implements Listener {
 
                         // The capture will be attributed to the first player in the attacker list (for being 
                         // in the chunk for the longest uninterrupted time)  
-                        UUID firstAttackingPlayer = siegeChunk.getPlayersInChunk().get(WarSide.ATTACKER).getFirst();
+                        UUID firstAttackingPlayerId = siegeChunk.getPlayersInChunk().get(WarSide.ATTACKER).getFirst();
 
                         Integer reward = 0;
                         String message = "";
@@ -225,7 +225,11 @@ public class SiegeManager implements Listener {
 
                         }
 
-                        WarScoreEvent warScoreEvent = new WarScoreEvent(war, firstAttackingPlayer, WarSide.ATTACKER,
+                        // The attacker of a chunk is not necessarily also the attacker in the overall war, so get the player's
+                        // side in the war to correctly award the points
+                        var playerWarSide = war.getPlayerWarSide(firstAttackingPlayerId);
+                        
+                        WarScoreEvent warScoreEvent = new WarScoreEvent(war, firstAttackingPlayerId, playerWarSide,
                                 WarScoreType.valueOf(eventtype), message, silent, reward);
                         warScoreEvent.callEvent();
 
