@@ -118,12 +118,16 @@ public class WarManager implements Listener {
 
         for (UUID playerId : onlinePlayers) {
             if (attackingPlayers.contains(playerId)) {
-                attackerOnline = true;
-                awardActivityScore(playerId, war, WarSide.ATTACKER);
+                if (playerHasWarLives(playerId, war)) {
+                    attackerOnline = true;
+                    awardActivityScore(playerId, war, WarSide.ATTACKER);
+                }
             }
             if (defendingPlayers.contains(playerId)) {
-                defenderOnline = true;
-                awardActivityScore(playerId, war, WarSide.DEFENDER);
+                if (playerHasWarLives(playerId, war)) {
+                    defenderOnline = true;
+                    awardActivityScore(playerId, war, WarSide.DEFENDER);
+                }
             }
         }
 
@@ -132,16 +136,6 @@ public class WarManager implements Listener {
     }
 
     private void awardActivityScore(UUID playerId, War war, WarSide warSide) {
-
-        var towny = TownyAPI.getInstance();
-
-        var resident = towny.getResident(playerId);
-        if (resident == null)
-            return;
-
-        var warLivesCount = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
-        if (warLivesCount == 0)
-            return;
 
         var reward = plugin.getConfig().getInt("score-settings.activity.points");
         var message = plugin.getConfig().getString("score-settings.activity.message");
@@ -152,6 +146,15 @@ public class WarManager implements Listener {
                 message, silent, reward);
 
         scoreEvent.callEvent();
+    }
+
+    private boolean playerHasWarLives(UUID playerId, War war) {
+        var resident = TownyAPI.getInstance().getResident(playerId);
+        if (resident == null)
+            return false;
+
+        var warLivesCount = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+        return warLivesCount > 0;
     }
 
     private boolean warCanBeStarted(War war) {
