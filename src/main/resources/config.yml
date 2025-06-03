@@ -50,7 +50,11 @@ mobilisation:
 # +---------------------------------------------+ #
 ###################################################
 
-wars-settings:
+# Duration of war immunity for towns that come out of a defensice war
+war-immunity-duration: 5 # in minutes
+
+# Settings for different war goals
+war-goal-settings:
   superiority:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
