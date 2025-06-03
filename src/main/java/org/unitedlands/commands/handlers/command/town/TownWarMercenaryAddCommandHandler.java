@@ -82,10 +82,10 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
         Integer maxMercenaryCount = 0;
         var currentMercenaryCount = 0;
         if (playerWarSide == WarSide.ATTACKER) {
-            maxMercenaryCount = plugin.getConfig().getInt("wars-settings." + war.getWar_goal().toString().toLowerCase() + ".max-attacker-mercenaries");
+            maxMercenaryCount = plugin.getConfig().getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-attacker-mercenaries");
             currentMercenaryCount = war.getAttacking_mercenaries().size();
         } else if (playerWarSide == WarSide.DEFENDER) {
-            maxMercenaryCount = plugin.getConfig().getInt("wars-settings." + war.getWar_goal().toString().toLowerCase() + ".max-defender-mercenaries");
+            maxMercenaryCount = plugin.getConfig().getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-defender-mercenaries");
             currentMercenaryCount = war.getDefending_mercenaries().size();
         }
 

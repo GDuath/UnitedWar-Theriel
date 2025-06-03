@@ -12,7 +12,9 @@ import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
+import org.unitedlands.util.WarImmunityMetadata;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
@@ -90,6 +92,14 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         if (targetTown.isNeutral()) {
             Messenger.sendMessage(player, "§cYou can't declare wars on neutral towns.",
                     true);
+            return;
+        }
+
+        var immunityExpirationTime = WarImmunityMetadata.getImmunityMetaDataFromTown(targetTown);
+        Logger.log(immunityExpirationTime + "");
+        if (System.currentTimeMillis() < immunityExpirationTime)
+        {
+            Messenger.sendMessage(player, "§cThis town is still immune to new war declarations.", true);
             return;
         }
 

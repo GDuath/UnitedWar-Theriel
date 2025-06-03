@@ -27,7 +27,9 @@ import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
 import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
+import org.unitedlands.util.WarImmunityMetadata;
 
+import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
@@ -220,7 +222,7 @@ public class WarManager implements Listener {
             WarGoal warGoal) {
 
         var wargoalSettings = plugin.getConfig()
-                .getConfigurationSection("wars-settings." + warGoal.toString().toLowerCase());
+                .getConfigurationSection("war-goal-settings." + warGoal.toString().toLowerCase());
         if (wargoalSettings == null) {
             Logger.logError("Settings for war goal " + warGoal.toString() + " could not be found, aborting.");
             return;
@@ -326,6 +328,7 @@ public class WarManager implements Listener {
 
     private void endWar(War war) {
         calculateWarResult(war);
+        setDefenderTownImmunity(war);
         removeWarLivesFromParticipants(war);
         payoutWarChests(war);
         war.setIs_active(false);
@@ -377,6 +380,17 @@ public class WarManager implements Listener {
         }
 
         war.setWar_result(warResult);
+    }
+
+    private void setDefenderTownImmunity(War war) {
+        var cooldown = plugin.getConfig().getLong("war-immunity-duration", 0L);
+        for (var townId : war.getDefending_towns())
+        {
+            Town town = TownyAPI.getInstance().getTown(townId);
+            if (town == null) continue;
+
+            WarImmunityMetadata.setWarImmunityForTown(town, System.currentTimeMillis() + (cooldown * 60000));
+        }
     }
 
     //#endregion
@@ -840,7 +854,7 @@ public class WarManager implements Listener {
         allPlayers.addAll(war.getDefending_mercenaries());
 
         int warLives = plugin.getConfig()
-                .getInt("wars-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
+                .getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
         for (UUID uuid : allPlayers) {
             try {
                 Resident resident = TownyUniverse.getInstance().getResident(uuid);

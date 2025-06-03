@@ -648,7 +648,7 @@ public class War implements Identifiable {
     public void buildWarChests() {
 
         var wargoalSettings = UnitedWar.getInstance().getConfig()
-                .getConfigurationSection("wars-settings." + getWar_goal().toString().toLowerCase());
+                .getConfigurationSection("war-goal-settings." + getWar_goal().toString().toLowerCase());
 
         buildSideWarChest(
                 getAttacking_towns(),
