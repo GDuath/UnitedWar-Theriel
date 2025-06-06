@@ -228,7 +228,7 @@ public class SiegeManager implements Listener {
                         // The attacker of a chunk is not necessarily also the attacker in the overall war, so get the player's
                         // side in the war to correctly award the points
                         var playerWarSide = war.getPlayerWarSide(firstAttackingPlayerId);
-                        
+
                         WarScoreEvent warScoreEvent = new WarScoreEvent(war, firstAttackingPlayerId, playerWarSide,
                                 WarScoreType.valueOf(eventtype), message, silent, reward);
                         warScoreEvent.callEvent();
@@ -309,6 +309,20 @@ public class SiegeManager implements Listener {
         if (town == null)
             return false;
 
+        if (plugin.getConfig().getBoolean("siege-settings.require-siege-from-border", false)) {
+            // See if the new siege chunk is connected to either the wilderness (at the town border) or to
+            // an already occupied siege chunk
+            var worldCoord = townBlock.getWorldCoord();
+            var northCoord = new WorldCoord(worldCoord.getWorldName(), worldCoord.getX(), worldCoord.getZ() + 1);
+            var southCoord = new WorldCoord(worldCoord.getWorldName(), worldCoord.getX(), worldCoord.getZ() - 1);
+            var westCoord = new WorldCoord(worldCoord.getWorldName(), worldCoord.getX() - 1, worldCoord.getZ());
+            var eastCoord = new WorldCoord(worldCoord.getWorldName(), worldCoord.getX() + 1, worldCoord.getZ());
+
+            if (!isOccupiedOrWilderness(northCoord) && !isOccupiedOrWilderness(southCoord)
+                    && !isOccupiedOrWilderness(westCoord) && !isOccupiedOrWilderness(eastCoord))
+                return false;
+        }
+
         // Get the chunk health settings
         ConfigurationSection chunkHealthSettings = plugin.getConfig()
                 .getConfigurationSection("siege-settings.chunk-max-health");
@@ -363,6 +377,15 @@ public class SiegeManager implements Listener {
         }
 
         return false;
+    }
+
+    private boolean isOccupiedOrWilderness(WorldCoord chunkWorldCoord) {
+        var chunkKey = getChunkKey(chunkWorldCoord);
+        if (siegeChunks.containsKey(chunkKey)) {
+            return siegeChunks.get(chunkKey).getOccupied();
+        } else {
+            return TownyAPI.getInstance().isWilderness(chunkWorldCoord);
+        }
     }
 
     //#endregion
