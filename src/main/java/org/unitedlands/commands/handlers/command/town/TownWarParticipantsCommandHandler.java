@@ -77,10 +77,11 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
                         defenderTownNames.add(townString);
                     }
                 }
+
                 for (UUID townId : war.getAttacking_mercenaries()) {
                     var resident = towny.getResident(townId);
                     if (resident != null)
-                        attackerTownNames.add(resident.getName());
+                        attackerMercenaryNames.add(resident.getName());
                 }
                 for (UUID townId : war.getDefending_mercenaries()) {
                     var resident = towny.getResident(townId);
