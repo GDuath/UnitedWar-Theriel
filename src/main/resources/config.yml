@@ -4,7 +4,7 @@
 # +---------------------------------------------+ #
 ###################################################
 
-# CAUTION! Developer mode will drop all database tables on startup. DO NOT USE IN PRODUCTION.  
+# CAUTION! Developer mode will drop all database tables on startup. DO NOT USE IN PRODUCTION.
 developer-mode: true
 
 # Database connection settings.
@@ -120,7 +120,7 @@ war-goal-settings:
 ###################################################
 
 score-settings:
-  activity: 
+  activity:
     silent: false
     points: 10
     message: score-activity
@@ -168,6 +168,9 @@ siege-settings:
   # If true, sieges and griefing will always be active regardless of whether players of a particular
   # war side are online or not
   override-activity-requirement: false
+  # If sieging from the border is required, players can only start capturing chunks that are
+  # either adjacent to wilderness, or adjacent to already occupied chunks
+  require-siege-from-border: true
   # If true, the health decay and restoration is applied per player in the majority:
   # 5 attackers vs. 2 defenders = 3 player majority for attackers = 3 * health decay rate per war tick
   # If false, the health decay and restoration only apply once per team in the majority
@@ -179,7 +182,7 @@ siege-settings:
   # The amount of HP a chunk heals when the defenders are in a majority
   health-restore-rate: 1
   # Initial max health points for chunk types
-  chunk-max-health: 
+  chunk-max-health:
     default: 10
     home: 50
     warcamp: 100
@@ -223,7 +226,7 @@ war-events:
 # +---------------------------------------------+ #
 ###################################################
 
-# Special rules for pvp inside of war zones (town in an active war). 
+# Special rules for pvp inside of war zones (town in an active war).
 # These only apply to players participating in an active war.
 
 warzone-pvp:
@@ -273,7 +276,7 @@ messages:
   prefix: "§c§lU§f§lL §7§lWar §8§l» "
   reload: "§2Plugin reloaded."
   invalid-command: "§cInvalid command usage."
-  no-permission: '§2You don''t have permission to perform this command.'
+  no-permission: "§2You don't have permission to perform this command."
   # {0} is the relevant town or nation name.
   town-nation-not-found: "§2No town or nation found named §e§l{0}"
   # {0} is the attempted input.
@@ -295,7 +298,7 @@ messages:
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§f§l{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
-  war-info: 
+  war-info:
     - "§c§m+|✦       §r§c§l[§f§l {war-name} ({war-active}) §c§l]§c§m       |✦+"
     - "§7{war-description}"
     - "§f§lAttacker: §r{attacker} {attacker-nation} | §lScore: §r{attacker-score} / {attacker-score-cap}"
@@ -303,7 +306,7 @@ messages:
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§f§l{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
-  war-ended: 
+  war-ended:
     - "§c§m+|✦       §r§c§l[§f§l {war-name} (ENDED)§c§l]§c§m       |✦+"
     - "§fThe war has ended with the following result:"
     - "§f§o{war-result}"
@@ -312,19 +315,19 @@ messages:
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§c§m+|✦                  +✦+                  |✦+"
   town-captured: "§e{war-name}: The town of {town-name} succumbed to the siege of the attacking armies and was captured!"
-    
+
   # +---------------------------------------------+ #
   # |                War Events                   | #
   # +---------------------------------------------+ #
 
-  event-info-no-event: "§7There is currently no event scheduled or active." 
-  event-info-scheduled: 
+  event-info-no-event: "§7There is currently no event scheduled or active."
+  event-info-scheduled:
     - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
     - "§7A new war event will will begin soon! It will have the following effects:"
     - "§f{event-description}"
     - "§7{timer-info}"
     - "§c§m+|✦                  +✦+                  |✦+"
-  event-info-active: 
+  event-info-active:
     - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
     - "§f{event-description}"
     - "§7{timer-info}"
@@ -343,7 +346,7 @@ messages:
   mobilisation-number-invalid: "§2Mobilisation must be set between 0-100."
   # {0} is the town or nation name.
   # {1} is the mobilisation amount.
-  mobilisation-set:  "§e§l{0} §2mobilisation set to §e§l{1}"
+  mobilisation-set: "§e§l{0} §2mobilisation set to §e§l{1}"
   # {0} is the town or nation name.
   mobilisation-delete: "§e§l{0} §2mobilisation deleted."
   # {0} is the set cost to toggle.
@@ -352,7 +355,6 @@ messages:
   # Formatted to look like a towny system notification, editable to have it match if changed.
   mobilisation-notification-gain: "§6[{0}] §bBecause of non-neutral status, {0} has gained some mobilisation progress."
   mobilisation-notification-lose: "§6[{0}] §bBecause of neutral status, {0} has lost some mobilisation progress."
-
 
   # +---------------------------------------------+ #
   # |                  Scores                     | #
@@ -394,11 +396,11 @@ messages:
   # |                  War Books                  | #
   # +---------------------------------------------+ #
 
-  war-book-name: 'War against '
+  war-book-name: "War against "
   war-book-lore:
-  - ''
-  - '§eRename §7this book at an anvil'
-  - '§7to set the name of the war.'
-  - '§eRight-click §7this book to write'
-  - '§7your reasoning behind the §ewar.'
-  - ''
+    - ""
+    - "§eRename §7this book at an anvil"
+    - "§7to set the name of the war."
+    - "§eRight-click §7this book to write"
+    - "§7your reasoning behind the §ewar."
+    - ""

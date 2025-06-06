@@ -29,7 +29,6 @@ import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarImmunityMetadata;
 
-import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
@@ -172,6 +171,7 @@ public class WarManager implements Listener {
         war.setIs_active(true);
         war.setState_changed(true);
         assignWarLivesToParticipants(war);
+        forcePvpInTowns(war);
         (new WarStartEvent(war)).callEvent();
 
         sendWarStartNotification(war);
@@ -212,6 +212,20 @@ public class WarManager implements Listener {
             return true;
 
         return false;
+    }
+
+    private void forcePvpInTowns(War war) {
+        var allTownsIds = new HashSet<UUID>();
+        allTownsIds.addAll(war.getAttacking_towns());
+        allTownsIds.addAll(war.getDefending_towns());
+
+        for (UUID townId : allTownsIds) {
+            var town = TownyAPI.getInstance().getTown(townId);
+            if (town != null) {
+                town.setAdminEnabledPVP(true);
+                town.save();
+            }
+        }
     }
 
     //#endregion
@@ -338,6 +352,8 @@ public class WarManager implements Listener {
 
         (new WarEndEvent(war)).callEvent();
 
+        unforcePvpInTowns(war);
+
         sendWarEndNotification(war);
     }
 
@@ -384,12 +400,28 @@ public class WarManager implements Listener {
 
     private void setDefenderTownImmunity(War war) {
         var cooldown = plugin.getConfig().getLong("war-immunity-duration", 0L);
-        for (var townId : war.getDefending_towns())
-        {
+        for (var townId : war.getDefending_towns()) {
             Town town = TownyAPI.getInstance().getTown(townId);
-            if (town == null) continue;
+            if (town == null)
+                continue;
 
             WarImmunityMetadata.setWarImmunityForTown(town, System.currentTimeMillis() + (cooldown * 60000));
+        }
+    }
+
+    private void unforcePvpInTowns(War war) {
+        var allTownsIds = new HashSet<UUID>();
+        allTownsIds.addAll(war.getAttacking_towns());
+        allTownsIds.addAll(war.getDefending_towns());
+
+        for (UUID townId : allTownsIds) {
+            if (!isTownInActiveWar(townId)) {
+                var town = TownyAPI.getInstance().getTown(townId);
+                if (town != null) {
+                    town.setAdminEnabledPVP(false);
+                    town.save();
+                }
+            }
         }
     }
 
@@ -570,6 +602,7 @@ public class WarManager implements Listener {
         var town = TownyAPI.getInstance().getTown(townId);
         if (town != null) {
             town.setBonusBlocks(town.getBonusBlocks() - amount);
+            town.save();
         }
     }
 
@@ -577,6 +610,7 @@ public class WarManager implements Listener {
         var town = TownyAPI.getInstance().getTown(townId);
         if (town != null) {
             town.addBonusBlocks(amount);
+            town.save();
         }
     }
 
