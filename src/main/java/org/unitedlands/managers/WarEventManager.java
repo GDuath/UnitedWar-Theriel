@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
@@ -45,12 +46,18 @@ public class WarEventManager {
         eventRegister = new HashMap<>();
         eventChances = new HashMap<>();
 
-        eventRegister.put("ATTACKER_PVP_KILL_2X", new AttackerPvpKill2xEvent("ATTACKER_PVP_KILL_2X", "Brutal Onslaught", "All attacker PvP kills give double points.", 900L));
-        eventRegister.put("DEFENDER_PVP_KILL_2X", new DefenderPvpKill2xEvent("DEFENDER_PVP_KILL_2X", "Defenders’ Fury", "All defender PvP kills give double points.", 900L));
-        eventRegister.put("SUDDEN_DEATH", new WarLivesSuddenDeathWarEvent("SUDDEN_DEATH", "Death is Working Overtime", "Players instantly lose all remaining war lives when they die.", 900L));
-        eventRegister.put("NO_DEATH", new WarLivesNoDeathWarEvent("NO_DEATH", "Death is on Vacation", "Players don't lose any war lives when dying.", 900L));
-        eventRegister.put("NO_SIEGE", new SiegeSuspensionEvent("NO_SIEGE", "Broken Siege Weapons", "All sieges are suspended.", 900L));
-        eventRegister.put("FAST_SIEGE", new SiegeDoubleSpeedEvent("FAST_SIEGE", "Advanced Siege Weapons", "Chunks lose HP at double speed.", 900L));
+        eventRegister.put("ATTACKER_PVP_KILL_2X", new AttackerPvpKill2xEvent("ATTACKER_PVP_KILL_2X", "Brutal Onslaught",
+                "All attacker PvP kills give double points.", 900L));
+        eventRegister.put("DEFENDER_PVP_KILL_2X", new DefenderPvpKill2xEvent("DEFENDER_PVP_KILL_2X", "Defenders’ Fury",
+                "All defender PvP kills give double points.", 900L));
+        eventRegister.put("SUDDEN_DEATH", new WarLivesSuddenDeathWarEvent("SUDDEN_DEATH", "Death is Working Overtime",
+                "Players instantly lose all remaining war lives when they die.", 900L));
+        eventRegister.put("NO_DEATH", new WarLivesNoDeathWarEvent("NO_DEATH", "Death is on Vacation",
+                "Players don't lose any war lives when dying.", 900L));
+        eventRegister.put("NO_SIEGE",
+                new SiegeSuspensionEvent("NO_SIEGE", "Broken Siege Weapons", "All sieges are suspended.", 900L));
+        eventRegister.put("FAST_SIEGE", new SiegeDoubleSpeedEvent("FAST_SIEGE", "Advanced Siege Weapons",
+                "Chunks lose HP at double speed.", 900L));
 
         var pickTable = plugin.getConfig().getConfigurationSection("war-events.pick-table");
         for (String key : pickTable.getKeys(false)) {
@@ -94,7 +101,8 @@ public class WarEventManager {
         }).exceptionally(ex -> {
             Logger.logError("Failed to load war event records: " + ex.getMessage());
             return null;
-        });;
+        });
+        ;
     }
 
     public void handleEvents() {
@@ -183,8 +191,7 @@ public class WarEventManager {
         }
     }
 
-    public void forceEvent(Player sender, String eventName, Integer warmup)
-    {
+    public void forceEvent(Player sender, String eventName, Integer warmup) {
         if (!eventRegister.containsKey(eventName)) {
             Messenger.sendMessage(sender, "This internal event name is not registered", true);
             return;
@@ -219,14 +226,23 @@ public class WarEventManager {
 
     private void sendEventPickNotification() {
         Messenger.broadcastMessageListTemplate("event-info-scheduled", currentEvent.getMessagePlaceholders(), false);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.0f, 1.0f);
+        }
     }
 
     private void sendEventStartNotification() {
         Messenger.broadcastMessageListTemplate("event-info-active", currentEvent.getMessagePlaceholders(), false);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_HIT_GROUND, 1.0f, 1.0f);
+        }
     }
 
     private void sendEventEndNotification() {
         Messenger.broadcastMessageListTemplate("event-info-ended", currentEvent.getMessagePlaceholders(), false);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_RETURN, 1.0f, 1.0f);
+        }
     }
 
     private BaseWarEvent doWeightedRandomSelection() {

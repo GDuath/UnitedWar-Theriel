@@ -75,15 +75,15 @@ public class PlayerSiegeEventListener implements Listener {
     @EventHandler
     public void onEnderPearlUse(ProjectileLaunchEvent event) {
 
-        var customCooldowns = plugin.getConfig().getConfigurationSection("warzone-pvp.cooldowns.projectiles");
-        if (!customCooldowns.getKeys(false).contains(event.getEntityType().toString()))
-            return;
-
         if (event.getEntity().getShooter() instanceof Player) {
 
             Player player = (Player) event.getEntity().getShooter();
 
             if (!isPlayerSubjectToWarZone(player))
+                return;
+
+            var customCooldowns = plugin.getConfig().getConfigurationSection("warzone-pvp.cooldowns.projectiles");
+            if (!customCooldowns.getKeys(false).contains(event.getEntityType().toString()))
                 return;
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -129,7 +129,9 @@ public class PlayerSiegeEventListener implements Listener {
                 player.getWorld().dropItemNaturally(player.getLocation(), leftover);
             }
 
-            Messenger.sendMessage(player, "§cElytras are disabled in warzones. Your elytra has been removed and placed in your inventory.", true);
+            Messenger.sendMessage(player,
+                    "§cElytras are disabled in warzones. Your elytra has been removed and placed in your inventory.",
+                    true);
         }
     }
 
