@@ -10,8 +10,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.warevents.AttackerPvpKill2xEvent;
 import org.unitedlands.classes.warevents.BaseWarEvent;
-import org.unitedlands.classes.warevents.SampleEvent;
+import org.unitedlands.classes.warevents.DefenderPvpKill2xEvent;
+import org.unitedlands.classes.warevents.SiegeDoubleSpeedEvent;
+import org.unitedlands.classes.warevents.SiegeSuspensionEvent;
 import org.unitedlands.classes.warevents.WarLivesNoDeathWarEvent;
 import org.unitedlands.classes.warevents.WarLivesSuddenDeathWarEvent;
 import org.unitedlands.models.WarEventRecord;
@@ -42,9 +45,12 @@ public class WarEventManager {
         eventRegister = new HashMap<>();
         eventChances = new HashMap<>();
 
-        eventRegister.put("SAMPLE", new SampleEvent("SAMPLE", "Defenders’ Fury", "All defender PvP kills give double points.", 7200L));
-        eventRegister.put("SUDDENDEATH", new WarLivesSuddenDeathWarEvent("SUDDENDEATH", "Death is Working Overtime", "Players instantly lose all remaining war lives when they die.", 7200L));
-        eventRegister.put("NODEATH", new WarLivesNoDeathWarEvent("NODEATH", "Death is on Vacation", "Players don't lose any war lives when dying.", 7200L));
+        eventRegister.put("ATTACKER_PVP_KILL_2X", new AttackerPvpKill2xEvent("ATTACKER_PVP_KILL_2X", "Brutal Onslaught", "All attacker PvP kills give double points.", 900L));
+        eventRegister.put("DEFENDER_PVP_KILL_2X", new DefenderPvpKill2xEvent("DEFENDER_PVP_KILL_2X", "Defenders’ Fury", "All defender PvP kills give double points.", 900L));
+        eventRegister.put("SUDDEN_DEATH", new WarLivesSuddenDeathWarEvent("SUDDEN_DEATH", "Death is Working Overtime", "Players instantly lose all remaining war lives when they die.", 900L));
+        eventRegister.put("NO_DEATH", new WarLivesNoDeathWarEvent("NO_DEATH", "Death is on Vacation", "Players don't lose any war lives when dying.", 900L));
+        eventRegister.put("NO_SIEGE", new SiegeSuspensionEvent("NO_SIEGE", "Broken Siege Weapons", "All sieges are suspended.", 900L));
+        eventRegister.put("FAST_SIEGE", new SiegeDoubleSpeedEvent("FAST_SIEGE", "Advanced Siege Weapons", "Chunks lose HP at double speed.", 900L));
 
         var pickTable = plugin.getConfig().getConfigurationSection("war-events.pick-table");
         for (String key : pickTable.getKeys(false)) {

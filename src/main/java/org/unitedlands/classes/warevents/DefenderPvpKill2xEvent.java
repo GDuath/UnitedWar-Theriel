@@ -6,9 +6,9 @@ import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarScoreEvent;
 
-public class SampleEvent extends BaseWarEvent {
+public class DefenderPvpKill2xEvent extends BaseWarEvent {
 
-    public SampleEvent(String internalName, String displayname, String description, Long duration) {
+    public DefenderPvpKill2xEvent(String internalName, String displayname, String description, Long duration) {
         super(internalName, displayname, description, duration);
     }
 
