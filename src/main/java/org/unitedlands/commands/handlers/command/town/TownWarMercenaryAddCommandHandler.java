@@ -12,8 +12,11 @@ import org.unitedlands.classes.WarSide;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
+import org.unitedlands.util.WarLivesMetadata;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.object.Resident;
 
 public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
 
@@ -82,10 +85,12 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
         Integer maxMercenaryCount = 0;
         var currentMercenaryCount = 0;
         if (playerWarSide == WarSide.ATTACKER) {
-            maxMercenaryCount = plugin.getConfig().getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-attacker-mercenaries");
+            maxMercenaryCount = plugin.getConfig().getInt(
+                    "war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-attacker-mercenaries");
             currentMercenaryCount = war.getAttacking_mercenaries().size();
         } else if (playerWarSide == WarSide.DEFENDER) {
-            maxMercenaryCount = plugin.getConfig().getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-defender-mercenaries");
+            maxMercenaryCount = plugin.getConfig().getInt(
+                    "war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-defender-mercenaries");
             currentMercenaryCount = war.getDefending_mercenaries().size();
         }
 
@@ -123,6 +128,19 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             defendingMercenaryList.add(mercenary.getUniqueId());
             war.setDefending_mercenaries(defendingMercenaryList);
             war.setState_changed(true);
+        } else {
+            Messenger.sendMessage(player, "§eError determining war side.", true);
+            return;
+        }
+
+        // If the war has already started, add war lives to the mercenary
+        if (war.getIs_active()) {
+            int warLives = plugin.getConfig()
+                    .getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
+            Resident mercenaryResident = TownyUniverse.getInstance().getResident(mercenary.getUniqueId());
+            if (mercenaryResident != null) {
+                WarLivesMetadata.setWarLivesMetaData(mercenaryResident, war.getId(), warLives);
+            }
         }
 
         Messenger.sendMessage(player, "§a" + mercenary.getName() + " has been added as a mercenary for your side.",
