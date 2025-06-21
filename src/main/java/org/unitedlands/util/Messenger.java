@@ -1,5 +1,9 @@
 package org.unitedlands.util;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
@@ -58,7 +62,8 @@ public class Messenger {
         sendMessage(sender, message, includePrefix);
     }
 
-    public static void sendMessageListTemplate(CommandSender sender, String messageListId, Map<String, String> replacements,
+    public static void sendMessageListTemplate(CommandSender sender, String messageListId,
+            Map<String, String> replacements,
             boolean includePrefix) {
 
         var messageList = plugin.getConfig().getStringList("messages." + messageListId);
@@ -71,7 +76,8 @@ public class Messenger {
         for (String message : messageList) {
             if (replacements != null) {
                 for (var entry : replacements.entrySet()) {
-                    message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
+                    message = message.replace("{" + entry.getKey() + "}",
+                            entry.getValue() != null ? entry.getValue() : "");
                 }
             }
             sendMessage(sender, message, includePrefix);
@@ -110,10 +116,46 @@ public class Messenger {
         for (String message : messageList) {
             if (replacements != null) {
                 for (var entry : replacements.entrySet()) {
-                    message = message.replace("{" + entry.getKey() + "}", entry.getValue() != null ? entry.getValue() : "");
+                    message = message.replace("{" + entry.getKey() + "}",
+                            entry.getValue() != null ? entry.getValue() : "");
                 }
             }
             broadCastMessage(message, includePrefix);
+        }
+    }
+
+    public static void sendDiscordEmbed(String embed, Map<String, String> replacements) {
+        try {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            if (webhookUrl == null)
+                return;
+
+            URL url = URI.create(webhookUrl).toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            if (replacements != null) {
+                for (var entry : replacements.entrySet()) {
+                    embed = embed.replace("{" + entry.getKey() + "}",
+                            entry.getValue() != null ? entry.getValue() : "");
+                }
+            }
+
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = embed.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != 204) {
+                System.out.println("Failed to send Discord embed. Response code: " + responseCode);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

@@ -175,6 +175,7 @@ public class WarManager implements Listener {
         (new WarStartEvent(war)).callEvent();
 
         sendWarStartNotification(war);
+        sendWarStartDiscordNotification(war);
     }
 
     private boolean warCanBeEnded(War war) {
@@ -303,7 +304,8 @@ public class WarManager implements Listener {
 
             pendingWars.add(war);
 
-            sendWarDeclatedNotification(attackingTown, defendingTown, war);
+            sendWarDeclaredNotification(war);
+            sendWarDeclaredDiscordNotification(war);
         } catch (Exception exception) {
             Logger.logError("The war could not be created: " + exception.getMessage());
             return;
@@ -355,6 +357,7 @@ public class WarManager implements Listener {
         unforcePvpInTowns(war);
 
         sendWarEndNotification(war);
+        sendWarEndDiscordNotification(war);
     }
 
     public void forceEndWar(War war) {
@@ -632,10 +635,19 @@ public class WarManager implements Listener {
 
     //#region Notification methods
 
-    private void sendWarDeclatedNotification(Town attackingTown, Town defendingTown, War war) {
+    private void sendWarDeclaredNotification(War war) {
         Messenger.broadcastMessageListTemplate("war-declared", war.getMessagePlaceholders(), false);
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_6, 1.0f, 1.0f);
+        }
+    }
+
+    private void sendWarDeclaredDiscordNotification(War war) {
+        if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var embed = plugin.getConfig().getString("discord.war-declaration-embed");
+            if (embed != null) {
+                Messenger.sendDiscordEmbed(embed, war.getMessagePlaceholders());
+            }
         }
     }
 
@@ -646,10 +658,28 @@ public class WarManager implements Listener {
         }
     }
 
+    private void sendWarStartDiscordNotification(War war) {
+        if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var embed = plugin.getConfig().getString("discord.war-started-embed");
+            if (embed != null) {
+                Messenger.sendDiscordEmbed(embed, war.getMessagePlaceholders());
+            }
+        }
+    }
+
     private void sendWarEndNotification(War war) {
         Messenger.broadcastMessageListTemplate("war-ended", war.getMessagePlaceholders(), false);
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_2, 1.0f, 1.0f);
+        }
+    }
+
+    private void sendWarEndDiscordNotification(War war) {
+        if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var embed = plugin.getConfig().getString("discord.war-ended-embed");
+            if (embed != null) {
+                Messenger.sendDiscordEmbed(embed, war.getMessagePlaceholders());
+            }
         }
     }
 
