@@ -759,11 +759,11 @@ public class War implements Identifiable {
         replacements.put("defender-score-cap", getDefender_score_cap().toString());
         replacements.put("war-result", getWar_result().getDisplayName());
         if (!getIs_active() && !getIs_ended()) {
-            replacements.put("timer-info", "War will start in §e"
+            replacements.put("timer-info", "War will start in "
                     + Formatter.formatDuration(scheduled_begin_time - System.currentTimeMillis()));
         } else if (getIs_active()) {
             replacements.put("timer-info",
-                    "War will end in §e" + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
+                    "War will end in " + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
         } else {
             replacements.put("timer-info", "War has ended.");
         }

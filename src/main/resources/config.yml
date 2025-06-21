@@ -404,3 +404,19 @@ messages:
     - "§eRight-click §7this book to write"
     - "§7your reasoning behind the §ewar."
     - ""
+
+
+############################################################
+# +------------------------------------------------------+ #
+# |                   Discord Settings                   | #
+# |                                                      | #
+# | Discord-related webhook settings.                    | #
+# +------------------------------------------------------+ #
+############################################################
+
+discord:
+  enabled: true
+  webhook_url: 
+  war-declaration-embed: "{\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Declaration: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"
+  war-started-embed: "{\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Started: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
+  war-ended-embed: "{\n \"embeds\": [\n {\n \"description\": \"The war has ended with the following result: **{war-result}** <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Ended: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
