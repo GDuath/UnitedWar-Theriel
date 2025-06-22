@@ -172,6 +172,7 @@ public class WarManager implements Listener {
         war.setState_changed(true);
         assignWarLivesToParticipants(war);
         forcePvpInTowns(war);
+        forceDisableFlight(war);
         (new WarStartEvent(war)).callEvent();
 
         sendWarStartNotification(war);
@@ -225,6 +226,26 @@ public class WarManager implements Listener {
             if (town != null) {
                 town.setAdminEnabledPVP(true);
                 town.save();
+            }
+        }
+    }
+
+    private void forceDisableFlight(War war) {
+        var playerIds = war.getAttacking_players();
+        playerIds.addAll(war.getDefending_players());
+        playerIds.addAll(war.getAttacking_mercenaries());
+        playerIds.addAll(war.getDefending_mercenaries());
+
+        for (var playerId : playerIds) {
+            var player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                if (player.isFlying()) {
+                    Messenger.sendMessage(player, "§cYou're now at war. Flight will be deactivated in 5 seconds.",
+                            true);
+                }
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    player.setAllowFlight(false);
+                }, 100);
             }
         }
     }
