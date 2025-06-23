@@ -66,8 +66,7 @@ public class TownWarCallAcceptCommandHandler extends BaseCommandHandler {
 
         var resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
-            Messenger.sendMessage(player,
-                    "§cError retrieving Towny resident data. Please contact an admin to look into this.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
             return;
         }
         if (!resident.isKing()) {
