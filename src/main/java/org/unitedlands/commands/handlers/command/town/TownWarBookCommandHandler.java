@@ -50,7 +50,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war book <target_town> <war_goal>", true);
+            Messenger.sendMessageTemplate(sender, "book-command-usage", null, true);
             return;
         }
 
@@ -58,16 +58,13 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         Player player = (Player) sender;
         Resident resident = towny.getResident(player);
         if (resident == null) {
-            Messenger.sendMessage(player,
-                    "§cError retrieving your resident data. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-data", null, true);
             return;
         }
 
         var playerTown = towny.getTown(player);
         if (playerTown == null) {
-            Messenger.sendMessage(player, "§cError retrieving your town. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
             return;
         }
 

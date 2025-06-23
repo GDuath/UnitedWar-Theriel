@@ -405,6 +405,13 @@ messages:
     - "§7your reasoning behind the §ewar."
     - ""
 
+  # +---------------------------------------------+ #
+  # |                  error messages             | #
+  # +---------------------------------------------+ #
+
+  book-command-usage: "Usage: /t war book <target_town> <war_goal>"
+  error-resident-data: "§cError retrieving your resident data. Please contact an admin to look into this."
+  error-resident-town-not-found: "§cError retrieving your resident town data. Please contact an admin to look into this."
 
 ############################################################
 # +------------------------------------------------------+ #
