@@ -52,7 +52,7 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war callally <ally_name> <war_name>", true);
+            Messenger.sendMessageTemplate(sender, "war-call-send-usage", null, true);
             return;
         }
 
@@ -60,32 +60,31 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
 
         Nation ally = TownyAPI.getInstance().getNation(args[0]);
         if (ally == null) {
-            Messenger.sendMessage(player, "§cCould not find nation " + args[0], true);
+            Messenger.sendMessageTemplate(sender, "error-nation-not-found" + args[0], null, true);
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[1]);
         if (war == null) {
-            Messenger.sendMessage(player, "§cCould not find war " + args[1], true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found" + args[1], null, true);
             return;
         }
 
         if (war.getIs_active() || war.getIs_ended()) {
-            Messenger.sendMessage(player, "§cYou can only call allies into pending wars!", true);
+            Messenger.sendMessageTemplate(sender, "error-war-call-send-ally-not-pending", null, true);
             return;
         }
 
         var allyCapital = ally.getCapital();
         if (war.getAttacking_towns().contains(allyCapital.getUUID())
                 || war.getDefending_towns().contains(allyCapital.getUUID())) {
-            Messenger.sendMessage(player, "§cThis nation is already part of the war!", true);
+            Messenger.sendMessageTemplate(sender, "error-war-call-send-nation-already-in-war", null, true);
             return;
         }
 
         var playerTown = TownyAPI.getInstance().getTown(player);
         if (playerTown == null) {
-            Messenger.sendMessage(player, "§cError retrieving your town. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-town-data", null, true);
             return;
         }
 
@@ -96,16 +95,13 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
             warSide = WarSide.DEFENDER;
 
         if (warSide == WarSide.NONE) {
-            Messenger.sendMessage(player,
-                    "§cError retrieving your war side. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-war-side-data", null, true);
             return;
         }
 
         var playerNation = playerTown.getNationOrNull();
         if (playerNation == null) {
-            Messenger.sendMessage(player, "§cError retrieving your nation. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-nation-data", null, true);
             return;
         }
 
@@ -117,13 +113,10 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
 
         plugin.getWarManager().addCallToWar(ctw);
 
-        Messenger.sendMessage(player, "§bCall to War sent to ally. The call will automatically expire in 5 minutes.",
-                true);
+        Messenger.sendMessageTemplate(sender, "war-call-send-success", null, true);
         Player allyKing = ally.getKing().getPlayer();
         if (allyKing != null)
-            Messenger.sendMessage(allyKing,
-                    "§bYou received a Call to War. Use /t war acceptcall <war_name> to accept. The call will automatically expire in 5 minutes.",
-                    true);
+            Messenger.sendMessageTemplate(allyKing, "war-call-receive", null, true);
 
     }
 
