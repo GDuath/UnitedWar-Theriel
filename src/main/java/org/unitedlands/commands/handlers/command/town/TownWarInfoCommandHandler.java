@@ -48,7 +48,7 @@ public class TownWarInfoCommandHandler extends BaseCommandHandler {
                 Messenger.sendMessageListTemplate(((Player) sender), "war-info", war.getMessagePlaceholders(),
                         false);
             } else {
-                Messenger.sendMessage(((Player) sender), "§cWar could not be found.", true);
+                Messenger.sendMessageTemplate(((Player)sender), "error-war-not-found", null, true);
             }
         }
     }

@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -47,7 +48,7 @@ public class TownWarCallAcceptCommandHandler extends BaseCommandHandler {
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length != 1) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war acceptcall <war_name>", true);
+            Messenger.sendMessageTemplate((Player)sender, "war-call-accept-usage", null, true);
             return;
         }
 
@@ -55,37 +56,34 @@ public class TownWarCallAcceptCommandHandler extends BaseCommandHandler {
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessage(player, "§cCould not find war " + args[0], true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
             return;
         }
 
         if (war.getIs_active() || war.getIs_ended()) {
-            Messenger.sendMessage(player, "§cYou can't join a war that is not pending.", true);
+            Messenger.sendMessageTemplate(sender, "error-join-war-not-pending", null, true);
             return;
         }
 
         var resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
-            Messenger.sendMessage(player,
-                    "§cError retrieving Towny resident data. Please contact an admin to look into this.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
             return;
         }
         if (!resident.isKing()) {
-            Messenger.sendMessage(player, "§cOnly nation leaders can accept Calls to War!", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-not-nation-leader-war-call-accept", null, true);
             return;
         }
 
         var nation = resident.getNationOrNull();
         if (nation == null) {
-            Messenger.sendMessage(player,
-                    "§cError retrieving Towny nation data. Please contact an admin to look into this.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-nation-data", null, true);
             return;
         }
 
         var ctw = plugin.getWarManager().getCallToWar(war.getId(), nation.getUUID());
         if (ctw == null) {
-            Messenger.sendMessage(player,
-                    "§cCall to War not found. It may have already expired.", true);
+            Messenger.sendMessageTemplate(sender, "error-call-to-war-not-found", null, true);
             return;
         }
 
@@ -105,8 +103,7 @@ public class TownWarCallAcceptCommandHandler extends BaseCommandHandler {
         war.setState_changed(true);
         war.buildPlayerLists();
 
-        Messenger.sendMessage(player,
-                "§bYour nation has joined the war!", true);
+        Messenger.sendMessageTemplate(sender, "resident-nation-joined-war", null, true);
     }
 
 }

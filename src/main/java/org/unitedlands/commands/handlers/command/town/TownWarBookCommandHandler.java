@@ -3,6 +3,7 @@ package org.unitedlands.commands.handlers.command.town;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
@@ -50,7 +51,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war book <target_town> <war_goal>", true);
+            Messenger.sendMessageTemplate(sender, "book-command-usage", null, true);
             return;
         }
 
@@ -58,40 +59,34 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         Player player = (Player) sender;
         Resident resident = towny.getResident(player);
         if (resident == null) {
-            Messenger.sendMessage(player,
-                    "§cError retrieving your resident data. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-data", null, true);
             return;
         }
 
         var playerTown = towny.getTown(player);
         if (playerTown == null) {
-            Messenger.sendMessage(player, "§cError retrieving your town. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
             return;
         }
 
         if (!resident.isMayor()) {
-            Messenger.sendMessage(player, "§cOnly mayors can declare wars.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-not-mayor", null, true);
             return;
         }
 
         if (playerTown.isNeutral()) {
-            Messenger.sendMessage(player, "§cNeutral towns can't declare wars.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-town-neutral", null, true);
             return;
         }
 
         var targetTown = towny.getTown(args[0]);
         if (targetTown == null) {
-            Messenger.sendMessage(player, "§cCould not find town " + args[0], true);
+            Messenger.sendMessageTemplate(sender, "error-town-not-found", Map.of("town-name",args[0]), true);
             return;
         }
 
         if (targetTown.isNeutral()) {
-            Messenger.sendMessage(player, "§cYou can't declare wars on neutral towns.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-target-town-neutral", null, true);
             return;
         }
 
@@ -99,12 +94,12 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         Logger.log(immunityExpirationTime + "");
         if (System.currentTimeMillis() < immunityExpirationTime)
         {
-            Messenger.sendMessage(player, "§cThis town is still immune to new war declarations.", true);
+            Messenger.sendMessageTemplate(sender, "error-target-town-immune", null, true);
             return;
         }
 
         if (playerTown.getUUID().equals(targetTown.getUUID())) {
-            Messenger.sendMessage(player, "§cHow would you even fight a war against yourself?", true);
+            Messenger.sendMessageTemplate(sender, "error-target-town-is-resident-town", null, true);
             return;
         }
 
@@ -112,7 +107,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         try {
             warGoal = WarGoal.valueOf(args[1]);
         } catch (Exception ex) {
-            Messenger.sendMessage(player, "§cUnknown war goal: " + args[1], true);
+            Messenger.sendMessageTemplate(sender, "error-unknown-war-goal", Map.of("war-goal-name",args[1]), true);
             return;
         }
 
@@ -121,7 +116,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
                 handleDefaultWar(player, playerTown, targetTown);
                 break;
             default:
-                Messenger.sendMessage(player, "§eThis war goal has not been implemented yet.", true);
+                Messenger.sendMessageTemplate(sender, "error-war-goal-not-implemented", null, true);
                 break;
         }
     }
@@ -132,25 +127,23 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         var playerNation = playerTown.getNationOrNull();
 
         if (playerNation != null && !playerTown.isCapital()) {
-            Messenger.sendMessage(player, "§cOnly capital towns or nationless towns can use this war goal.", true);
+            Messenger.sendMessageTemplate(player, "error-resident-town-not-capital-war-goal", null, true);
             return;
         }
 
         if (playerNation != null && targetNation != null && playerNation.getAllies().contains(targetNation)) {
-            Messenger.sendMessage(player, "§cYou can't declare wars on allied nations.", true);
+            Messenger.sendMessageTemplate(player, "error-target-town-nation-allied", null, true);
             return;
         }
 
         if (playerNation != null && targetNation != null && targetNation.getUUID().equals(playerNation.getUUID())) {
-            Messenger.sendMessage(player,
-                    "§cYou can't declare a war against a town in your own nation with this war goal.", true);
+            Messenger.sendMessageTemplate(player, "error-target-town-nation-war-goal", null, true);
             return;
         }
 
         var targetTownWars = plugin.getWarManager().getAllTownWars(targetTown.getUUID());
         if (targetTownWars.values().stream().anyMatch(w -> w.equals(WarSide.DEFENDER))) {
-            Messenger.sendMessage(player,
-                    "§cYou can't declare a war against a town that is already in a defensive war.", true);
+            Messenger.sendMessageTemplate(player, "error-target-town-in-defensive-war", null, true);
             return;
         }
 

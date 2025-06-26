@@ -35,33 +35,28 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 0) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war declare", true);
+            Messenger.sendMessageTemplate((Player) sender, "war-declare-usage", null, true);
             return;
         }
-
-        Logger.log("Test1");
 
         Player player = (Player) sender;
         Resident resident = TownyAPI.getInstance().getResident(player);
-        Logger.log("Test2");
 
         if (!resident.isMayor()) {
-            Messenger.sendMessage(sender, "§cOnly mayors can declare wars.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-not-mayor", null, true);
             return;
         }
-        Logger.log("Test3");
 
         var heldItem = player.getInventory().getItemInMainHand();
         if (heldItem == null || !heldItem.getType().equals(Material.WRITTEN_BOOK)) {
             Logger.log(heldItem.getType().toString());
-            Messenger.sendMessage(sender, "§cYou must hold a signed war book in your hand.", true);
+            Messenger.sendMessageTemplate(sender, "error-signed-war-book-missing", null, true);
             return;
         }
-        Logger.log("Test4");
 
         WarBookData warBookData = new WarBookData(heldItem);
         if (!warBookData.isWarBook()) {
-            Messenger.sendMessage(sender, "§cYou must hold a signed war book in your hand.", true);
+            Messenger.sendMessageTemplate(sender, "error-signed-war-book-missing", null, true);
             return;
         }
 

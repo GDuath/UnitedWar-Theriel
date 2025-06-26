@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -62,38 +63,36 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war removemercenary <war_name> <player_name>", true);
+            Messenger.sendMessageTemplate((Player)sender, "mercenary-remove-usage", null, true);
             return;
         }
 
         var player = (Player) sender;
         var resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
-            Messenger.sendMessage(player,
-                    "§cThere was an error while trying to retrieve your Towny data. Please contact staff.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-data", null, true);
             return;
         }
 
         if (!resident.isMayor() && !resident.getTownRanks().contains("co-mayor")) {
-            Messenger.sendMessage(player, "§cOnly mayors and co-mayors are allowed to remove mercenaries from a war.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-mercenary-remove-not-mayor", null, true);
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessage(player, "§cCould not find war " + args[0], true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
             return;
         }
 
         if (war.getIs_ended()) {
-            Messenger.sendMessage(player, "§cYou cannot remove mercenaries from a war that is already over.", true);
+            Messenger.sendMessageTemplate(sender, "error-mercenary-remove-war-over", null, true);
             return;
         }
 
         WarSide playerWarSide = war.getPlayerWarSide(player.getUniqueId());
         if (playerWarSide == WarSide.NONE) {
-            Messenger.sendMessage(player, "§cYou're not a part of this war.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-not-in-war", null, true);
             return;
         }
 
@@ -108,8 +107,7 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
 
         if (!attackingMercenaryList.contains(mercenary.getUniqueId())
                 && !defendingMercenaryList.contains(mercenary.getUniqueId())) {
-            Messenger.sendMessage(player, "§eThat player is not a mercenary in this war.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-mercenary-remove-not-in-war", null, true);
             return;
         }
 
@@ -123,15 +121,11 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
             war.setState_changed(true);
         }
 
-        Messenger.sendMessage(player, "§a" + mercenary.getName() + " has been removed as a mercenary for your side.",
-                true);
+        Messenger.sendMessageTemplate(sender,"mercenary-remove-success", Map.of("mercenary-name",mercenary.getName()), true);
 
         if (mercenary.isOnline()) {
             Player onlineMercenary = Bukkit.getPlayer(mercenary.getUniqueId());
-            Messenger.sendMessage(onlineMercenary,
-                    "§eYou've been removed as a mercenary on the " + playerWarSide.toString().toLowerCase()
-                            + " side of " + war.getTitle(),
-                    true);
+            Messenger.sendMessageTemplate(onlineMercenary, "mercenary-resident-removed-success", Map.of("war-side",playerWarSide.toString().toLowerCase(),"war-name",war.getTitle()), true);
         }
     }
 
