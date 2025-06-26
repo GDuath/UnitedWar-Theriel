@@ -95,7 +95,7 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
 
                 Messenger.sendMessageListTemplate(((Player) sender), "war-participants", replacements, false);
             } else {
-                Messenger.sendMessage(((Player) sender), "§cWar could not be found.", true);
+                Messenger.sendMessageTemplate(sender, "error-war-not-found", null, true);
             }
         }
     }

@@ -113,56 +113,55 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
     private void handleCreateCallToWar(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            Messenger.sendMessage((Player) sender, "Usage: /wd <war_name> <caller_nation> <target_nation>",
-                    true);
+            Messenger.sendMessageTemplate((Player)sender, "war-debug-create-usage", null, true);
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[1]);
         if (war == null) {
-            Messenger.sendMessage((Player) sender, "§cWar not found.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-not-found", null, true);
             return;
         }
 
         if (war.getIs_active() || war.getIs_ended()) {
-            Messenger.sendMessage((Player) sender, "§cWar is not pending.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-not-pending", null, true);
             return;
         }
 
         var callerNation = TownyAPI.getInstance().getNation(args[2]);
         if (callerNation == null) {
-            Messenger.sendMessage((Player) sender, "§cCaller nation not found.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-caller-nation-not-found", null, true);
             return;
         }
 
         var targetNation = TownyAPI.getInstance().getNation(args[3]);
         if (targetNation == null) {
-            Messenger.sendMessage((Player) sender, "§cTarget nation not found.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-target-nation-not-found", null, true);
             return;
         }
 
         if (callerNation == targetNation) {
-            Messenger.sendMessage((Player) sender, "§cCaller and target nation can't be the same.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-caller-target-same-nation", null, true);
             return;
         }
 
         var callerAllies = callerNation.getAllies();
         if (!callerAllies.contains(targetNation)) {
-            Messenger.sendMessage((Player) sender, "§cThe target nation is not allied to the caller nation.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-target-not-caller-ally-nation", null, true);
             return;
         }
 
         var callerCapital = callerNation.getCapital();
         if (!war.getAttacking_towns().contains(callerCapital.getUUID())
                 && !war.getDefending_towns().contains(callerCapital.getUUID())) {
-            Messenger.sendMessage((Player) sender, "§cThe caller nation is not part of the war.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-caller-nation-not-in-war", null, true);
             return;
         }
 
         var targetCapital = targetNation.getCapital();
         if (war.getAttacking_towns().contains(targetCapital.getUUID())
                 || war.getDefending_towns().contains(targetCapital.getUUID())) {
-            Messenger.sendMessage((Player) sender, "§cThe target nation is already part of the war.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-target-nation-already-in-war", null, true);
             return;
         }
 
@@ -182,26 +181,21 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
 
         Player callerKing = callerNation.getKing().getPlayer();
         if (callerKing != null)
-            Messenger.sendMessage(callerKing,
-                    "§bCall to War sent to ally. The call will automatically expire in 5 minutes.",
-                    true);
+            Messenger.sendMessageTemplate(callerKing, "war-call-ally-send-success", null, true);
         Player allyKing = targetNation.getKing().getPlayer();
         if (allyKing != null)
-            Messenger.sendMessage(allyKing,
-                    "§bYou received a Call to War. Use /t war acceptcall <war_name> to accept. The call will automatically expire in 5 minutes.",
-                    true);
+            Messenger.sendMessageTemplate(allyKing, "war-call-receive", null, true);
     }
 
     private void handleAddWarScore(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            Messenger.sendMessage((Player) sender, "Usage: /wd addwarscore <warname> [attacker|defender] <points>",
-                    true);
+            Messenger.sendMessageTemplate((Player)sender, "add-war-score-usage", null, true);
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[1]);
         if (war == null) {
-            Messenger.sendMessage((Player) sender, "War not found.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-not-found", null, true);
             return;
         }
 
@@ -209,7 +203,7 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
         try {
             points = Integer.parseInt(args[3]);
         } catch (NumberFormatException ex) {
-            Messenger.sendMessage((Player) sender, "Points could not be converted to a number.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-war-points-not-number", null, true);
             return;
         }
 
@@ -227,29 +221,29 @@ public class WarDebugCommands implements CommandExecutor, TabCompleter {
                         "Added " + points + " to defenders in war " + war.getTitle() + ".", true);
                 break;
             default:
-                Messenger.sendMessage((Player) sender, "Side must be attacker or defender.", true);
+                Messenger.sendMessageTemplate((Player)sender, "error-side-not-attacker-defender", null, true);
                 break;
         }
     }
 
     private void handleCreateWarDeclaration(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            Messenger.sendMessage((Player) sender, "Usage: /wardebug createwardeclaration <attacker> <defender>", true);
+            Messenger.sendMessageTemplate((Player) sender, "wardebug-create-war-declaration-usage", null, true);
             return;
         }
 
         var attackerTown = TownyAPI.getInstance().getTown(args[1]);
         if (attackerTown == null) {
-            Messenger.sendMessage((Player) sender, "Attacker town not found.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-wardebug-attacker-not-found", null, true);
             return;
         }
         var defenderTown = TownyAPI.getInstance().getTown(args[2]);
         if (defenderTown == null) {
-            Messenger.sendMessage((Player) sender, "Defender town not found.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-wardebug-defender-not-found", null, true);
             return;
         }
         if (attackerTown.equals(defenderTown)) {
-            Messenger.sendMessage((Player) sender, "Attacker and defender towns cannot be the same.", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-wardebug-attacker-is-defender", null, true);
             return;
         }
 

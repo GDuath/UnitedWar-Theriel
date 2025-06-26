@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -47,38 +48,36 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessage((Player) sender, "Usage: /t war addmercenary <war_name> <player_name>", true);
+            Messenger.sendMessageTemplate((Player)sender, "mercenary-add-usage", null, true);
             return;
         }
 
         var player = (Player) sender;
         var resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
-            Messenger.sendMessage(player,
-                    "§cThere was an error while trying to retrieve your Towny data. Please contact staff.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
             return;
         }
 
         if (!resident.isMayor() && !resident.getTownRanks().contains("co-mayor")) {
-            Messenger.sendMessage(player, "§cOnly mayors and co-mayors are allowed to recruit mercenaries for a war.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-resident-not-mayor-add-mecrenary", null, true);
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessage(player, "§cCould not find war " + args[0], true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
             return;
         }
 
         if (war.getIs_ended()) {
-            Messenger.sendMessage(player, "§cYou cannot add mercenaries to a war that is already over.", true);
+            Messenger.sendMessageTemplate(sender, "error-add-mercenary-war-over", null, true);
             return;
         }
 
         WarSide playerWarSide = war.getPlayerWarSide(player.getUniqueId());
         if (playerWarSide == WarSide.NONE) {
-            Messenger.sendMessage(player, "§cYou're not a part of this war.", true);
+            Messenger.sendMessageTemplate(sender, "error-resident-not-in-war", null, true);
             return;
         }
 
@@ -95,7 +94,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
         }
 
         if (currentMercenaryCount >= maxMercenaryCount) {
-            Messenger.sendMessage(player, "§cYou cannot add another mercenary, maximum is " + maxMercenaryCount, true);
+            Messenger.sendMessageTemplate(sender, "error-add-mercenary-max", null, true);
             return;
         }
 
@@ -106,7 +105,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
         if (mercenary == player) {
-            Messenger.sendMessage((Player) sender, "§eYou can't add yourself as a mercenary :facepalm:", true);
+            Messenger.sendMessageTemplate((Player)sender, "error-add-mercenary-is-resident", null, true);
             return;
         }
 
@@ -115,8 +114,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
 
         if (attackingMercenaryList.contains(mercenary.getUniqueId())
                 || defendingMercenaryList.contains(mercenary.getUniqueId())) {
-            Messenger.sendMessage(player, "§eThat player has already been hired as a mercenary for this war.",
-                    true);
+            Messenger.sendMessageTemplate(sender, "error-add-mercenary-already-added", null, true);
             return;
         }
 
@@ -129,7 +127,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             war.setDefending_mercenaries(defendingMercenaryList);
             war.setState_changed(true);
         } else {
-            Messenger.sendMessage(player, "§eError determining war side.", true);
+            Messenger.sendMessageTemplate(sender, "error-war-side-data", null, true);
             return;
         }
 
@@ -143,12 +141,8 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             }
         }
 
-        Messenger.sendMessage(player, "§a" + mercenary.getName() + " has been added as a mercenary for your side.",
-                true);
-        Messenger.sendMessage(mercenary,
-                "§bYou've been added as a mercenary on the " + playerWarSide.toString().toLowerCase() + " side of "
-                        + war.getTitle(),
-                true);
+        Messenger.sendMessageTemplate(sender,"add-mercenary-succes", Map.of("mercenary-name",mercenary.getName()), true);
+        Messenger.sendMessageTemplate(mercenary, "resident-mercenary-join-success", Map.of("war-side",playerWarSide.toString().toLowerCase(),"war-name",war.getTitle()), true);
     }
 
 }
