@@ -3,6 +3,7 @@ package org.unitedlands.commands.handlers.command.town;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
@@ -80,7 +81,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
 
         var targetTown = towny.getTown(args[0]);
         if (targetTown == null) {
-            Messenger.sendMessageTemplate(sender, "error-town-not-found" + args[0], null, true);
+            Messenger.sendMessageTemplate(sender, "error-town-not-found", Map.of("town-name",args[0]), true);
             return;
         }
 
@@ -106,7 +107,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         try {
             warGoal = WarGoal.valueOf(args[1]);
         } catch (Exception ex) {
-            Messenger.sendMessageTemplate(sender, "error-unknown-war-goal" + args[1], null, true);
+            Messenger.sendMessageTemplate(sender, "error-unknown-war-goal", Map.of("war-goal-name",args[1]), true);
             return;
         }
 

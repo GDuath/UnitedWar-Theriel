@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -65,7 +66,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found" + args[0], null, true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
             return;
         }
 
@@ -140,9 +141,8 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             }
         }
 
-        Messenger.sendMessageTemplate(player, "§a" + mercenary.getName() + "add-mercenary-succes", null, true);
-        Messenger.sendMessageTemplate(mercenary, "resident-mercenary-join-success" + playerWarSide.toString().toLowerCase() + " side of "
-                        + war.getTitle(), null, true);
+        Messenger.sendMessageTemplate(sender,"add-mercenary-succes", Map.of("mercenary-name",mercenary.getName()), true);
+        Messenger.sendMessageTemplate(mercenary, "resident-mercenary-join-success", Map.of("war-side",playerWarSide.toString().toLowerCase(),"war-name",war.getTitle()), true);
     }
 
 }

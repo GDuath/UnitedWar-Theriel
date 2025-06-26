@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -80,7 +81,7 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found" + args[0], null, true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
             return;
         }
 
@@ -120,12 +121,11 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
             war.setState_changed(true);
         }
 
-        Messenger.sendMessageTemplate(sender, "§a" + mercenary.getName() + "mercenary-remove-success", null, true);
+        Messenger.sendMessageTemplate(sender,"mercenary-remove-success", Map.of("mercenary-name",mercenary.getName()), true);
 
         if (mercenary.isOnline()) {
             Player onlineMercenary = Bukkit.getPlayer(mercenary.getUniqueId());
-            Messenger.sendMessageTemplate(onlineMercenary, "§eYou've been removed as a mercenary on the " + playerWarSide.toString().toLowerCase()
-                            + " side of " + war.getTitle(), null, true);
+            Messenger.sendMessageTemplate(onlineMercenary, "mercenary-resident-removed-success", Map.of("war-side",playerWarSide.toString().toLowerCase(),"war-name",war.getTitle()), true);
         }
     }
 

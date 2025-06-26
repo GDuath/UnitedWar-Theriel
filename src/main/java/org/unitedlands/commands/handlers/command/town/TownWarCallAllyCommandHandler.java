@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
@@ -60,13 +61,13 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
 
         Nation ally = TownyAPI.getInstance().getNation(args[0]);
         if (ally == null) {
-            Messenger.sendMessageTemplate(sender, "error-nation-not-found" + args[0], null, true);
+            Messenger.sendMessageTemplate(sender, "error-nation-not-found", Map.of("nation-name",args[0]), true);
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[1]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found" + args[1], null, true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[1]), true);
             return;
         }
 
