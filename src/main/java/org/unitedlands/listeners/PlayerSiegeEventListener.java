@@ -1,6 +1,7 @@
 package org.unitedlands.listeners;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -10,11 +11,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.WarSide;
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -70,6 +74,48 @@ public class PlayerSiegeEventListener implements Listener {
             return;
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getPlayer().getLocation());
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, null);
+    }
+
+    @EventHandler
+    public void onPlayerSendCommand(PlayerCommandPreprocessEvent event) {
+        if (!plugin.getWarManager().isPlayerInActiveWar(event.getPlayer().getUniqueId()))
+            return;
+
+        Player player = event.getPlayer();
+        if (player.isOp())
+            return;
+
+        List<String> disabledCommands = plugin.getConfig().getStringList("siege-settings.disabled-commands");
+        if (disabledCommands == null || disabledCommands.isEmpty())
+            return;
+
+        boolean disabledCommand = false;
+        var msg = event.getMessage();
+        for (var cmd : disabledCommands) {
+            if (msg.startsWith("/" + cmd)) {
+                disabledCommand = true;
+            }
+        }
+
+        if (!disabledCommand)
+            return;
+
+        boolean enemiesOnline = false;
+        var wars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
+        for (var warSet : wars.entrySet()) {
+            if (warSet.getValue() == WarSide.ATTACKER) {
+                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getTarget_town_id()))
+                    enemiesOnline = true;
+            } else if (warSet.getValue() == WarSide.DEFENDER) {
+                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getDeclaring_town_id()))
+                    enemiesOnline = true;
+            }
+        }
+
+        if (enemiesOnline) {
+            event.setCancelled(true);
+            Messenger.sendMessageTemplate(player, "error-command-disabled", null, true);
+        }
     }
 
     @EventHandler
