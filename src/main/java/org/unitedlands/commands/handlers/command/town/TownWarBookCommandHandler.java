@@ -81,19 +81,13 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
 
         var targetTown = towny.getTown(args[0]);
         if (targetTown == null) {
-            Messenger.sendMessageTemplate(sender, "error-town-not-found", Map.of("town-name",args[0]), true);
-            return;
-        }
-
-        if (targetTown.isNeutral()) {
-            Messenger.sendMessageTemplate(sender, "error-target-town-neutral", null, true);
+            Messenger.sendMessageTemplate(sender, "error-town-not-found", Map.of("town-name", args[0]), true);
             return;
         }
 
         var immunityExpirationTime = WarImmunityMetadata.getImmunityMetaDataFromTown(targetTown);
         Logger.log(immunityExpirationTime + "");
-        if (System.currentTimeMillis() < immunityExpirationTime)
-        {
+        if (System.currentTimeMillis() < immunityExpirationTime) {
             Messenger.sendMessageTemplate(sender, "error-target-town-immune", null, true);
             return;
         }
@@ -107,7 +101,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         try {
             warGoal = WarGoal.valueOf(args[1]);
         } catch (Exception ex) {
-            Messenger.sendMessageTemplate(sender, "error-unknown-war-goal", Map.of("war-goal-name",args[1]), true);
+            Messenger.sendMessageTemplate(sender, "error-unknown-war-goal", Map.of("war-goal-name", args[1]), true);
             return;
         }
 
@@ -139,6 +133,18 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         if (playerNation != null && targetNation != null && targetNation.getUUID().equals(playerNation.getUUID())) {
             Messenger.sendMessageTemplate(player, "error-target-town-nation-war-goal", null, true);
             return;
+        }
+
+        if (targetNation != null) {
+            if (targetNation.isNeutral()) {
+                Messenger.sendMessageTemplate(player, "error-target-nation-neutral", null, true);
+                return;
+            }
+        } else {
+            if (targetTown.isNeutral()) {
+                Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
+                return;
+            }
         }
 
         var targetTownWars = plugin.getWarManager().getAllTownWars(targetTown.getUUID());

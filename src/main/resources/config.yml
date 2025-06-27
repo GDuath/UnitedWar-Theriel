@@ -187,6 +187,11 @@ siege-settings:
     home: 50
     warcamp: 100
     fortress: 250
+  # Commands that players can't use while sieges are ongoing
+  disabled-commands:
+    - "rtp"
+    - "warp"
+    - "ud"
 
 grief-zone-settings:
   warcamp:
@@ -425,6 +430,7 @@ messages:
   error-resident-town-neutral: "§cNeutral towns can't declare wars."
   error-town-not-found: "§cCould not find town {town-name}"
   error-target-town-neutral: "§cYou can't declare wars on neutral towns."
+  error-target-nation-neutral: "§cYou can't declare wars on neutral nations."
   error-target-town-immune: "§cThis town is still immune to new war declarations."
   error-target-town-is-resident-town: "§cHow would you even fight a war against yourself?"
   error-unknown-war-goal: "§cUnknown war goal: {war-goal-name}"
@@ -472,7 +478,8 @@ messages:
   error-wardebug-attacker-not-found: "Attacker town not found."
   error-wardebug-defender-not-found: "Defender town not found."
   error-wardebug-attacker-is-defender: "Attacker and defender towns cannot be the same."
-
+  error-command-disabled: "§cYou cannot use this command while enemies are online."
+  
 ############################################################
 # +------------------------------------------------------+ #
 # |                   Discord Settings                   | #
