@@ -39,8 +39,6 @@ mobilisation:
   daily-decay: 1
   # Minimum amount of mobilisation needed to declare a war.
   min-to-declare: 60
-  # How much mobilisation decreases when a war is declared.
-  cost-to-declare: 20
   # How much mobilisation costs to toggle peaceful.
   cost-to-toggle-peaceful: 1
 
@@ -58,6 +56,7 @@ war-goal-settings:
   superiority:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
+    cost: 30 # mobilisation points
     attacker-call-nation: true
     attacker-call-allies: false
     defender-call-nation: true
@@ -77,6 +76,7 @@ war-goal-settings:
   skirmish:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
+    cost: 10 # mobilisation points
     attacker-call-nation: false
     attacker-call-allies: false
     defender-call-nation: false
@@ -96,6 +96,7 @@ war-goal-settings:
   plunder:
     warmup-time: 60 # in seconds
     duration: 3600 # in seconds
+    cost: 10 # mobilisation points
     attacker-call-nation: false
     attacker-call-allies: false
     defender-call-nation: false
@@ -479,6 +480,8 @@ messages:
   error-wardebug-defender-not-found: "Defender town not found."
   error-wardebug-attacker-is-defender: "Attacker and defender towns cannot be the same."
   error-command-disabled: "§cYou cannot use this command while enemies are online."
+  error-under-min-mobilisation: "§cYour needs at least {min-mobilisation} mobilisation to be able to declare wars."
+  error-insufficient-mobilisation: "§cYour town can't afford the mobilisation costs of {costs}."
   
 ############################################################
 # +------------------------------------------------------+ #
