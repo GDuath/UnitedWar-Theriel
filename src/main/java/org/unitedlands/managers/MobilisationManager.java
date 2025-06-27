@@ -87,20 +87,6 @@ public class MobilisationManager implements Listener {
     }
 
     @EventHandler
-    // Remove a town's mobilisation if they join a nation.
-    public void onTownJoinNationMobilisation(NationAddTownEvent event) {
-        Town town = event.getTown();
-        MobilisationMetadata.removeMetaDataFromTown(town);
-    }
-
-    @EventHandler
-    // Re-add a town's mobilisation ability if they leave a nation.
-    public void onTownLeaveNationMobilisation(NationRemoveTownEvent event) {
-        Town town = event.getTown();
-        MobilisationMetadata.addMetaDataToTown(town);
-    }
-
-    @EventHandler
     // Give new towns mobilisation data.
     public void onNewTown(NewTownEvent event) {
         MobilisationMetadata.addMetaDataToTown(event.getTown());
