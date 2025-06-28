@@ -104,11 +104,13 @@ public class PlayerSiegeEventListener implements Listener {
         var wars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
         for (var warSet : wars.entrySet()) {
             if (warSet.getValue() == WarSide.ATTACKER) {
-                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getTarget_town_id()))
+                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getTarget_town_id())) {
                     enemiesOnline = true;
+                }
             } else if (warSet.getValue() == WarSide.DEFENDER) {
-                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getDeclaring_town_id()))
+                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getDeclaring_town_id())) {
                     enemiesOnline = true;
+                }
             }
         }
 

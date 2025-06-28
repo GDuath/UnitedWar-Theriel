@@ -21,7 +21,7 @@ public class WarAdminWarEventsForceSubcommandHandler extends BaseCommandHandler 
         List<String> options = new ArrayList<>();
         switch (args.length) {
             case 1:
-                options = plugin.getWarEventManager().getEventRegister().keySet().stream()
+                options = plugin.getWarEventManager().getEventRegister().stream()
                         .collect(Collectors.toList());
                 break;
         }

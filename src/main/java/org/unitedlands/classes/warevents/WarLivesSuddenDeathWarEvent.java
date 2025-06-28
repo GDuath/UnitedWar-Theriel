@@ -6,8 +6,8 @@ import org.unitedlands.events.WarLivesUpdateEvent;
 
 public class WarLivesSuddenDeathWarEvent extends BaseWarEvent {
 
-    public WarLivesSuddenDeathWarEvent(String internalName, String displayname, String description, Long duration) {
-        super(internalName, displayname, description, duration);
+    public WarLivesSuddenDeathWarEvent() {
+        super();
     }
 
     // Players instantly lose all war lives when dying

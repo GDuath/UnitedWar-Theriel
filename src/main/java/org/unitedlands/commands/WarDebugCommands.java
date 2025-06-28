@@ -13,8 +13,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarSide;
+import org.unitedlands.classes.warevents.CallToWar;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
