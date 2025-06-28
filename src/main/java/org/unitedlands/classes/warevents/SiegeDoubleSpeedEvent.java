@@ -6,10 +6,10 @@ import org.unitedlands.events.SiegeChunkHealthChangeEvent;
 
 public class SiegeDoubleSpeedEvent extends BaseWarEvent {
 
-    public SiegeDoubleSpeedEvent(String internalName, String displayname, String description, Long duration) {
-        super(internalName, displayname, description, duration);
+    public SiegeDoubleSpeedEvent() {
+        super();
     }
-
+    
     @EventHandler(priority = EventPriority.HIGH)
     public void onScoreEvent(SiegeChunkHealthChangeEvent event) {
         if (!isActive())

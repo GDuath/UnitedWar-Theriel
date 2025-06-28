@@ -18,11 +18,8 @@ public abstract class BaseWarEvent implements Listener {
     private @Nullable Long scheduledEndTime = null;
     private boolean isActive = false;
 
-    public BaseWarEvent(String internalName, String displayname, String description, Long duration) {
-        this.internalName = internalName;
-        this.displayname = displayname;
-        this.description = description;
-        this.duration = duration;
+    public BaseWarEvent() {
+
     }
 
     public String getInternalName() {

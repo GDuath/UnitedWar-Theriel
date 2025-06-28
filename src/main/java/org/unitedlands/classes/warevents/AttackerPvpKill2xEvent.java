@@ -8,8 +8,8 @@ import org.unitedlands.events.WarScoreEvent;
 
 public class AttackerPvpKill2xEvent extends BaseWarEvent {
 
-    public AttackerPvpKill2xEvent(String internalName, String displayname, String description, Long duration) {
-        super(internalName, displayname, description, duration);
+    public AttackerPvpKill2xEvent() {
+        super();
     }
 
     @EventHandler(priority = EventPriority.HIGH)

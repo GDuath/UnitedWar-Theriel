@@ -1,6 +1,8 @@
-package org.unitedlands.classes;
+package org.unitedlands.classes.warevents;
 
 import java.util.UUID;
+
+import org.unitedlands.classes.WarSide;
 
 public class CallToWar {
     private UUID warId;

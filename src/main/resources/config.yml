@@ -188,11 +188,13 @@ siege-settings:
     home: 50
     warcamp: 100
     fortress: 250
-  # Commands that players can't use while sieges are ongoing
+  # Commands that players can't use while sieges are ongoing (i.e. enemies are online)
   disabled-commands:
     - "rtp"
+    - "tfly"
+    - "pwarp"
     - "warp"
-    - "ud"
+    - "ud warp"
 
 grief-zone-settings:
   warcamp:
@@ -219,12 +221,48 @@ grief-zone-settings:
 war-events:
   # Chance for a random event to happen every hour
   event-warmup-time: 30 # in seconds
-  # 0.0 is disabled and 1.0 is guaranteed.
   random-event-chance: 0.0
   event-schedule:
-    - "00:00"
+  - "00:00"
+  events:
+    ATTACKER_PVP_KILL_2X:
+      class: "AttackerPvpKill2xEvent"
+      display-name: "Brutal Onslaught"
+      description: "All attacker PvP kills give double points."
+      duration: 900
+    DEFENDER_PVP_KILL_2X:
+      class: "DefenderPvpKill2xEvent"
+      display-name: "Defenders’ Fury"
+      description: "All defender PvP kills give double points."
+      duration: 900
+    SUDDEN_DEATH:
+      class: "WarLivesSuddenDeathWarEvent"
+      display-name: "Death is Working Overtime"
+      description: "Players instantly lose all remaining war lives when they die."
+      duration: 900
+    NO_DEATH:
+      class: "WarLivesNoDeathWarEvent"
+      display-name: "Death is on Vacation"
+      description: "Players don't lose any war lives when dying."
+      duration: 900
+    NO_SIEGE:
+      class: "SiegeSuspensionEvent"
+      display-name: "Broken Siege Weapons"
+      description: "All sieges are suspended."
+      duration: 900
+    FAST_SIEGE:
+      class: "SiegeDoubleSpeedEvent"
+      display-name: "Advanced Siege Engines"
+      description: "Chunks lose HP at double speed."
+      duration: 900
+
   pick-table:
-    "SAMPLE": 1
+    "ATTACKER_PVP_KILL_2X": 1
+    "DEFENDER_PVP_KILL_2X": 1
+    "SUDDEN_DEATH": 1
+    "NO_DEATH": 1
+    "NO_SIEGE": 1
+    "FAST_SIEGE": 1
 
 ###################################################
 # +---------------------------------------------+ #

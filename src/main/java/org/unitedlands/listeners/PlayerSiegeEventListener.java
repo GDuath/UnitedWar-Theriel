@@ -18,7 +18,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -104,11 +103,13 @@ public class PlayerSiegeEventListener implements Listener {
         var wars = plugin.getWarManager().getActivePlayerWars(player.getUniqueId());
         for (var warSet : wars.entrySet()) {
             if (warSet.getValue() == WarSide.ATTACKER) {
-                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getTarget_town_id()))
+                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getTarget_town_id())) {
                     enemiesOnline = true;
+                }
             } else if (warSet.getValue() == WarSide.DEFENDER) {
-                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getDeclaring_town_id()))
+                if (plugin.getSiegeManager().isSiegeEnabled(warSet.getKey().getDeclaring_town_id())) {
                     enemiesOnline = true;
+                }
             }
         }
 
