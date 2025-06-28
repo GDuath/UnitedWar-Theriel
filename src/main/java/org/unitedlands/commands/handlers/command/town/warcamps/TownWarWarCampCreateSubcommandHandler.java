@@ -114,6 +114,7 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler {
 
     }
 
+    @SuppressWarnings("deprecation")
     private void createWarCamp(Player player, @Nullable Town town) {
         Messenger.sendMessage(player, "§bCreating war camp...", true);
 

@@ -18,7 +18,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
