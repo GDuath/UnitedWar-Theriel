@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.unitedlands.UnitedWar;
@@ -87,7 +88,7 @@ public class WarBookData {
 
         meta.displayName(name);
         meta.lore(getLore());
-        meta.setCustomModelData(2);
+        //meta.setCustomModelData(2);
         warBook.setItemMeta(meta);
     }
 
