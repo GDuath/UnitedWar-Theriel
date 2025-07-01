@@ -619,6 +619,7 @@ public class WarManager implements Listener {
         var town = TownyAPI.getInstance().getTown(townId);
         if (town != null) {
             town.getAccount().deposit(amount, reason);
+            Logger.log("Deposited " + amount + "G into town " + town.getName() + "(" + reason + ")");
         }
     }
 
@@ -627,6 +628,8 @@ public class WarManager implements Listener {
         if (town != null) {
             town.setBonusBlocks(town.getBonusBlocks() - amount);
             town.save();
+            Logger.log("Removed " + amount + "claims from town " + town.getName());
+
         }
     }
 
@@ -635,6 +638,7 @@ public class WarManager implements Listener {
         if (town != null) {
             town.addBonusBlocks(amount);
             town.save();
+            Logger.log("Added " + amount + "claims to town " + town.getName());
         }
     }
 
