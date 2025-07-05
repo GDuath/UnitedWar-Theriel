@@ -755,7 +755,7 @@ public class WarManager implements Listener {
     }
 
     public boolean isAnyWarActive() {
-        return activeWars.size() > 0;
+        return activeWars.size() > 0 || pendingWars.size() > 0;
     }
 
     public Map<War, WarSide> getActivePlayerWars(UUID playerId) {
