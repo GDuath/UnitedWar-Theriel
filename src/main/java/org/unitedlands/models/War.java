@@ -238,21 +238,32 @@ public class War implements Identifiable {
     //#region Player lists
 
     public void buildPlayerLists() {
-        setAttacking_players(collectResidentsFromTowns(getAttacking_towns()));
-        setDefending_players(collectResidentsFromTowns(getDefending_towns()));
+        var attackers = collectResidentsFromTowns(getAttacking_towns(), WarSide.ATTACKER);
+        setAttacking_players(attackers);
+        var defenders = collectResidentsFromTowns(getDefending_towns(), WarSide.DEFENDER);
+        setDefending_players(defenders);
     }
 
-    private Set<UUID> collectResidentsFromTowns(Set<UUID> townIds) {
+    private Set<UUID> collectResidentsFromTowns(Set<UUID> townIds, WarSide side) {
         Set<UUID> residentIds = new HashSet<>();
         for (UUID townId : townIds) {
             Town town = TownyAPI.getInstance().getTown(townId);
             if (town != null) {
+                var militaryRanks = UnitedWar.getInstance().getConfig().getConfigurationSection("military-ranks").getKeys(false);
                 for (Resident resident : town.getResidents()) {
-                    residentIds.add(resident.getUUID());
+                    if (residentHasMilitaryRank(resident, militaryRanks))
+                        residentIds.add(resident.getUUID());
                 }
             }
         }
         return residentIds;
+    }
+
+    public boolean residentHasMilitaryRank(Resident resident, Set<String> ranks)
+    {
+        var intersection = new ArrayList<String>(resident.getTownRanks());
+        intersection.retainAll(ranks);
+        return intersection.size() > 0;
     }
 
     //#endregion
@@ -840,8 +851,8 @@ public class War implements Identifiable {
         return attacking_players;
     }
 
-    public void setAttacking_players(Set<UUID> attacking_player) {
-        this.attacking_players = attacking_player;
+    public void setAttacking_players(Set<UUID> attacking_players) {
+        this.attacking_players = attacking_players;
     }
 
     public Set<UUID> getDefending_players() {

@@ -1,5 +1,7 @@
 package org.unitedlands.listeners;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
@@ -22,6 +24,7 @@ import com.palmergames.bukkit.towny.event.NationSpawnEvent;
 import com.palmergames.bukkit.towny.event.PlotPreChangeTypeEvent;
 import com.palmergames.bukkit.towny.event.PreDeleteNationEvent;
 import com.palmergames.bukkit.towny.event.PreDeleteTownEvent;
+import com.palmergames.bukkit.towny.event.TownAddResidentRankEvent;
 import com.palmergames.bukkit.towny.event.TownPreAddResidentEvent;
 import com.palmergames.bukkit.towny.event.TownPreClaimEvent;
 import com.palmergames.bukkit.towny.event.TownSpawnEvent;
@@ -31,11 +34,13 @@ import com.palmergames.bukkit.towny.event.nation.NationPreAddAllyEvent;
 import com.palmergames.bukkit.towny.event.nation.NationPreInviteTownEvent;
 import com.palmergames.bukkit.towny.event.nation.NationPreMergeEvent;
 import com.palmergames.bukkit.towny.event.nation.NationPreTownLeaveEvent;
+import com.palmergames.bukkit.towny.event.nation.NationRankAddEvent;
 import com.palmergames.bukkit.towny.event.town.TownKickEvent;
 import com.palmergames.bukkit.towny.event.town.TownLeaveEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreInvitePlayerEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreMergeEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreUnclaimEvent;
+import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.TownBlockType;
 import com.palmergames.bukkit.towny.object.TownBlockTypeCache.CacheType;
 
@@ -293,6 +298,81 @@ public class TownyEventListener implements Listener {
 
     //#endregion
 
+    //#region Towny rank events
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onAddTownRank(TownAddResidentRankEvent event) {
+
+        var ranks = plugin.getWarManager().getMilitaryRanks();
+        var newRank = event.getRank();
+        if (!ranks.get("town").contains(newRank))
+            return;
+
+        if (plugin.getWarManager().isPlayerInActiveWar(event.getResident().getPlayer().getUniqueId())) {
+            event.setCancelMessage("§cMilitary ranks can't be added during an active war.");
+            event.setCancelled(true);
+        }
+
+        var isUniqueRank = plugin.getConfig().getBoolean("military-ranks." + newRank + ".unique");
+        if (isUniqueRank) {
+            var town = event.getTown();
+            var townRanks = town.getRank(newRank);
+            if (townRanks != null && townRanks.size() > 0) {
+                event.setCancelMessage("§cThe rank " + newRank
+                        + " can only be given to one player, and you have already assigned it to someone else.");
+                event.setCancelled(true);
+            }
+        }
+
+        removeAllOtherMilitaryRanks(event.getResident(), ranks);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onAddNationRank(NationRankAddEvent event) {
+
+        var ranks = plugin.getWarManager().getMilitaryRanks();
+        var newRank = event.getRank();
+        if (!ranks.get("nation").contains(newRank))
+            return;
+
+        if (plugin.getWarManager().isPlayerInActiveWar(event.getResident().getPlayer().getUniqueId())) {
+            event.setCancelMessage("§cMilitary ranks can't be added during an active war.");
+            event.setCancelled(true);
+            return;
+        }
+
+        var isUniqueRank = plugin.getConfig().getBoolean("military-ranks." + newRank + ".unique");
+        if (isUniqueRank) {
+            var nation = event.getNation();
+            for (var nationResident : nation.getResidents()) {
+                if (nationResident.getNationRanks().contains(newRank)) {
+                    event.setCancelMessage("§cThe rank " + newRank
+                            + " can only be given to one player, and you have already assigned it to someone else.");
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
+        removeAllOtherMilitaryRanks(event.getResident(), ranks);
+    }
+
+    private void removeAllOtherMilitaryRanks(Resident resident, Map<String, List<String>> ranks) {
+        // Make sure a player only ever has one military rank, so remove any existing rank before letting the event pass
+        var townRanks = resident.getTownRanks();
+        var nationRanks = resident.getNationRanks();
+        for (var level : ranks.keySet()) {
+            for (var rank : ranks.get(level)) {
+                if (townRanks.contains(rank))
+                    resident.removeTownRank(rank);
+                if (nationRanks.contains(rank))
+                    resident.removeNationRank(rank);
+            }
+        }
+    }
+
+    //#endregion
+
     //#region Teleportation
 
     @EventHandler
@@ -367,9 +447,9 @@ public class TownyEventListener implements Listener {
 
         if (event.isSigning()) {
 
-            var newMeta = (BookMeta)event.getNewBookMeta();
+            var newMeta = (BookMeta) event.getNewBookMeta();
             newMeta.displayName(Component.text(newMeta.getTitle()));
-            
+
             var signedBook = ItemStack.of(Material.WRITTEN_BOOK, 1);
             signedBook.setItemMeta(newMeta);
 

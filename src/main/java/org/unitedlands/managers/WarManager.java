@@ -123,8 +123,7 @@ public class WarManager implements Listener {
                     attackerOnline = true;
                     awardActivityScore(playerId, war, WarSide.ATTACKER);
                 }
-            }
-            if (defendingPlayers.contains(playerId)) {
+            } else if (defendingPlayers.contains(playerId)) {
                 if (playerHasWarLives(playerId, war)) {
                     defenderOnline = true;
                     awardActivityScore(playerId, war, WarSide.DEFENDER);
@@ -231,7 +230,8 @@ public class WarManager implements Listener {
     }
 
     private void forceDisableFlight(War war) {
-        var playerIds = war.getAttacking_players();
+        var playerIds = new HashSet<UUID>();
+        playerIds.addAll(war.getAttacking_players());
         playerIds.addAll(war.getDefending_players());
         playerIds.addAll(war.getAttacking_mercenaries());
         playerIds.addAll(war.getDefending_mercenaries());
@@ -868,6 +868,16 @@ public class WarManager implements Listener {
         return callsToWar.stream()
                 .filter(c -> c.getWarId().equals(warId) && c.getTargetNationId().equals(targetNationId)).findAny()
                 .orElse(null);
+    }
+
+    public Map<String, List<String>> getMilitaryRanks() {
+        Map<String, List<String>> result = new HashMap<>();
+        var militaryRanks = plugin.getConfig().getConfigurationSection("military-ranks").getKeys(false);
+        for (var configRank : militaryRanks) {
+            var level = plugin.getConfig().getString("military-ranks." + configRank + ".level");
+            result.computeIfAbsent(level, v -> new ArrayList<String>()).add(configRank);
+        }
+        return result;
     }
 
     //#endregion
