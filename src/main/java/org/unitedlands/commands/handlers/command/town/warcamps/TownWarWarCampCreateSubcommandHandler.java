@@ -3,19 +3,22 @@ package org.unitedlands.commands.handlers.command.town.warcamps;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.http.WebSocket.Listener;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.events.ChunkBackupQueuedEvent;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
@@ -28,8 +31,8 @@ import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.TownBlockType;
 import com.palmergames.bukkit.towny.object.TownBlockTypeCache.CacheType;
 import com.palmergames.bukkit.towny.object.TownyWorld;
+import com.palmergames.bukkit.towny.object.WorldCoord;
 import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -42,13 +45,16 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
-import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.world.World;
 
-public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler {
+public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler implements Listener {
+
+    private Set<WorldCoord> queuedWarcampChunkBackups = new HashSet<>();
 
     public TownWarWarCampCreateSubcommandHandler(UnitedWar plugin) {
         super(plugin);
+
+        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     @Override
@@ -114,10 +120,7 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler {
 
     }
 
-    @SuppressWarnings("deprecation")
     private void createWarCamp(Player player, @Nullable Town town) {
-        Messenger.sendMessage(player, "§bCreating war camp...", true);
-
         TownyWorld townyWorld = TownyAPI.getInstance().getTownyWorld(player.getLocation().getWorld());
         if (townyWorld == null)
             return;
@@ -128,13 +131,26 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler {
         townBlock.setType("warcamp");
         townBlock.save();
 
-        Set<TownBlock> townBlockList = Set.of(townBlock);
-        plugin.getChunkBackupManager().snapshotChunks(townBlockList, town.getUUID(), "warcamp");
+        queuedWarcampChunkBackups.add(townBlock.getWorldCoord());
+        plugin.getChunkBackupManager().snapshotChunks(Set.of(townBlock), town.getUUID(), "warcamp");
 
-        // Create the camp itself a bit later to give the ChunkBackupManager enough time to create the snapshot
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        Messenger.sendMessage(player,
+                "§bCreating war camp. Use '/t war warcamp tp' to get here while the camp is not occupied by the enemy.",
+                true);
+    }
 
-            int numTemplates = 5;
+    @SuppressWarnings("deprecation")
+    @EventHandler
+    private void onChunkBackupQueued(ChunkBackupQueuedEvent event) {
+        var eventWorldCoordinate = event.getWorldCoord();
+        if (queuedWarcampChunkBackups.contains(eventWorldCoordinate)) {
+
+            Logger.log("Chunk backup queued, placing war camp now...");
+
+            int numTemplates = plugin.getConfig().getInt("siege-settings.warcamp-templates", 0);
+            if (numTemplates == 0)
+                return;
+
             var rnd = (int) (Math.round(Math.random() * (numTemplates - 1)) + 1);
 
             String path = plugin.getDataFolder().getPath() + File.separator + "schematics" + File.separator
@@ -158,17 +174,14 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler {
             if (clipboard == null)
                 return;
 
-            SessionManager manager = WorldEdit.getInstance().getSessionManager();
-            LocalSession localSession = manager.get(BukkitAdapter.adapt(player));
+            var world = Bukkit.getWorld(eventWorldCoordinate.getWorldName());
+            var pasteLocX = (eventWorldCoordinate.getX() * 16) + 8;
+            var pasteLocZ = (eventWorldCoordinate.getZ() * 16) + 8;
+            var pasteLocY = world.getHighestBlockYAt(pasteLocX, pasteLocZ) + 1;
 
-            Chunk chunk = player.getChunk();
-            var pasteLocX = (chunk.getX() * 16) + 8;
-            var pasteLocZ = (chunk.getZ() * 16) + 8;
-            var pasteLocY = player.getWorld().getHighestBlockYAt(pasteLocX, pasteLocZ) + 1;
+            World worldEditWorld = BukkitAdapter.adapt(world);
 
-            World world = BukkitAdapter.adapt(player.getWorld());
-
-            try (EditSession editSession = WorldEdit.getInstance().newEditSession(world)) {
+            try (EditSession editSession = WorldEdit.getInstance().newEditSession(worldEditWorld)) {
                 ClipboardHolder holder = new ClipboardHolder(clipboard);
 
                 AffineTransform transform = new AffineTransform().rotateY(Math.round(Math.random() * 3) * 90d);
@@ -180,19 +193,23 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler {
                         .build();
 
                 Operations.complete(operation);
-                localSession.remember(editSession);
 
-                Messenger.sendMessage(player,
-                        "§bWar camp created. Use '/t war warcamp tp' to get here while the camp is not occupied by the enemy.",
-                        true);
+                var townBlock = eventWorldCoordinate.getTownBlockOrNull();
+                if (townBlock != null)
+                    plugin.getGriefZoneManager().addWarcampBlock(townBlock);
 
-                plugin.getGriefZoneManager().addWarcampBlock(townBlock);
-                
             } catch (WorldEditException exception) {
                 Logger.logError(exception.getMessage());
                 return;
             }
-        }, 20);
-    }
 
+        }
+
+        for (WorldCoord worldCoordinate : queuedWarcampChunkBackups) {
+            if (worldCoordinate.getX() == eventWorldCoordinate.getX()
+                    && worldCoordinate.getZ() == eventWorldCoordinate.getZ()) {
+
+            }
+        }
+    }
 }

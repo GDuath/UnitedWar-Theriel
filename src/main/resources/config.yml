@@ -205,6 +205,8 @@ score-settings:
 ###################################################
 
 siege-settings:
+  # number of schematics to randomly pick from when placing war camps. Set to 0 to disable placement.
+  warcamp-templates: 5
   # If true, sieges and griefing will always be active regardless of whether players of a particular
   # war side are online or not
   override-activity-requirement: false
@@ -414,10 +416,12 @@ messages:
   war-call-send-success: "§bCall to War sent to ally. The call will automatically expire in 5 minutes."
   war-call-receive: "§bYou received a Call to War. Use /t war acceptcall <war_name> to accept. The call will automatically expire in 5 minutes."
   war-declare-usage: "Usage: /t war declare"
-  add-mercenary-succes: "{mercenary-name} has been added as a mercenary for your side."
+  add-mercenary-success: "§b{mercenary-name} has been added as a mercenary for your side."
   resident-mercenary-join-success: "§bYou've been added as a mercenary on the {war-side} side of {war-name}"
-  mercenary-remove-success: "{mercenary-name} has been removed as a mercenary for your side."
+  mercenary-remove-success: "§b{mercenary-name} has been removed as a mercenary for your side."
   mercenary-resident-removed-success: "§eYou've been removed as a mercenary on the {war-side} side of {war-name}"
+  mercenary-invite-sent: "§bInvitation sent to {mercenary-name}. It will automatically expire in 5 minutes."
+  mercenary-invite-received: "§bYou've received an invitation to join as a mercenary for the {war-side} side of {war-name}. Use \"/t war acceptinvite <warname>\" to accept."
   war-call-ally-send-success: "§bCall to War sent to ally. The call will automatically expire in 5 minutes."
 
   # +---------------------------------------------+ #
@@ -501,8 +505,10 @@ messages:
   # +---------------------------------------------+ #
   # |                  War Books                  | #
   # +---------------------------------------------+ #
-
+  
+  war-book-created: "§bYou have created a war declaration book. Edit it to add your reasons for the war. The name of the signed book will be the name of the war. If you wish to set a longer war name, rename this book at an anvil after signing."
   war-book-name: "War against "
+  war-book-content: "Replace this page with a brief description of your war reasons.\n\n"
   war-book-lore:
     - ""
     - "§eRename §7this book at an anvil"
@@ -548,13 +554,15 @@ messages:
   error-resident-not-mayor-add-mecrenary: "§cOnly mayors and co-mayors are allowed to recruit mercenaries for a war."
   error-add-mercenary-war-over: "§cYou cannot add mercenaries to a war that is already over."
   error-resident-not-in-war: "§cYou're not a part of this war."
-  error-add-mercenary-max: "§cYou cannot add another mercenary, maximum is "
+  error-add-mercenary-max: "§cThis war side has reached the maximum number of mercenaries."
   error-add-mercenary-is-resident: "§eYou can't add yourself as a mercenary :facepalm:"
   error-add-mercenary-already-added: "§eThat player has already been hired as a mercenary for this war."
   mercenary-remove-usage: "Usage: /t war removemercenary <war_name> <player_name>"
   error-mercenary-remove-not-mayor: "§cOnly mayors and co-mayors are allowed to remove mercenaries from a war."
   error-mercenary-remove-war-over: "§cYou cannot remove mercenaries from a war that is already over."
   error-mercenary-remove-not-in-war: "§eThat player is not a mercenary in this war."
+  mercenary-acceptinvite-usage: "Usage: /t war mercenary accept <war name>"
+  error-merc-invite-not-found: "§cYou don't have any pending invitations."
   war-debug-create-usage: "Usage: /wd <war_name> <caller_nation> <target_nation>"
   error-war-not-pending: "§cWar is not pending."
   error-war-caller-nation-not-found: "§cCaller nation not found."
@@ -573,7 +581,15 @@ messages:
   error-command-disabled: "§cYou cannot use this command while enemies are online."
   error-under-min-mobilisation: "§cYour needs at least {min-mobilisation} mobilisation to be able to declare wars."
   error-insufficient-mobilisation: "§cYour town can't afford the mobilisation costs of {costs}."
-  
+
+  immunity-usage: "Usage: /wa immunity <set|clear> <town_name> [seconds]"
+  immunity-clear: "Immunity for {town-name} has been cleared."
+  immunity-set: "Immunity for {town-name} has been set to {value} seconds from now."
+
+  surrender-usage: "Usage: /t war surrender <war_name>"
+  error-surrender-not-subject: "§cYou can't surrender, your town is not the attacker or the target of the war."
+  surrender-done: "§bYour side has surrendered. The war will end with the next war update tick."
+
 ############################################################
 # +------------------------------------------------------+ #
 # |                   Discord Settings                   | #

@@ -19,10 +19,11 @@ import org.unitedlands.commands.handlers.command.town.TownWarCallAcceptCommandHa
 import org.unitedlands.commands.handlers.command.town.TownWarCallAllyCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarEventCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarInfoCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarMercenaryAcceptInviteCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarMercenaryAddCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarMercenaryRemoveCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarParticipantsCommandHandler;
-import org.unitedlands.commands.handlers.command.town.warcamps.TownWarWarCampCommandHandler;
+import org.unitedlands.commands.handlers.command.town.TownWarSurrenderCommandHandler;
 import org.unitedlands.util.Formatter;
 import org.unitedlands.util.Messenger;
 
@@ -53,7 +54,8 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         handlers.put("acceptcall", new TownWarCallAcceptCommandHandler(plugin));
         handlers.put("addmercenary", new TownWarMercenaryAddCommandHandler(plugin));
         handlers.put("removemercenary", new TownWarMercenaryRemoveCommandHandler(plugin));
-        handlers.put("warcamp", new TownWarWarCampCommandHandler(plugin));
+        handlers.put("acceptinvite", new TownWarMercenaryAcceptInviteCommandHandler(plugin));
+        handlers.put("surrender", new TownWarSurrenderCommandHandler(plugin));
     }
 
     @Override

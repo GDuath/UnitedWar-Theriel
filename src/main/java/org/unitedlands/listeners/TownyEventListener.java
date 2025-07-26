@@ -3,6 +3,7 @@ package org.unitedlands.listeners;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,6 +28,7 @@ import com.palmergames.bukkit.towny.event.PreDeleteTownEvent;
 import com.palmergames.bukkit.towny.event.TownAddResidentRankEvent;
 import com.palmergames.bukkit.towny.event.TownPreAddResidentEvent;
 import com.palmergames.bukkit.towny.event.TownPreClaimEvent;
+import com.palmergames.bukkit.towny.event.TownRemoveResidentRankEvent;
 import com.palmergames.bukkit.towny.event.TownSpawnEvent;
 import com.palmergames.bukkit.towny.event.economy.NationPreTransactionEvent;
 import com.palmergames.bukkit.towny.event.economy.TownPreTransactionEvent;
@@ -35,6 +37,7 @@ import com.palmergames.bukkit.towny.event.nation.NationPreInviteTownEvent;
 import com.palmergames.bukkit.towny.event.nation.NationPreMergeEvent;
 import com.palmergames.bukkit.towny.event.nation.NationPreTownLeaveEvent;
 import com.palmergames.bukkit.towny.event.nation.NationRankAddEvent;
+import com.palmergames.bukkit.towny.event.nation.NationRankRemoveEvent;
 import com.palmergames.bukkit.towny.event.town.TownKickEvent;
 import com.palmergames.bukkit.towny.event.town.TownLeaveEvent;
 import com.palmergames.bukkit.towny.event.town.TownPreInvitePlayerEvent;
@@ -308,9 +311,10 @@ public class TownyEventListener implements Listener {
         if (!ranks.get("town").contains(newRank))
             return;
 
-        if (plugin.getWarManager().isPlayerInActiveWar(event.getResident().getPlayer().getUniqueId())) {
+        if (plugin.getWarManager().isTownInActiveWar(event.getTown().getUUID())) {
             event.setCancelMessage("§cMilitary ranks can't be added during an active war.");
             event.setCancelled(true);
+            return;
         }
 
         var isUniqueRank = plugin.getConfig().getBoolean("military-ranks." + newRank + ".unique");
@@ -335,7 +339,7 @@ public class TownyEventListener implements Listener {
         if (!ranks.get("nation").contains(newRank))
             return;
 
-        if (plugin.getWarManager().isPlayerInActiveWar(event.getResident().getPlayer().getUniqueId())) {
+        if (plugin.getWarManager().isTownInActiveWar(event.getNation().getCapital().getUUID())) {
             event.setCancelMessage("§cMilitary ranks can't be added during an active war.");
             event.setCancelled(true);
             return;
@@ -355,6 +359,53 @@ public class TownyEventListener implements Listener {
         }
 
         removeAllOtherMilitaryRanks(event.getResident(), ranks);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onRemoveTownRank(TownRemoveResidentRankEvent event) {
+
+        var ranks = plugin.getWarManager().getMilitaryRanks();
+        var oldRank = event.getRank();
+        if (!ranks.get("town").contains(oldRank))
+            return;
+
+        if (!plugin.getWarManager().isTownInActiveWar(event.getTown().getUUID()))
+            return;
+
+        removePlayerFromWar(event.getTown().getUUID(), event.getResident().getUUID());
+    }
+
+    private void removePlayerFromWar(UUID townId, UUID playerId) {
+        var wars = plugin.getWarManager().getAllTownWars(townId);
+        for (var set : wars.entrySet()) {
+            var warSide = set.getValue();
+            var war = set.getKey();
+            if (warSide == WarSide.ATTACKER) {
+                var attackingPlayers = war.getAttacking_players();
+                attackingPlayers.remove(playerId);
+                war.setAttacking_players(attackingPlayers);
+                war.setState_changed(true);
+            } else if (warSide == WarSide.DEFENDER) {
+                var defendingPlayers = war.getDefending_players();
+                defendingPlayers.remove(playerId);
+                war.setDefending_players(defendingPlayers);
+                war.setState_changed(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onRemoveNationRank(NationRankRemoveEvent event) {
+
+        var ranks = plugin.getWarManager().getMilitaryRanks();
+        var oldRank = event.getRank();
+        if (!ranks.get("nation").contains(oldRank))
+            return;
+
+        if (!plugin.getWarManager().isTownInActiveWar(event.getNation().getCapital().getUUID()))
+            return;
+
+        removePlayerFromWar(event.getNation().getCapital().getUUID(), event.getResident().getUUID());
     }
 
     private void removeAllOtherMilitaryRanks(Resident resident, Map<String, List<String>> ranks) {

@@ -218,6 +218,9 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
                 }
             }
 
+            Messenger.sendMessageTemplate(player, "war-book-created", null, true);
+
+
         }).setTitle("§7Creating this war declaration book will cost " + mobilisationCost + " mobilisation. Continue?")
                 .sendTo(player);
     }

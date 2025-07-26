@@ -599,6 +599,7 @@ public class SiegeManager implements Listener {
             playerSiegeEventListenerRegistered = false;
         }
         removeSiegeChunks(event.getWar());
+        removeTownOccupation(event.getWar());
     }
 
     //#endregion
@@ -690,6 +691,13 @@ public class SiegeManager implements Listener {
 
     public boolean isTownOccupied(UUID townId) {
         return townOccupied.computeIfAbsent(townId, k -> false);
+    }
+
+    private void removeTownOccupation(War war) {
+        for (UUID townId : war.getAttacking_towns())
+            townOccupied.remove(townId);
+        for (UUID townId : war.getDefending_towns())
+            townOccupied.remove(townId);
     }
 
     public boolean isChunkOccupied(TownBlock townBlock) {

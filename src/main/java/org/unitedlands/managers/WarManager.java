@@ -15,11 +15,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.CallToWar;
+import org.unitedlands.classes.MercenaryInvite;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.classes.warevents.CallToWar;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.events.WarStartEvent;
@@ -42,6 +43,9 @@ public class WarManager implements Listener {
     private Set<War> activeWars = new HashSet<>();
 
     private Set<CallToWar> callsToWar = new HashSet<>();
+    private Set<MercenaryInvite> mercenaryInvites = new HashSet<>();
+
+    private Map<UUID, Long> townImmunities = new HashMap<>();
 
     public WarManager(UnitedWar plugin) {
         this.plugin = plugin;
@@ -60,6 +64,8 @@ public class WarManager implements Listener {
                 war.buildPlayerLists();
             }
             Logger.log("Loaded " + wars.size() + " war(s) from the database.");
+
+            loadTownImmunities();
 
             // Once the wars have loaded, proceed to load the other database entities
             plugin.getSiegeManager().loadSiegeChunks();
@@ -82,30 +88,35 @@ public class WarManager implements Listener {
             checkOnlinePlayers(war, onlinePlayers);
         }
 
-        Set<War> startedWars = new HashSet<>();
+        Set<War> startingWars = new HashSet<>();
         for (War war : pendingWars) {
             if (warCanBeStarted(war)) {
-                startWar(war);
-                startedWars.add(war);
+                startingWars.add(war);
             }
+        }
+        pendingWars.removeAll(startingWars);
+        activeWars.addAll(startingWars);
 
+        for (War war : startingWars) {
+            startWar(war);
             if (war.getState_changed())
                 saveWarToDatabase(war);
         }
-        pendingWars.removeAll(startedWars);
-        activeWars.addAll(startedWars);
 
-        Set<War> endedWars = new HashSet<>();
+        Set<War> endingWars = new HashSet<>();
         for (War war : activeWars) {
-            //checkOnlinePlayers(war, onlinePlayers, true);
             if (warCanBeEnded(war)) {
-                endWar(war);
-                endedWars.add(war);
+                endingWars.add(war);
             }
+        }
+        activeWars.removeAll(endingWars);
+
+        for (War war : endingWars) {
+            endWar(war);
             if (war.getState_changed())
                 saveWarToDatabase(war);
         }
-        activeWars.removeAll(endedWars);
+
     }
 
     private void checkOnlinePlayers(War war, Set<UUID> onlinePlayers) {
@@ -252,6 +263,58 @@ public class WarManager implements Listener {
 
     //#endregion
 
+    //#region Immunity handling 
+
+    private void loadTownImmunities() {
+        Logger.log("Loading town war immunity data...");
+        var towns = TownyAPI.getInstance().getTowns();
+        for (Town town : towns) {
+            var immunity = WarImmunityMetadata.getImmunityMetaDataFromTown(town);
+            if (immunity != 0L)
+                townImmunities.put(town.getUUID(), immunity);
+        }
+        Logger.log("Found " + townImmunities.size() + " towns with active war immunity.");
+    }
+
+    public void handleTownImmunities() {
+        if (townImmunities.size() == 0)
+            return;
+
+        Set<UUID> immunitiesToRemove = new HashSet<>();
+        for (var set : townImmunities.entrySet()) {
+            var townId = set.getKey();
+            var time = set.getValue();
+
+            if (System.currentTimeMillis() > time) {
+                immunitiesToRemove.add(townId);
+            }
+        }
+
+        if (immunitiesToRemove.size() == 0)
+            return;
+
+        for (var townId : immunitiesToRemove) {
+            var town = TownyAPI.getInstance().getTown(townId);
+            if (town == null)
+                continue;
+            clearTownImmunity(town);
+        }
+    }
+
+    public void setTownImmunity(Town town, long value) {
+        var time = System.currentTimeMillis() + (value * 1000);
+        WarImmunityMetadata.setWarImmunityForTown(town, time);
+        townImmunities.put(town.getUUID(), time);
+    }
+
+    public void clearTownImmunity(Town town) {
+        WarImmunityMetadata.removeMetaDataFromTown(town);
+        townImmunities.remove(town.getUUID());
+        Logger.log("Removed immunity from town " + town.getName());
+    }
+
+    //#endregion
+
     //#region War creation
 
     public void createWar(String title, String description, UUID attackingTownId, UUID defendingTownId,
@@ -392,6 +455,10 @@ public class WarManager implements Listener {
     }
 
     private void calculateWarResult(War war) {
+
+        if (war.getWar_result() != WarResult.UNDECIDED)
+            return;
+
         float attackerScore = (float) war.getAttacker_score();
         float defenderScore = (float) war.getDefender_score();
 
@@ -429,7 +496,7 @@ public class WarManager implements Listener {
             if (town == null)
                 continue;
 
-            WarImmunityMetadata.setWarImmunityForTown(town, System.currentTimeMillis() + (cooldown * 60000));
+            setTownImmunity(town, cooldown * 60);
         }
     }
 
@@ -483,26 +550,12 @@ public class WarManager implements Listener {
                 Map<UUID, Double> defendingTownContributions = calculateTownContributions(defendingTownScores,
                         war.getDefender_score());
 
-                Double attackerPayoutRatio = 0d;
-                Double defenderPayoutRatio = 0d;
-                WarSide sideToLoseClaims = WarSide.NONE;
-
-                // Determine payout ratios and whether claims should be removed
                 var result = war.getWar_result();
-                if (result == WarResult.NARROW_ATTACKER_WIN) {
-                    attackerPayoutRatio = 0.75d;
-                    defenderPayoutRatio = 0.25d;
-                } else if (result == WarResult.NORMAL_ATTACKER_WIN || result == WarResult.STRONG_ATTACKER_WIN) {
-                    attackerPayoutRatio = 1d;
-                    sideToLoseClaims = WarSide.DEFENDER;
-                } else if (result == WarResult.NARROW_DEFENDER_WIN) {
-                    attackerPayoutRatio = 0.25d;
-                    defenderPayoutRatio = 0.75d;
-                } else if (result == WarResult.NORMAL_DEFENDER_WIN || result == WarResult.STRONG_DEFENDER_WIN) {
-                    defenderPayoutRatio = 1d;
-                    sideToLoseClaims = WarSide.ATTACKER;
-                }
-
+                Double attackerPayoutRatio = (double)result.getAttackerPayout();
+                Double defenderPayoutRatio = (double)result.getDefenderPayout();;
+                WarSide sideToLoseClaims = result.getSideToLoseClaims();
+                Logger.log("sideToLoseClaims: " + sideToLoseClaims.toString());
+                
                 var attackerMoneyWarchest = war.getAttacker_total_money_warchest();
                 var defenderMoneyWarchest = war.getDefender_total_money_warchest();
                 var totalMoneyAmount = attackerMoneyWarchest + defenderMoneyWarchest;
@@ -619,7 +672,7 @@ public class WarManager implements Listener {
         var town = TownyAPI.getInstance().getTown(townId);
         if (town != null) {
             town.getAccount().deposit(amount, reason);
-            Logger.log("Deposited " + amount + "G into town " + town.getName() + "(" + reason + ")");
+            Logger.log("Deposited " + amount + "G into town " + town.getName() + " (" + reason + ")");
         }
     }
 
@@ -628,7 +681,7 @@ public class WarManager implements Listener {
         if (town != null) {
             town.setBonusBlocks(town.getBonusBlocks() - amount);
             town.save();
-            Logger.log("Removed " + amount + "claims from town " + town.getName());
+            Logger.log("Removed " + amount + " claims from town " + town.getName());
 
         }
     }
@@ -638,7 +691,7 @@ public class WarManager implements Listener {
         if (town != null) {
             town.addBonusBlocks(amount);
             town.save();
-            Logger.log("Added " + amount + "claims to town " + town.getName());
+            Logger.log("Added " + amount + " claims to town " + town.getName());
         }
     }
 
@@ -867,6 +920,24 @@ public class WarManager implements Listener {
     public CallToWar getCallToWar(UUID warId, UUID targetNationId) {
         return callsToWar.stream()
                 .filter(c -> c.getWarId().equals(warId) && c.getTargetNationId().equals(targetNationId)).findAny()
+                .orElse(null);
+    }
+
+    public void addMercenaryInvite(MercenaryInvite invite) {
+        mercenaryInvites.add(invite);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            mercenaryInvites.remove(invite);
+        }, 300 * 20);
+    }
+
+    public List<MercenaryInvite> getPlayerMercenaryInvites(UUID playerId) {
+        return mercenaryInvites.stream().filter(c -> c.getTargetPlayerId().equals(playerId))
+                .collect(Collectors.toList());
+    }
+
+    public MercenaryInvite getMercenaryInvite(UUID warId, UUID targetPlayerId) {
+        return mercenaryInvites.stream()
+                .filter(c -> c.getWarId().equals(warId) && c.getTargetPlayerId().equals(targetPlayerId)).findAny()
                 .orElse(null);
     }
 

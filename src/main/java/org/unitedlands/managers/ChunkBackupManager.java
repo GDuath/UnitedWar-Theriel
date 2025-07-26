@@ -5,10 +5,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.zip.*;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.events.ChunkBackupQueuedEvent;
 import org.unitedlands.util.Logger;
 
 import com.palmergames.bukkit.towny.TownySettings;
@@ -64,7 +66,11 @@ public class ChunkBackupManager {
     private void snapshotChunk(TownBlock townBlock, UUID townId, String snapshotType) {
         createSnapshot(townBlock).thenAcceptAsync(data -> {
             if (!data.getBlockList().isEmpty() && saveSnapshot(data, townId, snapshotType)) {
-                Logger.log("Backup complete for chunk at " + townBlock.getWorldCoord());
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    Logger.log("Backup of chunk " + townBlock.getWorldCoord()
+                            + " taken in memory and queued for writing.");
+                    (new ChunkBackupQueuedEvent(data.getWorldCoord())).callEvent();
+                });
             }
         }).exceptionally(e -> {
             Throwable cause = (e.getCause() != null) ? e.getCause() : e;
@@ -104,7 +110,7 @@ public class ChunkBackupManager {
         for (TownBlock block : townBlocks) {
             PlotBlockData data = loadSnapshot(block, townId, snapshotType);
             if (data != null) {
-                Logger.log("Restoring town block at " + block.getWorldCoord());
+                Logger.log("Restoring " + block.getTypeName() + " town block at " + block.getWorldCoord());
                 TownyRegenAPI.addToActiveRegeneration(data);
             }
         }
