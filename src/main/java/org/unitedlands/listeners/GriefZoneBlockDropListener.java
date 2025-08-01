@@ -16,6 +16,12 @@ public class GriefZoneBlockDropListener implements Listener {
     public void onBlockDrop(BlockDropItemEvent event) {
         var chunk = event.getBlock().getChunk();
         if (UnitedWar.getInstance().getGriefZoneManager().isChunkInAnyGriefingZone(chunk)) {
+            
+            // Allow shulkers and chests to be broken
+            var blockType = event.getBlock().getType().toString();
+            if (blockType.contains("SHULKER") || blockType.contains("CHEST"))
+                return;
+
             event.setCancelled(true);
         }
     }
