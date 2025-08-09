@@ -48,7 +48,7 @@ public class WarBookData {
             this.targetTownName = getItemMeta("book.targetName");
             this.warGoal = WarGoal.valueOf(getItemMeta("book.goal"));
         } catch (Exception ignored) {
-            
+
         }
     }
 
@@ -73,9 +73,17 @@ public class WarBookData {
     }
 
     public ItemStack getBook() {
+        addPages();
         addItemMeta();
         attachWarData();
         return warBook;
+    }
+
+    private void addPages() {
+        var bookMeta = (BookMeta) warBook.getItemMeta();
+        var bookContent = UnitedWar.getInstance().getConfig().getString("messages.war-book-content", "");
+        bookMeta.addPages(Component.text(bookContent));
+        warBook.setItemMeta(bookMeta);
     }
 
     private void addItemMeta() {
@@ -87,7 +95,7 @@ public class WarBookData {
 
         meta.displayName(name);
         meta.lore(getLore());
-        meta.setCustomModelData(2);
+        //meta.setCustomModelData(2);
         warBook.setItemMeta(meta);
     }
 
@@ -151,7 +159,7 @@ public class WarBookData {
         var description = "";
         var pages = bookMeta.pages();
         for (var page : pages) {
-            description += PlainTextComponentSerializer.plainText().serialize(page);
+            description += PlainTextComponentSerializer.plainText().serialize(page) + " ";
         }
 
         return description;

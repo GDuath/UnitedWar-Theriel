@@ -137,6 +137,13 @@ public class Messenger {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json");
 
+            var pingRole = plugin.getConfig().getString("discord.ping-role-id");
+            if (pingRole != null && pingRole.length() > 0) {
+                replacements.put("ping-role", "<@&" + pingRole + ">");
+            } else {
+                replacements.put("ping-role", "");
+            }
+
             if (replacements != null) {
                 for (var entry : replacements.entrySet()) {
                     embed = embed.replace("{" + entry.getKey() + "}",

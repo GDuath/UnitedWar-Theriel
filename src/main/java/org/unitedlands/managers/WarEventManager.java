@@ -68,7 +68,9 @@ public class WarEventManager {
     public void handleEvents() {
         handleCurrentEvent();
         if (currentEvent == null) {
-            handleEventCreation();
+            if (plugin.getWarManager().isAnyWarActive()) {
+                handleEventCreation();
+            }
         }
     }
 
@@ -145,7 +147,8 @@ public class WarEventManager {
             var eventWarmupTime = plugin.getConfig().getInt("war-events.event-warmup-time", 0);
             currentEvent = newEvent;
             currentEvent.setScheduledStartTime(System.currentTimeMillis() + (eventWarmupTime * 1000L));
-            currentEvent.setScheduledEndTime(currentEvent.getScheduledStartTime() + (currentEvent.getDuration() * 1000L));
+            currentEvent
+                    .setScheduledEndTime(currentEvent.getScheduledStartTime() + (currentEvent.getDuration() * 1000L));
             currentEvent.setActive(false);
 
             Bukkit.getPluginManager().registerEvents((Listener) currentEvent, plugin);

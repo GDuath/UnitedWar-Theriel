@@ -54,13 +54,13 @@ war-immunity-duration: 5 # in minutes
 # Settings for different war goals
 war-goal-settings:
   superiority:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
+    warmup-time: 86400 # in seconds
+    duration: 259200 # in seconds
     cost: 30 # mobilisation points
     attacker-call-nation: true
     attacker-call-allies: false
     defender-call-nation: true
-    defender-call-allies: true
+    defender-call-allies: false
     war-lives: 5
     max-attacker-mercenaries: 5
     max-defender-mercenaries: 5
@@ -71,11 +71,11 @@ war-goal-settings:
       defender-claims-contribution: 0.1
       additional-bonus-claims: 20
     scorecaps:
-      attacker: 500
-      defender: 500
+      attacker: 30000
+      defender: 30000
   skirmish:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
+    warmup-time: 86400 # in seconds
+    duration: 259200 # in seconds
     cost: 10 # mobilisation points
     attacker-call-nation: false
     attacker-call-allies: false
@@ -91,11 +91,11 @@ war-goal-settings:
       defender-claims-contribution: 0.0
       additional-bonus-claims: 0
     scorecaps:
-      attacker: 500
-      defender: 500
+      attacker: 10000
+      defender: 10000
   plunder:
-    warmup-time: 60 # in seconds
-    duration: 3600 # in seconds
+    warmup-time: 86400 # in seconds
+    duration: 259200 # in seconds
     cost: 10 # mobilisation points
     attacker-call-nation: false
     attacker-call-allies: false
@@ -111,8 +111,8 @@ war-goal-settings:
       defender-claims-contribution: 0.0
       additional-bonus-claims: 0
     scorecaps:
-      attacker: 500
-      defender: 500
+      attacker: 30000
+      defender: 30000
 
 ###################################################
 # +---------------------------------------------+ #
@@ -120,23 +120,62 @@ war-goal-settings:
 # +---------------------------------------------+ #
 ###################################################
 
+military-ranks:
+  default: # civilian rank, players with no assigned military towny rank
+    score-multiplier: 0.0
+    level: town
+    unique: false
+  militia:
+    score-multiplier: 0.9
+    level: town
+    unique: false
+  soldier:
+    score-multiplier: 1.0
+    level: town
+    unique: false
+  officer:
+    score-multiplier: 1.1
+    level: town
+    unique: false
+  general:
+    level: nation
+    score-multiplier: 1.2
+    unique: true
+
 score-settings:
   activity:
-    silent: false
-    points: 10
+    silent: true
+    points: 1
     message: score-activity
     type: ACTIVITY
   pvp-kill:
-    default:
-      silent: false
-      points: 10
-      message: score-pvp-kill-default
-      type: PVP_KILL
-    leader:
-      silent: false
-      points: 50
-      message: score-pvp-kill-leader
-      type: PVP_LEADER_KILL
+    leader-kill-bonus-multiplier: 1.5
+    rank-scores:
+      default: # civilian
+        silent: false
+        points: 0
+        message: score-pvp-kill-default
+        type: PVP_KILL
+      militia:
+        silent: false
+        points: 10
+        message: score-pvp-kill
+        type: PVP_KILL
+      soldier:
+        silent: false
+        points: 100
+        message: score-pvp-kill
+        type: PVP_KILL
+      officer:
+        silent: false
+        points: 200
+        message: score-pvp-kill
+        type: PVP_KILL
+      general:
+        silent: false
+        points: 500
+        message: score-pvp-kill
+        type: PVP_KILL
   chunk-capture:
     default:
       silent: false
@@ -145,12 +184,12 @@ score-settings:
       type: SIEGE_CAPTURE
     home:
       silent: false
-      points: 50
+      points: 500
       message: score-siege-capture-home
       type: SIEGE_CAPTURE
     warcamp:
       silent: false
-      points: 100
+      points: 250
       message: score-siege-capture-warcamp
       type: SIEGE_CAPTURE
     fortress:
@@ -166,6 +205,8 @@ score-settings:
 ###################################################
 
 siege-settings:
+  # number of schematics to randomly pick from when placing war camps. Set to 0 to disable placement.
+  warcamp-templates: 5
   # If true, sieges and griefing will always be active regardless of whether players of a particular
   # war side are online or not
   override-activity-requirement: false
@@ -235,16 +276,6 @@ war-events:
       display-name: "Defenders’ Fury"
       description: "All defender PvP kills give double points."
       duration: 900
-    SUDDEN_DEATH:
-      class: "WarLivesSuddenDeathWarEvent"
-      display-name: "Death is Working Overtime"
-      description: "Players instantly lose all remaining war lives when they die."
-      duration: 900
-    NO_DEATH:
-      class: "WarLivesNoDeathWarEvent"
-      display-name: "Death is on Vacation"
-      description: "Players don't lose any war lives when dying."
-      duration: 900
     NO_SIEGE:
       class: "SiegeSuspensionEvent"
       display-name: "Broken Siege Weapons"
@@ -255,6 +286,17 @@ war-events:
       display-name: "Advanced Siege Engines"
       description: "Chunks lose HP at double speed."
       duration: 900
+    SUDDEN_DEATH:
+      class: "WarLivesSuddenDeathWarEvent"
+      display-name: "Death is Working Overtime"
+      description: "Players instantly lose all remaining war lives when they die."
+      duration: 900
+    NO_DEATH:
+      class: "WarLivesNoDeathWarEvent"
+      display-name: "Death is on Vacation"
+      description: "Players don't lose any war lives when dying."
+      duration: 900
+
 
   pick-table:
     "ATTACKER_PVP_KILL_2X": 1
@@ -279,8 +321,8 @@ warzone-pvp:
   disable-pw: false
   cooldowns:
     projectiles:
-      ENDER_PEARL: 5 # in seconds
-      WIND_CHARGE: 5 # in seconds
+      ENDER_PEARL: 15 # in seconds
+      WIND_CHARGE: 10 # in seconds
 
 ###################################################
 # +---------------------------------------------+ #
@@ -333,63 +375,79 @@ messages:
   # |               War Messages                  | #
   # +---------------------------------------------+ #
 
-  war-started: "§fThe war §e§o{war-name} §7§rhas started! Get ready to fight - war point scoring is now active!"
+  war-started: "§fThe war §6§l{war-name} §7§rhas started! Get ready to fight - war point scoring is now active!"
   war-declared:
-    - "§c§m+|✦       §r§c§l[§f§l WAR DECLARED §c§l]§c§m       |✦+"
-    - "§f§c§o{war-name}"
+    - "§c§m+|✦                       §r§c§l[§f§l War Declared! §c§l]§c§m                       |✦+"
+    - "§6§l{war-name}"
     - "§7{war-description}"
-    - "Attacker: {attacker} {attacker-nation} | Defender: {defender} {defender-nation}"
+    - "§f§lAttacker: §r{attacker} {attacker-nation}"
+    - "§f§lDefender: §r{defender} {defender-nation}"
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§f§l{timer-info}"
-    - "§c§m+|✦                  +✦+                  |✦+"
-  war-info:
-    - "§c§m+|✦       §r§c§l[§f§l {war-name} ({war-active}) §c§l]§c§m       |✦+"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
+  war-info: 
+    - "§c§m+|✦                          §r§c§l[§f§l War Info §c§l]§c§m                           |✦+"
+    - "§6§l{war-name}"
     - "§7{war-description}"
-    - "§f§lAttacker: §r{attacker} {attacker-nation} | §lScore: §r{attacker-score} / {attacker-score-cap}"
-    - "§f§lDefender: §r{defender} {defender-nation} | §lScore: §r{defender-score} / {defender-score-cap}"
+    - "§f§lAttacker: §r{attacker} {attacker-nation} | 🗡 {attacker-score} / {attacker-score-cap}"
+    - "§f§lDefender: §r{defender} {defender-nation} | 🗡 {defender-score} / {defender-score-cap}"
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§f§l{timer-info}"
-    - "§c§m+|✦                  +✦+                  |✦+"
-  war-ended:
-    - "§c§m+|✦       §r§c§l[§f§l {war-name} (ENDED)§c§l]§c§m       |✦+"
-    - "§fThe war has ended with the following result:"
-    - "§f§o{war-result}"
-    - "§f§lAttacker: §r{attacker} | §lFinal score: §r{attacker-score} / {attacker-score-cap}"
-    - "§f§lDefender: §r{defender} | §lFinal score: §r{defender-score} / {defender-score-cap}"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
+  war-ended: 
+    - "§c§m+|✦                         §r§c§l[§f§l War Ended! §c§l]§c§m                         |✦+"
+    - "§7The war §6§l{war-name} §r§7has ended with the following result:"
+    - "§e{war-result}"
+    - "§f§lAttacker: §r{attacker} | 🗡 {attacker-score} / {attacker-score-cap}"
+    - "§f§lDefender: §r{defender} | 🗡 {defender-score} / {defender-score-cap}"
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
-    - "§c§m+|✦                  +✦+                  |✦+"
-  town-captured: "§e{war-name}: The town of {town-name} succumbed to the siege of the attacking armies and was captured!"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
+  war-participants: 
+    - "§c§m+|✦                          §r§c§l[§f§l War Info §c§l]§c§m                           |✦+"
+    - "§6§l{war-name}"
+    - "§7{war-description}"
+    - "§c§lAttacking towns: §r§c{attacking-towns}"
+    - "§4§lAttacking mercenaries: §r§4{attacking-mercs}"
+    - "§a§lDefending towns: §r§a{defending-towns}"
+    - "§2§lDefending mercenaries: §r§2{defending-mercs}"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
+  town-captured: "§6§l{war-name}§r§f: The town of {town-name} succumbed to the siege of the attacking armies and was captured!"
   resident-nation-joined-war: "§bYour nation has joined the war!"
   war-call-send-success: "§bCall to War sent to ally. The call will automatically expire in 5 minutes."
   war-call-receive: "§bYou received a Call to War. Use /t war acceptcall <war_name> to accept. The call will automatically expire in 5 minutes."
   war-declare-usage: "Usage: /t war declare"
-  add-mercenary-succes: "{mercenary-name} has been added as a mercenary for your side."
+  add-mercenary-success: "§b{mercenary-name} has been added as a mercenary for your side."
   resident-mercenary-join-success: "§bYou've been added as a mercenary on the {war-side} side of {war-name}"
-  mercenary-remove-success: "{mercenary-name} has been removed as a mercenary for your side."
+  mercenary-remove-success: "§b{mercenary-name} has been removed as a mercenary for your side."
   mercenary-resident-removed-success: "§eYou've been removed as a mercenary on the {war-side} side of {war-name}"
+  mercenary-invite-sent: "§bInvitation sent to {mercenary-name}. It will automatically expire in 5 minutes."
+  mercenary-invite-received: "§bYou've received an invitation to join as a mercenary for the {war-side} side of {war-name}. Use \"/t war acceptinvite <warname>\" to accept."
   war-call-ally-send-success: "§bCall to War sent to ally. The call will automatically expire in 5 minutes."
 
   # +---------------------------------------------+ #
   # |                War Events                   | #
   # +---------------------------------------------+ #
 
-  event-info-no-event: "§7There is currently no event scheduled or active."
-  event-info-scheduled:
-    - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
+  event-info-no-event: "§7There is currently no event scheduled or active." 
+  event-info-scheduled: 
+    - "§c§m+|✦                         §r§c§l[§f§l War Event §c§l]§c§m                          |✦+"
     - "§7A new war event will will begin soon! It will have the following effects:"
-    - "§f{event-description}"
+    - "§6§l{event-name}"
+    - "§f§o{event-description}"
     - "§7{timer-info}"
-    - "§c§m+|✦                  +✦+                  |✦+"
-  event-info-active:
-    - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
-    - "§f{event-description}"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
+  event-info-active: 
+    - "§c§m+|✦                         §r§c§l[§f§l War Event §c§l]§c§m                          |✦+"
+    - "§6§l{event-name}"
+    - "§f§o{event-description}"
     - "§7{timer-info}"
-    - "§c§m+|✦                  +✦+                  |✦+"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
   event-info-ended:
-    - "§c§m+|✦       §r§c§l[§f§l {event-name} §c§l]§c§m       |✦+"
-    - "§f{event-description}"
+    - "§c§m+|✦                         §r§c§l[§f§l War Event §c§l]§c§m                          |✦+"
+    - "§6§l{event-name}"
+    - "§f§o{event-description}"
     - "§7This event has now ended and all effects have been removed."
-    - "§c§m+|✦                  +✦+                  |✦+"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
 
   # +---------------------------------------------+ #
   # |               Mobilisation                  | #
@@ -413,9 +471,8 @@ messages:
   # |                  Scores                     | #
   # +---------------------------------------------+ #
 
-  score-ativity: "§7You scored §f§l{score} points for being online."
-  score-pvp-kill-default: "§7You scored §f§l{score} points §7§rfor killing an enemy!"
-  score-pvp-kill-leader: "§7You scored §f§l{score} points §7§rfor killing an enemy leader!"
+  score-activity: "§7You scored §f§l{score} points for being online."
+  score-pvp-kill: "§7You scored §f§l{score} points §7§rfor killing an enemy!"
   score-siege-capture-default: "§7Your team received §f§l{score} points §7§rfor capturing a chunk in an enemy town!"
   score-siege-capture-home: "§7Your team received §f§l{score} points §7§rfor bringing down an enemy home chunk!"
   score-siege-capture-warcamp: "§7Your team received §f§l{score} points §7§rfor razing an enemy war camp!"
@@ -448,8 +505,10 @@ messages:
   # +---------------------------------------------+ #
   # |                  War Books                  | #
   # +---------------------------------------------+ #
-
+  
+  war-book-created: "§bYou have created a war declaration book. Edit it to add your reasons for the war. The name of the signed book will be the name of the war. If you wish to set a longer war name, rename this book at an anvil after signing."
   war-book-name: "War against "
+  war-book-content: "Replace this page with a brief description of your war reasons.\n\n"
   war-book-lore:
     - ""
     - "§eRename §7this book at an anvil"
@@ -495,13 +554,15 @@ messages:
   error-resident-not-mayor-add-mecrenary: "§cOnly mayors and co-mayors are allowed to recruit mercenaries for a war."
   error-add-mercenary-war-over: "§cYou cannot add mercenaries to a war that is already over."
   error-resident-not-in-war: "§cYou're not a part of this war."
-  error-add-mercenary-max: "§cYou cannot add another mercenary, maximum is "
+  error-add-mercenary-max: "§cThis war side has reached the maximum number of mercenaries."
   error-add-mercenary-is-resident: "§eYou can't add yourself as a mercenary :facepalm:"
   error-add-mercenary-already-added: "§eThat player has already been hired as a mercenary for this war."
   mercenary-remove-usage: "Usage: /t war removemercenary <war_name> <player_name>"
   error-mercenary-remove-not-mayor: "§cOnly mayors and co-mayors are allowed to remove mercenaries from a war."
   error-mercenary-remove-war-over: "§cYou cannot remove mercenaries from a war that is already over."
   error-mercenary-remove-not-in-war: "§eThat player is not a mercenary in this war."
+  mercenary-acceptinvite-usage: "Usage: /t war mercenary accept <war name>"
+  error-merc-invite-not-found: "§cYou don't have any pending invitations."
   war-debug-create-usage: "Usage: /wd <war_name> <caller_nation> <target_nation>"
   error-war-not-pending: "§cWar is not pending."
   error-war-caller-nation-not-found: "§cCaller nation not found."
@@ -520,7 +581,15 @@ messages:
   error-command-disabled: "§cYou cannot use this command while enemies are online."
   error-under-min-mobilisation: "§cYour needs at least {min-mobilisation} mobilisation to be able to declare wars."
   error-insufficient-mobilisation: "§cYour town can't afford the mobilisation costs of {costs}."
-  
+
+  immunity-usage: "Usage: /wa immunity <set|clear> <town_name> [seconds]"
+  immunity-clear: "Immunity for {town-name} has been cleared."
+  immunity-set: "Immunity for {town-name} has been set to {value} seconds from now."
+
+  surrender-usage: "Usage: /t war surrender <war_name>"
+  error-surrender-not-subject: "§cYou can't surrender, your town is not the attacker or the target of the war."
+  surrender-done: "§bYour side has surrendered. The war will end with the next war update tick."
+
 ############################################################
 # +------------------------------------------------------+ #
 # |                   Discord Settings                   | #
@@ -531,7 +600,8 @@ messages:
 
 discord:
   enabled: true
-  webhook_url: 
-  war-declaration-embed: "{\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Declaration: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"
-  war-started-embed: "{\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Started: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
-  war-ended-embed: "{\n \"embeds\": [\n {\n \"description\": \"The war has ended with the following result: **{war-result}** <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"Attacker final score\",\n \"value\": \"🗡 {attacker-score} / {attacker-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender final score\",\n \"value\": \"🗡 {defender-score} / {defender-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Ended: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
+  webhook_url: # the webhook url
+  ping-role-id: # the role id to ping
+  war-declaration-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"{war-description} \",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Declaration: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n}"
+  war-started-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Started: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
+  war-ended-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"The war has ended with the following result: **{war-result}** <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"Attacker final score\",\n \"value\": \"🗡 {attacker-score} / {attacker-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender final score\",\n \"value\": \"🗡 {defender-score} / {defender-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Ended: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  

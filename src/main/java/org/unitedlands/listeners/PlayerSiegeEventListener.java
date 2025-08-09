@@ -16,12 +16,14 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.event.PlayerChangePlotEvent;
+import com.palmergames.bukkit.towny.object.TownBlock;
 
 public class PlayerSiegeEventListener implements Listener {
 
@@ -38,7 +40,7 @@ public class PlayerSiegeEventListener implements Listener {
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
 
-        handleElytra(event.getPlayer());
+        handleElytra(event.getPlayer(), toPlot);
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, toPlot);
     }
 
@@ -159,8 +161,8 @@ public class PlayerSiegeEventListener implements Listener {
         }
     }
 
-    private void handleElytra(Player player) {
-        if (!isPlayerSubjectToWarZone(player))
+    private void handleElytra(Player player, TownBlock targetTownBlock) {
+        if (!isPlayerSubjectToWarZone(player, targetTownBlock))
             return;
 
         if (!plugin.getConfig().getBoolean("warzone-pvp.disable-elytra", true))
@@ -170,6 +172,7 @@ public class PlayerSiegeEventListener implements Listener {
 
         if (chestplate != null && chestplate.getType() == Material.ELYTRA) {
             player.getInventory().setChestplate(null);
+            player.setVelocity(new Vector());
 
             HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(chestplate);
             for (ItemStack leftover : leftovers.values()) {
@@ -185,12 +188,19 @@ public class PlayerSiegeEventListener implements Listener {
     private boolean isPlayerSubjectToWarZone(Player player) {
         if (!plugin.getWarManager().isPlayerInActiveWar(player.getUniqueId()))
             return false;
-
         var townBlock = TownyAPI.getInstance().getTownBlock(player);
         if (townBlock == null)
             return false;
+        return isPlayerSubjectToWarZone(player, townBlock);
+    }
 
-        var town = townBlock.getTownOrNull();
+    private boolean isPlayerSubjectToWarZone(Player player, TownBlock targetTownBlock) {
+        if (!plugin.getWarManager().isPlayerInActiveWar(player.getUniqueId()))
+            return false;
+        if (targetTownBlock == null)
+            return false;
+
+        var town = targetTownBlock.getTownOrNull();
         if (town == null)
             return false;
 

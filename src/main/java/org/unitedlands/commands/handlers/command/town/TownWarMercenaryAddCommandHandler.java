@@ -9,15 +9,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.MercenaryInvite;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
-import org.unitedlands.util.WarLivesMetadata;
-
 import com.palmergames.bukkit.towny.TownyAPI;
-import com.palmergames.bukkit.towny.TownyUniverse;
-import com.palmergames.bukkit.towny.object.Resident;
 
 public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
 
@@ -48,7 +45,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessageTemplate((Player)sender, "mercenary-add-usage", null, true);
+            Messenger.sendMessageTemplate((Player) sender, "mercenary-add-usage", null, true);
             return;
         }
 
@@ -66,7 +63,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name", args[0]), true);
             return;
         }
 
@@ -105,7 +102,7 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
         if (mercenary == player) {
-            Messenger.sendMessageTemplate((Player)sender, "error-add-mercenary-is-resident", null, true);
+            Messenger.sendMessageTemplate((Player) sender, "error-add-mercenary-is-resident", null, true);
             return;
         }
 
@@ -118,31 +115,18 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        if (playerWarSide == WarSide.ATTACKER) {
-            attackingMercenaryList.add(mercenary.getUniqueId());
-            war.setAttacking_mercenaries(attackingMercenaryList);
-            war.setState_changed(true);
-        } else if (playerWarSide == WarSide.DEFENDER) {
-            defendingMercenaryList.add(mercenary.getUniqueId());
-            war.setDefending_mercenaries(defendingMercenaryList);
-            war.setState_changed(true);
-        } else {
-            Messenger.sendMessageTemplate(sender, "error-war-side-data", null, true);
-            return;
-        }
+        var invite = new MercenaryInvite();
+        invite.setSendingPlayerId(player.getUniqueId());
+        invite.setTargetPlayerId(mercenary.getUniqueId());
+        invite.setWarId(war.getId());
+        invite.setWarSide(playerWarSide);
 
-        // If the war has already started, add war lives to the mercenary
-        if (war.getIs_active()) {
-            int warLives = plugin.getConfig()
-                    .getInt("war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".war-lives", 5);
-            Resident mercenaryResident = TownyUniverse.getInstance().getResident(mercenary.getUniqueId());
-            if (mercenaryResident != null) {
-                WarLivesMetadata.setWarLivesMetaData(mercenaryResident, war.getId(), warLives);
-            }
-        }
+        plugin.getWarManager().addMercenaryInvite(invite);
 
-        Messenger.sendMessageTemplate(sender,"add-mercenary-succes", Map.of("mercenary-name",mercenary.getName()), true);
-        Messenger.sendMessageTemplate(mercenary, "resident-mercenary-join-success", Map.of("war-side",playerWarSide.toString().toLowerCase(),"war-name",war.getTitle()), true);
+        Messenger.sendMessageTemplate(player, "mercenary-invite-sent", Map.of("mercenary-name", mercenary.getName()),
+                true);
+        Messenger.sendMessageTemplate(mercenary, "mercenary-invite-received",
+                Map.of("war-side", playerWarSide.toString().toLowerCase(), "war-name", war.getTitle()), true);
     }
 
 }

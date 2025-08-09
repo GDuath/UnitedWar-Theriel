@@ -65,16 +65,17 @@ public class WarImmunityMetadata {
         }
     }
 
-    // Remove town mobilisation metadata.
+    // Remove town immunity metadata.
     public static void removeMetaDataFromTown(Town t) {
         t.removeMetaData(IMMUNITY_INTERNAL_FIELD);
         t.removeMetaData(IMMUNITY_DISPLAY_FIELD);
         TownyUniverse.getInstance().getDataSource().saveTown(t);
     }
 
-    // Set a town's mobilisation.
+    // Set a town's immunity.
     public static void setWarImmunityForTown(Town t, long datetime) {
-        t.removeMetaData(KEYNAME_INTERNAL);
+        t.removeMetaData(IMMUNITY_INTERNAL_FIELD);
+        t.removeMetaData(IMMUNITY_DISPLAY_FIELD);
         t.addMetaData(new LongDataField(KEYNAME_INTERNAL, datetime));
         t.addMetaData(new StringDataField(KEYNAME_DISPLAY, new SimpleDateFormat("dd-MM-yyyy HH:mm").format(datetime), LABEL_DISPLAY));
         TownyUniverse.getInstance().getDataSource().saveTown(t);

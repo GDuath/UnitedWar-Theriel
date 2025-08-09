@@ -1,6 +1,7 @@
 package org.unitedlands.listeners;
 
-import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.object.Resident;
+
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
@@ -21,6 +22,8 @@ import org.unitedlands.events.WarLivesUpdateEvent;
 import org.unitedlands.events.WarScoreEvent;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+
+import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 
@@ -37,6 +40,10 @@ public class PlayerDeathListener implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
+
+        if (!plugin.getWarManager().isAnyWarActive())
+            return;
+
         Player victim = event.getEntity();
 
         // Check if this is a death caused by an entity
@@ -56,24 +63,41 @@ public class PlayerDeathListener implements Listener {
             return;
         }
 
-        // If this player is not tracked by Towny, don't continue
+        // If the players are not tracked by Towny, don't continue
         var victimRes = TownyAPI.getInstance().getResident(victim);
         if (victimRes == null)
             return;
+        var killerRes = TownyAPI.getInstance().getResident(killer);
+        if (killerRes == null)
+            return;
 
-        String killtype = "default";
+        // Get the killer's and victim's military ranks
+        String victimMilitaryRank = getMilitaryRank(victimRes);
+        String killerMilitaryRank = getMilitaryRank(killerRes);
 
-        // See if the victim is a mayor or general in their town.
-        // If so, prepare a higher reward.
-        if (victimRes.isMayor() || victimRes.getTownRanks().contains("co-mayor")
-                || victimRes.getTownRanks().contains("general")) {
-            killtype = "leader";
+        // Skip if the killer is a civilian
+        if (killerMilitaryRank.equals("default")) {
+            return; // Killer doesn't have any military rank, no score
         }
 
-        Integer reward = plugin.getConfig().getInt("score-settings.pvp-kill." + killtype + ".points");
-        String message = plugin.getConfig().getString("score-settings.pvp-kill." + killtype + ".message");
-        Boolean silent = plugin.getConfig().getBoolean("score-settings.pvp-kill." + killtype + ".silent");
-        String eventType = plugin.getConfig().getString("score-settings.pvp-kill." + killtype + ".type");
+        boolean isVictimLeader = false;
+        if (victimRes.isMayor() || victimRes.isKing()) {
+            isVictimLeader = true;
+        }
+
+        Integer reward = plugin.getConfig()
+                .getInt("score-settings.pvp-kill.ranks-scores." + victimMilitaryRank + ".points");
+        String message = plugin.getConfig()
+                .getString("score-settings.pvp-kill.ranks-scores." + victimMilitaryRank + ".message");
+        Boolean silent = plugin.getConfig()
+                .getBoolean("score-settings.pvp-kill.ranks-scores." + victimMilitaryRank + ".silent");
+        String eventType = plugin.getConfig()
+                .getString("score-settings.pvp-kill.ranks-scores." + victimMilitaryRank + ".type");
+
+        Double killMultiplier = plugin.getConfig()
+                .getDouble("military-ranks." + killerMilitaryRank + ".score-multiplier");
+        Double leaderBonusMultiplier = plugin.getConfig()
+                .getDouble("score-settings.pvp-kill.leader-kill-bonus-multiplier");
 
         for (var victimWar : victimWars.entrySet()) {
             var victimWarSide = victimWar.getValue();
@@ -86,8 +110,8 @@ public class PlayerDeathListener implements Listener {
                 continue;
 
             // Check if killer has war lives.
-            var killerRes = TownyUniverse.getInstance().getResident(killer.getUniqueId());
-            if (killerRes == null || WarLivesMetadata.getWarLivesMetaData(killerRes, warId) <= 0) {
+            var killerWarLives = WarLivesMetadata.getWarLivesMetaData(killerRes, warId);
+            if (killerWarLives <= 0) {
                 continue; // Killer is eliminated or not valid.
             }
 
@@ -96,15 +120,27 @@ public class PlayerDeathListener implements Listener {
                 continue; // Victim already eliminated, no score
             }
 
-            // Determine scores.
+            // Adjust score based on ranks and bonuses
+            var adjustedReward = (int) Math.round((double) reward * killMultiplier);
+            if (isVictimLeader)
+                adjustedReward = (int) Math.round((double) adjustedReward * leaderBonusMultiplier);
+
+            var scoreType = WarScoreType.PVP_KILL;
+            try {
+                scoreType = WarScoreType.valueOf(eventType);
+            } catch (Exception ex) {
+                Logger.logError(ex.getMessage());
+            }
+
+
             if (victimWarSide == WarSide.ATTACKER && killerWarSide == WarSide.DEFENDER) {
-                new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, WarScoreType.valueOf(eventType), message,
-                        silent,
-                        reward).callEvent();
+                var warScoreEvent = new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, scoreType, message, silent, adjustedReward);
+                warScoreEvent.callEvent();
             } else if (victimWarSide == WarSide.DEFENDER && killerWarSide == WarSide.ATTACKER) {
-                new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, WarScoreType.valueOf(eventType), message,
-                        silent,
-                        reward).callEvent();
+                var warScoreEvent = new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, scoreType, message, silent, adjustedReward);
+                warScoreEvent.callEvent();
+            } else {
+                return;
             }
 
             // Decrease victim lives.
@@ -112,7 +148,8 @@ public class PlayerDeathListener implements Listener {
             int newLives = Math.max(0, currentLives - 1);
 
             // Call update event in case war lives are influenced by an ongoing WarEvent
-            WarLivesUpdateEvent warLivesUpdateEvent = new WarLivesUpdateEvent(victim, war, victimWarSide, currentLives, newLives);
+            WarLivesUpdateEvent warLivesUpdateEvent = new WarLivesUpdateEvent(victim, war, victimWarSide, currentLives,
+                    newLives);
             warLivesUpdateEvent.callEvent();
 
             // Only adjust and inform if the update event wasn't cancelled
@@ -193,5 +230,18 @@ public class PlayerDeathListener implements Listener {
         // TODO: Anchor and crystal kills
 
         return killer;
+    }
+
+    private String getMilitaryRank(Resident resident) {
+        var ranks = plugin.getWarManager().getMilitaryRanks();
+        var townRanks = resident.getTownRanks();
+        var nationRanks = resident.getNationRanks();
+        for (var level : ranks.keySet()) {
+            for (var rank : ranks.get(level)) {
+                if (townRanks.contains(rank) || nationRanks.contains(rank))
+                    return rank;
+            }
+        }
+        return "default";
     }
 }

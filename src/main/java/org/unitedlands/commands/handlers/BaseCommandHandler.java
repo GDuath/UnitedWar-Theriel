@@ -3,9 +3,10 @@ package org.unitedlands.commands.handlers;
 import java.util.List;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 
-public abstract class BaseCommandHandler implements ICommandHandler {
+public abstract class BaseCommandHandler implements ICommandHandler, Listener {
 
     protected final UnitedWar plugin;
 

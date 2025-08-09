@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,70 +35,80 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
 
-        if (args.length == 1) {
-            War war = plugin.getWarManager().getWarByName(args[0]);
-            if (war != null) {
-                var replacements = war.getMessagePlaceholders();
+        Player player = (Player) sender;
 
-                List<String> attackerTownNames = new ArrayList<>();
-                List<String> defenderTownNames = new ArrayList<>();
-                List<String> attackerMercenaryNames = new ArrayList<>();
-                List<String> defenderMercenaryNames = new ArrayList<>();
-
-                var towny = TownyAPI.getInstance();
-                for (UUID townId : war.getAttacking_towns()) {
-                    var town = towny.getTown(townId);
-                    if (town != null) {
-                        String townString = town.getName();
-                        if (town.hasNation())
-                        {
-                            var tag = town.getNationOrNull().getTag();
-                            if (tag == null || tag.isEmpty())
-                            {
-                                tag = town.getNationOrNull().getName();
-                            }
-                            townString += " (" + tag + ")";
-                        }
-                        attackerTownNames.add(townString);
-                    }
-                }
-                for (UUID townId : war.getDefending_towns()) {
-                    var town = towny.getTown(townId);
-                    if (town != null) {
-                        String townString = town.getName();
-                        if (town.hasNation())
-                        {
-                            var tag = town.getNationOrNull().getTag();
-                            if (tag == null || tag.isEmpty())
-                            {
-                                tag = town.getNationOrNull().getName();
-                            }
-                            townString += " (" + tag + ")";
-                        }
-                        defenderTownNames.add(townString);
-                    }
-                }
-
-                for (UUID townId : war.getAttacking_mercenaries()) {
-                    var resident = towny.getResident(townId);
-                    if (resident != null)
-                        attackerMercenaryNames.add(resident.getName());
-                }
-                for (UUID townId : war.getDefending_mercenaries()) {
-                    var resident = towny.getResident(townId);
-                    if (resident != null)
-                        defenderMercenaryNames.add(resident.getName());
-                }
-                replacements.put("attacking-towns", String.join(", ", attackerTownNames));
-                replacements.put("defending-towns", String.join(", ", defenderTownNames));
-                replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
-                replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
-
-                Messenger.sendMessageListTemplate(((Player) sender), "war-participants", replacements, false);
-            } else {
-                Messenger.sendMessageTemplate(sender, "error-war-not-found", null, true);
+        War war = null;
+        if (args.length == 0) {
+            war = plugin.getWarManager().getAllPlayerWars(player.getUniqueId()).keySet().stream().findFirst()
+                    .orElse(null);
+            if (war == null) {
+                Messenger.sendMessageTemplate((Player) sender, "info-not-in-war", null, true);
+                return;
             }
         }
+
+        if (args.length >= 1) {
+            war = plugin.getWarManager().getWarByName(args[0]);
+            if (war == null) {
+                Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name", args[0]), true);
+                return;
+            }
+        }
+
+        var replacements = war.getMessagePlaceholders();
+
+        List<String> attackerTownNames = new ArrayList<>();
+        List<String> defenderTownNames = new ArrayList<>();
+        List<String> attackerMercenaryNames = new ArrayList<>();
+        List<String> defenderMercenaryNames = new ArrayList<>();
+
+        var towny = TownyAPI.getInstance();
+        for (UUID townId : war.getAttacking_towns()) {
+            var town = towny.getTown(townId);
+            if (town != null) {
+                String townString = town.getName();
+                if (town.hasNation()) {
+                    var tag = town.getNationOrNull().getTag();
+                    if (tag == null || tag.isEmpty()) {
+                        tag = town.getNationOrNull().getName();
+                    }
+                    townString += " (" + tag + ")";
+                }
+                attackerTownNames.add(townString);
+            }
+        }
+        for (UUID townId : war.getDefending_towns()) {
+            var town = towny.getTown(townId);
+            if (town != null) {
+                String townString = town.getName();
+                if (town.hasNation()) {
+                    var tag = town.getNationOrNull().getTag();
+                    if (tag == null || tag.isEmpty()) {
+                        tag = town.getNationOrNull().getName();
+                    }
+                    townString += " (" + tag + ")";
+                }
+                defenderTownNames.add(townString);
+            }
+        }
+
+        for (UUID townId : war.getAttacking_mercenaries()) {
+            var resident = towny.getResident(townId);
+            if (resident != null)
+                attackerMercenaryNames.add(resident.getName());
+        }
+        for (UUID townId : war.getDefending_mercenaries()) {
+            var resident = towny.getResident(townId);
+            if (resident != null)
+                defenderMercenaryNames.add(resident.getName());
+        }
+        replacements.put("attacking-towns", String.join(", ", attackerTownNames));
+        replacements.put("defending-towns", String.join(", ", defenderTownNames));
+        replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
+        replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
+
+        Messenger.sendMessageListTemplate(((Player) sender), "war-participants", replacements, false);
+
     }
 
 }

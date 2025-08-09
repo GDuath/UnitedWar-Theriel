@@ -26,6 +26,7 @@ public class WarScheduler {
 
     public void run() {
         plugin.getWarManager().handleWars();
+        plugin.getWarManager().handleTownImmunities();
         plugin.getWarEventManager().handleEvents();
         plugin.getSiegeManager().handleSiegeChunks();
     }

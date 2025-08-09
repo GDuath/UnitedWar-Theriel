@@ -141,7 +141,7 @@ public class UnitedWar extends JavaPlugin {
         instance = null;
 
         if (databaseManager != null) {
-            databaseManager.disconnect();
+            databaseManager.close();
         }
         if (chunkBackupManager != null) {
             chunkBackupManager.shutdown();

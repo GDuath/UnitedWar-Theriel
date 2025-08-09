@@ -7,7 +7,6 @@ import java.util.Map;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.classes.WarSide;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
@@ -87,21 +86,7 @@ public class TownWarCallAcceptCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        if (ctw.getWarSide() == WarSide.ATTACKER) {
-            var attackingTowns = war.getAttacking_towns();
-            for (var town : nation.getTowns()) {
-                attackingTowns.add(town.getUUID());
-            }
-            war.setAttacking_towns(attackingTowns);
-        } else if (ctw.getWarSide() == WarSide.DEFENDER) {
-            var defendingTowns = war.getDefending_towns();
-            for (var town : nation.getTowns()) {
-                defendingTowns.add(town.getUUID());
-            }
-            war.setDefending_towns(defendingTowns);
-        }
-        war.setState_changed(true);
-        war.buildPlayerLists();
+        war.addAllyToWar(nation, ctw.getWarSide());
 
         Messenger.sendMessageTemplate(sender, "resident-nation-joined-war", null, true);
     }

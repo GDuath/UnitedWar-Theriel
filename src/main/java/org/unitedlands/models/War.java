@@ -16,11 +16,13 @@ import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.util.Formatter;
+import org.unitedlands.util.Logger;
 
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 
@@ -120,6 +122,232 @@ public class War implements Identifiable {
 
     public War() {
     }
+
+    //#region War Chests generation
+
+    public void buildWarChests() {
+
+        var wargoalSettings = UnitedWar.getInstance().getConfig()
+                .getConfigurationSection("war-goal-settings." + getWar_goal().toString().toLowerCase());
+
+        buildSideWarChest(
+                getAttacking_towns(),
+                this::setAttacker_money_warchest,
+                this::setAttacker_claims_warchest,
+                wargoalSettings.getDouble("warchest.attacker-money-contribution", 0.1),
+                wargoalSettings.getDouble("warchest.attacker-claims-contribution", 0.1));
+
+        buildSideWarChest(
+                getDefending_towns(),
+                this::setDefender_money_warchest,
+                this::setDefender_claims_warchest,
+                wargoalSettings.getDouble("warchest.defender-money-contribution", 0.1),
+                wargoalSettings.getDouble("warchest.defender-claims-contribution", 0.1));
+    }
+
+    public void addAllyToWarChest(Nation nation, WarSide warSide) {
+        var wargoalSettings = UnitedWar.getInstance().getConfig()
+                .getConfigurationSection("war-goal-settings." + getWar_goal().toString().toLowerCase());
+
+        Map<UUID, Double> moneyWarChest = null;
+        Map<UUID, Integer> claimsWarChest = null;
+        Consumer<Map<UUID, Double>> setMoneyWarchest = null;
+        Consumer<Map<UUID, Integer>> setClaimsWarchest = null;
+
+        var moneyContributionRate = wargoalSettings.getDouble("warchest.attacker-money-contribution", 0.1);
+        var claimsContributionRate = wargoalSettings.getDouble("warchest.attacker-claims-contribution", 0.1);
+
+        switch (warSide) {
+            case ATTACKER:
+                moneyWarChest = attacker_money_warchest;
+                claimsWarChest = attacker_claims_warchest;
+                setMoneyWarchest = this::setAttacker_money_warchest;
+                setClaimsWarchest = this::setAttacker_claims_warchest;
+                break;
+            case DEFENDER:
+                moneyWarChest = defender_money_warchest;
+                claimsWarChest = defender_claims_warchest;
+                setMoneyWarchest = this::setDefender_money_warchest;
+                setClaimsWarchest = this::setDefender_claims_warchest;
+                break;
+            default:
+                return;
+        }
+
+        if (moneyWarChest == null || claimsWarChest == null || setMoneyWarchest == null || setClaimsWarchest == null)
+            return;
+
+        var allyTowns = nation.getTowns();
+        for (var town : allyTowns) {
+            double balance = town.getAccount().getCachedBalance(true);
+            double money = Math.round(balance * moneyContributionRate);
+            town.getAccount().withdraw(money, "War contribution to " + getTitle());
+            if (!moneyWarChest.containsKey(town.getUUID())) {
+                moneyWarChest.put(town.getUUID(), money);
+                Logger.log("Withdrawing " + money + "G from town " + town.getName());
+            }
+
+            int bonusBlocks = town.getBonusBlocks();
+            if (bonusBlocks > 0) {
+                int claims = (int) Math.round(bonusBlocks * claimsContributionRate);
+                if (!claimsWarChest.containsKey(town.getUUID())) {
+                    claimsWarChest.put(town.getUUID(), claims);
+                    Logger.log("Reserving " + claims + " claims from town " + town.getName());
+                }
+            }
+        }
+
+        setMoneyWarchest.accept(moneyWarChest);
+        setClaimsWarchest.accept(claimsWarChest);
+    }
+
+    private void buildSideWarChest(
+            Set<UUID> townIds,
+            Consumer<Map<UUID, Double>> setMoneyWarchest,
+            Consumer<Map<UUID, Integer>> setClaimsWarchest,
+            double moneyContributionRate,
+            double claimsContributionRate) {
+        Map<UUID, Double> moneyContributions = new HashMap<>();
+        Map<UUID, Integer> claimsContributions = new HashMap<>();
+
+        for (UUID townId : townIds) {
+            Town town = TownyAPI.getInstance().getTown(townId);
+            if (town == null)
+                continue;
+
+            double balance = town.getAccount().getCachedBalance(true);
+            double money = Math.round(balance * moneyContributionRate);
+            town.getAccount().withdraw(money, "War contribution to " + getTitle());
+            moneyContributions.put(townId, money);
+            Logger.log("Withdrawing " + money + "G from town " + town.getName());
+
+            int bonusBlocks = town.getBonusBlocks();
+            if (bonusBlocks > 0) {
+                int claims = (int) Math.round(bonusBlocks * claimsContributionRate);
+                claimsContributions.put(townId, claims);
+                Logger.log("Reserving " + claims + " claims from town " + town.getName());
+            }
+        }
+
+        setMoneyWarchest.accept(moneyContributions);
+        setClaimsWarchest.accept(claimsContributions);
+    }
+
+    //#endregion
+
+    //#region Player lists
+
+    public void buildPlayerLists() {
+        var attackers = collectResidentsFromTowns(getAttacking_towns(), WarSide.ATTACKER);
+        setAttacking_players(attackers);
+        var defenders = collectResidentsFromTowns(getDefending_towns(), WarSide.DEFENDER);
+        setDefending_players(defenders);
+    }
+
+    private Set<UUID> collectResidentsFromTowns(Set<UUID> townIds, WarSide side) {
+        Set<UUID> residentIds = new HashSet<>();
+        for (UUID townId : townIds) {
+            Town town = TownyAPI.getInstance().getTown(townId);
+            if (town != null) {
+                var militaryRanks = UnitedWar.getInstance().getConfig().getConfigurationSection("military-ranks").getKeys(false);
+                for (Resident resident : town.getResidents()) {
+                    if (residentHasMilitaryRank(resident, militaryRanks))
+                        residentIds.add(resident.getUUID());
+                }
+            }
+        }
+        return residentIds;
+    }
+
+    public boolean residentHasMilitaryRank(Resident resident, Set<String> ranks)
+    {
+        var intersection = new ArrayList<String>(resident.getTownRanks());
+        intersection.retainAll(ranks);
+        return intersection.size() > 0;
+    }
+
+    //#endregion
+
+    //#region Public methods
+
+    public void addAllyToWar(Nation nation, WarSide warSide) {
+        if (warSide == WarSide.ATTACKER) {
+            var attackingTowns = getAttacking_towns();
+            for (var town : nation.getTowns()) {
+                attackingTowns.add(town.getUUID());
+            }
+            setAttacking_towns(attackingTowns);
+        } else if (warSide == WarSide.DEFENDER) {
+            var defendingTowns = getDefending_towns();
+            for (var town : nation.getTowns()) {
+                defendingTowns.add(town.getUUID());
+            }
+            setDefending_towns(defendingTowns);
+        }
+        buildPlayerLists();
+        addAllyToWarChest(nation, warSide);
+        setState_changed(true);
+    }
+
+    public WarSide getPlayerWarSide(UUID playerId) {
+        if (getAttacking_players().contains(playerId) || getAttacking_mercenaries().contains(playerId))
+            return WarSide.ATTACKER;
+        else if (getDefending_players().contains(playerId) || getDefending_mercenaries().contains(playerId))
+            return WarSide.DEFENDER;
+        else
+            return WarSide.NONE;
+    }
+
+    public WarSide getTownWarSide(UUID townId) {
+        if (getAttacking_towns().contains(townId))
+            return WarSide.ATTACKER;
+        else if (getDefending_towns().contains(townId))
+            return WarSide.DEFENDER;
+        else
+            return WarSide.NONE;
+    }
+
+    //#endregion
+
+    //#region Placeholders
+
+    public Map<String, String> getMessagePlaceholders() {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("war-name", getCleanTitle());
+        replacements.put("war-description", getDescription());
+        replacements.put("war-active", getIs_active() ? "§cACTIVE" : getIs_ended() ? "§8ENDED" : "§eWARMUP");
+        replacements.put("attacker", getDeclaring_town_name());
+        replacements.put("defender", getTarget_town_name());
+        replacements.put("attacker-nation",
+                getDeclaring_nation_name() != null ? "(" + getDeclaring_nation_name() + ")" : null);
+        replacements.put("defender-nation",
+                getTarget_nation_name() != null ? "(" + getTarget_nation_name() + ")" : null);
+        replacements.put("war-goal", war_goal.getDisplayName());
+        replacements.put("attacker-score", getAttacker_score().toString());
+        replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
+        replacements.put("defender-score", getDefender_score().toString());
+        replacements.put("defender-score-cap", getDefender_score_cap().toString());
+        replacements.put("war-result", getWar_result().getDisplayName());
+        if (!getIs_active() && !getIs_ended()) {
+            replacements.put("timer-info", "War will start in "
+                    + Formatter.formatDuration(scheduled_begin_time - System.currentTimeMillis()));
+        } else if (getIs_active()) {
+            replacements.put("timer-info",
+                    "War will end in " + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
+        } else {
+            replacements.put("timer-info", "War has ended.");
+        }
+        replacements.put("war-chest-money",
+                String.valueOf(getAttacker_total_money_warchest() + getDefender_total_money_warchest()));
+        replacements.put("war-chest-claims", String.valueOf(getAttacker_total_claims_warchest()
+                + getDefender_total_claims_warchest() + getAdditional_claims_payout()));
+
+        return replacements;
+    }
+
+    //#endregion
+    
+    //#region Getters / setters
 
     public UUID getId() {
         return id;
@@ -623,8 +851,8 @@ public class War implements Identifiable {
         return attacking_players;
     }
 
-    public void setAttacking_players(Set<UUID> attacking_player) {
-        this.attacking_players = attacking_player;
+    public void setAttacking_players(Set<UUID> attacking_players) {
+        this.attacking_players = attacking_players;
     }
 
     public Set<UUID> getDefending_players() {
@@ -643,136 +871,6 @@ public class War implements Identifiable {
         this.state_changed = state_changed;
     }
 
-    //#region War Chests generation
-
-    public void buildWarChests() {
-
-        var wargoalSettings = UnitedWar.getInstance().getConfig()
-                .getConfigurationSection("war-goal-settings." + getWar_goal().toString().toLowerCase());
-
-        buildSideWarChest(
-                getAttacking_towns(),
-                this::setAttacker_money_warchest,
-                this::setAttacker_claims_warchest,
-                wargoalSettings.getDouble("warchest.attacker-money-contribution", 0.1),
-                wargoalSettings.getDouble("warchest.attacker-claims-contribution", 0.1));
-
-        buildSideWarChest(
-                getDefending_towns(),
-                this::setDefender_money_warchest,
-                this::setDefender_claims_warchest,
-                wargoalSettings.getDouble("warchest.defender-money-contribution", 0.1),
-                wargoalSettings.getDouble("warchest.defender-claims-contribution", 0.1));
-    }
-
-    private void buildSideWarChest(
-            Set<UUID> townIds,
-            Consumer<Map<UUID, Double>> setMoneyWarchest,
-            Consumer<Map<UUID, Integer>> setClaimsWarchest,
-            double moneyContributionRate,
-            double claimsContributionRate) {
-        Map<UUID, Double> moneyContributions = new HashMap<>();
-        Map<UUID, Integer> claimsContributions = new HashMap<>();
-
-        for (UUID townId : townIds) {
-            Town town = TownyAPI.getInstance().getTown(townId);
-            if (town == null)
-                continue;
-
-            double balance = town.getAccount().getCachedBalance(true);
-            double money = Math.round(balance * moneyContributionRate);
-            town.getAccount().withdraw(money, "War contribution to " + getTitle());
-            moneyContributions.put(townId, money);
-
-            int bonusBlocks = town.getBonusBlocks();
-            if (bonusBlocks > 0) {
-                int claims = (int) Math.round(bonusBlocks * claimsContributionRate);
-                claimsContributions.put(townId, claims);
-            }
-        }
-
-        setMoneyWarchest.accept(moneyContributions);
-        setClaimsWarchest.accept(claimsContributions);
-    }
-
     //#endregion
-
-    //#region Player lists
-
-    public void buildPlayerLists() {
-        setAttacking_players(collectResidentsFromTowns(getAttacking_towns()));
-        setDefending_players(collectResidentsFromTowns(getDefending_towns()));
-    }
-
-    private Set<UUID> collectResidentsFromTowns(Set<UUID> townIds) {
-        Set<UUID> residentIds = new HashSet<>();
-        for (UUID townId : townIds) {
-            Town town = TownyAPI.getInstance().getTown(townId);
-            if (town != null) {
-                for (Resident resident : town.getResidents()) {
-                    residentIds.add(resident.getUUID());
-                }
-            }
-        }
-        return residentIds;
-    }
-
-    //#endregion
-
-    //#region Public utility methods
-
-    public WarSide getPlayerWarSide(UUID playerId) {
-        if (getAttacking_players().contains(playerId) || getAttacking_mercenaries().contains(playerId))
-            return WarSide.ATTACKER;
-        else if (getDefending_players().contains(playerId) || getDefending_mercenaries().contains(playerId))
-            return WarSide.DEFENDER;
-        else
-            return WarSide.NONE;
-    }
-
-    public WarSide getTownWarSide(UUID townId) {
-        if (getAttacking_towns().contains(townId))
-            return WarSide.ATTACKER;
-        else if (getDefending_towns().contains(townId))
-            return WarSide.DEFENDER;
-        else
-            return WarSide.NONE;
-    }
-
-    //#endregion
-
-    public Map<String, String> getMessagePlaceholders() {
-        Map<String, String> replacements = new HashMap<String, String>();
-        replacements.put("war-name", getCleanTitle());
-        replacements.put("war-description", getDescription());
-        replacements.put("war-active", getIs_active() ? "§cACTIVE" : getIs_ended() ? "§8ENDED" : "§eWARMUP");
-        replacements.put("attacker", getDeclaring_town_name());
-        replacements.put("defender", getTarget_town_name());
-        replacements.put("attacker-nation",
-                getDeclaring_nation_name() != null ? "(" + getDeclaring_nation_name() + ")" : null);
-        replacements.put("defender-nation",
-                getTarget_nation_name() != null ? "(" + getTarget_nation_name() + ")" : null);
-        replacements.put("war-goal", war_goal.getDisplayName());
-        replacements.put("attacker-score", getAttacker_score().toString());
-        replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
-        replacements.put("defender-score", getDefender_score().toString());
-        replacements.put("defender-score-cap", getDefender_score_cap().toString());
-        replacements.put("war-result", getWar_result().getDisplayName());
-        if (!getIs_active() && !getIs_ended()) {
-            replacements.put("timer-info", "War will start in "
-                    + Formatter.formatDuration(scheduled_begin_time - System.currentTimeMillis()));
-        } else if (getIs_active()) {
-            replacements.put("timer-info",
-                    "War will end in " + Formatter.formatDuration(scheduled_end_time - System.currentTimeMillis()));
-        } else {
-            replacements.put("timer-info", "War has ended.");
-        }
-        replacements.put("war-chest-money",
-                String.valueOf(getAttacker_total_money_warchest() + getDefender_total_money_warchest()));
-        replacements.put("war-chest-claims", String.valueOf(getAttacker_total_claims_warchest()
-                + getDefender_total_claims_warchest() + getAdditional_claims_payout()));
-
-        return replacements;
-    }
 
 }
