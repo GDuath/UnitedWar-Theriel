@@ -3,11 +3,14 @@ package org.unitedlands.listeners;
 import java.util.HashMap;
 import java.util.List;
 
+import org.antlr.v4.parse.BlockSetTransformer.topdown_return;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
@@ -118,6 +121,17 @@ public class PlayerSiegeEventListener implements Listener {
         if (enemiesOnline) {
             event.setCancelled(true);
             Messenger.sendMessageTemplate(player, "error-command-disabled", null, true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onCobwebPlace(BlockPlaceEvent event) {
+        if (!(event.getBlock().getType() == Material.COBWEB))
+            return;
+
+        if (isPlayerSubjectToWarZone(event.getPlayer())) {
+            Messenger.sendMessageTemplate(event.getPlayer(), "error-cannot-place-in-warzone", null, true);
+            event.setCancelled(true);
         }
     }
 
