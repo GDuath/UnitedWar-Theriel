@@ -3,7 +3,6 @@ package org.unitedlands.listeners;
 import java.util.HashMap;
 import java.util.List;
 
-import org.antlr.v4.parse.BlockSetTransformer.topdown_return;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,6 +16,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -173,6 +173,19 @@ public class PlayerSiegeEventListener implements Listener {
                 }
             }
         }
+    }
+
+    @EventHandler
+    public void onRipTide(PlayerRiptideEvent event) {
+        var player = (Player) event.getPlayer();
+        if (!isPlayerSubjectToWarZone(player))
+            return;
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            player.setVelocity(new Vector());
+            Messenger.sendMessage(player, "§cYou can't use riptide in war zones!", true);
+        }, 2L);
+
     }
 
     private void handleElytra(Player player, TownBlock targetTownBlock) {
