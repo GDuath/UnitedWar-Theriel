@@ -581,6 +581,7 @@ messages:
   error-command-disabled: "§cYou cannot use this command while enemies are online."
   error-under-min-mobilisation: "§cYour needs at least {min-mobilisation} mobilisation to be able to declare wars."
   error-insufficient-mobilisation: "§cYour town can't afford the mobilisation costs of {costs}."
+  error-cannot-place-in-warzone: "§cYou can't place this block in a war zone during an active war."
 
   immunity-usage: "Usage: /wa immunity <set|clear> <town_name> [seconds]"
   immunity-clear: "Immunity for {town-name} has been cleared."

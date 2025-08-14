@@ -235,6 +235,7 @@ public class WarManager implements Listener {
             var town = TownyAPI.getInstance().getTown(townId);
             if (town != null) {
                 town.setAdminEnabledPVP(true);
+                town.setActiveWar(true);
                 town.save();
             }
         }
@@ -510,6 +511,7 @@ public class WarManager implements Listener {
                 var town = TownyAPI.getInstance().getTown(townId);
                 if (town != null) {
                     town.setAdminEnabledPVP(false);
+                    town.setActiveWar(false);
                     town.save();
                 }
             }

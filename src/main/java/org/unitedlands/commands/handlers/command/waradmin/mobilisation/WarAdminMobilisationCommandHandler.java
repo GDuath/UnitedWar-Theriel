@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.managers.MobilisationManager;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
 
@@ -46,8 +47,18 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
         // /wa mobilisation [Town | Nation] set [Value]
         // /wa mobilisation [Town | Nation] delete
-        if (args.length < 2) {
+        // /wa mobilisation convert
+        if (args.length < 1) {
             Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
+            return;
+        }
+
+        if (args.length == 1)
+        {
+            if (args[0].equalsIgnoreCase("convert"))
+            {
+                plugin.getMobilisationManager().convertWarTokensToMobilisation();
+            }
             return;
         }
 

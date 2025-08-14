@@ -34,6 +34,7 @@ public class UnitedWar extends JavaPlugin {
     private SiegeManager siegeManager;
     private ChunkBackupManager chunkBackupManager;
     private GriefZoneManager griefZoneManager;
+    private MobilisationManager mobilisationManager;
     private TaskScheduler taskScheduler;
     private WarScheduler warScheduler;
 
@@ -72,6 +73,7 @@ public class UnitedWar extends JavaPlugin {
         siegeManager = new SiegeManager(this);
         chunkBackupManager = new ChunkBackupManager(this);
         griefZoneManager = new GriefZoneManager(this);
+        mobilisationManager = new MobilisationManager(this);
     }
 
     private void createSchedulers() {
@@ -129,6 +131,10 @@ public class UnitedWar extends JavaPlugin {
 
     public ChunkBackupManager getChunkBackupManager() {
         return chunkBackupManager;
+    }
+
+    public MobilisationManager getMobilisationManager() {
+        return mobilisationManager;
     }
 
     public TaskScheduler getTaskScheduler() {
