@@ -3,7 +3,8 @@ package org.unitedlands.classes;
 public enum WarGoal {
     SUPERIORITY("Superiority"),
     SKIRMISH("Skirmish"),
-    PLUNDER("Plunder");
+    PLUNDER("Plunder"),
+    CONQUEST("Conquest");
 
     private final String displayName;
 
