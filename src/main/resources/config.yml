@@ -113,7 +113,27 @@ war-goal-settings:
     scorecaps:
       attacker: 30000
       defender: 30000
-
+  conquest:
+    warmup-time: 86400 # in seconds
+    duration: 259200 # in seconds
+    cost: 30 # mobilisation points
+    attacker-call-nation: true
+    attacker-call-allies: false
+    defender-call-nation: true
+    defender-call-allies: true
+    war-lives: 5
+    max-attacker-mercenaries: 5
+    max-defender-mercenaries: 5
+    warchest:
+      attacker-money-contribution: 0.0 # in percentage of town balance
+      defender-money-contribution: 0.0
+      attacker-claims-contribution: 0.25 # in percentage of town bonus claims
+      defender-claims-contribution: 0.25
+      additional-bonus-claims: 20
+    scorecaps:
+      attacker: 30000
+      defender: 30000
+      
 ###################################################
 # +---------------------------------------------+ #
 # |               Score settings                | #
