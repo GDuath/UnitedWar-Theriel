@@ -108,6 +108,8 @@ public class WarManager implements Listener {
             if (warCanBeEnded(war)) {
                 endingWars.add(war);
             }
+            if (war.getState_changed())
+                saveWarToDatabase(war);
         }
         activeWars.removeAll(endingWars);
 
@@ -553,11 +555,12 @@ public class WarManager implements Listener {
                         war.getDefender_score());
 
                 var result = war.getWar_result();
-                Double attackerPayoutRatio = (double)result.getAttackerPayout();
-                Double defenderPayoutRatio = (double)result.getDefenderPayout();;
+                Double attackerPayoutRatio = (double) result.getAttackerPayout();
+                Double defenderPayoutRatio = (double) result.getDefenderPayout();
+                ;
                 WarSide sideToLoseClaims = result.getSideToLoseClaims();
                 Logger.log("sideToLoseClaims: " + sideToLoseClaims.toString());
-                
+
                 var attackerMoneyWarchest = war.getAttacker_total_money_warchest();
                 var defenderMoneyWarchest = war.getDefender_total_money_warchest();
                 var totalMoneyAmount = attackerMoneyWarchest + defenderMoneyWarchest;

@@ -133,6 +133,9 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
             case PLUNDER:
                 handlePlunderWar(player, playerTown, targetTown);
                 break;
+            case CONQUEST:
+                handleConquestWar(player, playerTown, targetTown);
+                break;
             default:
                 Messenger.sendMessageTemplate(sender, "error-war-goal-not-implemented", null, true);
                 break;
@@ -200,6 +203,16 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         createDeclarationBook(player, playerTown, targetTown, WarGoal.PLUNDER);
     }
 
+    private void handleConquestWar(Player player, Town playerTown, Town targetTown) {
+
+        if (targetTown.isNeutral()) {
+            Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
+            return;
+        }
+
+        createDeclarationBook(player, playerTown, targetTown, WarGoal.CONQUEST);
+    }
+
     private void createDeclarationBook(Player player, Town playerTown, Town targetTown, WarGoal warGoal) {
 
         Integer mobilisationCost = plugin.getConfig()
@@ -219,7 +232,6 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
             }
 
             Messenger.sendMessageTemplate(player, "war-book-created", null, true);
-
 
         }).setTitle("§7Creating this war declaration book will cost " + mobilisationCost + " mobilisation. Continue?")
                 .sendTo(player);
