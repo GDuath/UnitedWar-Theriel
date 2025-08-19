@@ -67,6 +67,11 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
             var town = towny.getTown(townId);
             if (town != null) {
                 String townString = town.getName();
+                if(plugin.getSiegeManager().isTownOccupied(townId)) {
+                    townString = "§r§7§m" + townString;
+                } else {
+                    townString = "§r§c" + townString;
+                }
                 if (town.hasNation()) {
                     var tag = town.getNationOrNull().getTag();
                     if (tag == null || tag.isEmpty()) {
@@ -81,6 +86,11 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
             var town = towny.getTown(townId);
             if (town != null) {
                 String townString = town.getName();
+                if(plugin.getSiegeManager().isTownOccupied(townId)) {
+                    townString = "§r§7§m" + townString;
+                } else {
+                    townString = "§r§a" + townString;
+                }
                 if (town.hasNation()) {
                     var tag = town.getNationOrNull().getTag();
                     if (tag == null || tag.isEmpty()) {
@@ -107,7 +117,7 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
         replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
         replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
 
-        Messenger.sendMessageListTemplate(((Player) sender), "war-participants", replacements, false);
+        Messenger.sendMessageListTemplate(sender, "war-participants", replacements, false);
 
     }
 
