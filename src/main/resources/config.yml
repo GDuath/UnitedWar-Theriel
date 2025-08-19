@@ -133,7 +133,7 @@ war-goal-settings:
     scorecaps:
       attacker: 30000
       defender: 30000
-      
+
 ###################################################
 # +---------------------------------------------+ #
 # |               Score settings                | #
@@ -405,7 +405,7 @@ messages:
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§f§l{timer-info}"
     - "§c§m+|✦                                 +✦+                                 |✦+"
-  war-info: 
+  war-info:
     - "§c§m+|✦                          §r§c§l[§f§l War Info §c§l]§c§m                           |✦+"
     - "§6§l{war-name}"
     - "§7{war-description}"
@@ -414,7 +414,7 @@ messages:
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§f§l{timer-info}"
     - "§c§m+|✦                                 +✦+                                 |✦+"
-  war-ended: 
+  war-ended:
     - "§c§m+|✦                         §r§c§l[§f§l War Ended! §c§l]§c§m                         |✦+"
     - "§7The war §6§l{war-name} §r§7has ended with the following result:"
     - "§e{war-result}"
@@ -422,7 +422,7 @@ messages:
     - "§f§lDefender: §r{defender} | 🗡 {defender-score} / {defender-score-cap}"
     - "§f§lWar Goal: §r{war-goal} | §lWar Chest: §r{war-chest-money}G / {war-chest-claims} claims"
     - "§c§m+|✦                                 +✦+                                 |✦+"
-  war-participants: 
+  war-participants:
     - "§c§m+|✦                          §r§c§l[§f§l War Info §c§l]§c§m                           |✦+"
     - "§6§l{war-name}"
     - "§7{war-description}"
@@ -448,15 +448,15 @@ messages:
   # |                War Events                   | #
   # +---------------------------------------------+ #
 
-  event-info-no-event: "§7There is currently no event scheduled or active." 
-  event-info-scheduled: 
+  event-info-no-event: "§7There is currently no event scheduled or active."
+  event-info-scheduled:
     - "§c§m+|✦                         §r§c§l[§f§l War Event §c§l]§c§m                          |✦+"
     - "§7A new war event will will begin soon! It will have the following effects:"
     - "§6§l{event-name}"
     - "§f§o{event-description}"
     - "§7{timer-info}"
     - "§c§m+|✦                                 +✦+                                 |✦+"
-  event-info-active: 
+  event-info-active:
     - "§c§m+|✦                         §r§c§l[§f§l War Event §c§l]§c§m                          |✦+"
     - "§6§l{event-name}"
     - "§f§o{event-description}"
@@ -525,7 +525,7 @@ messages:
   # +---------------------------------------------+ #
   # |                  War Books                  | #
   # +---------------------------------------------+ #
-  
+
   war-book-created: "§bYou have created a war declaration book. Edit it to add your reasons for the war. The name of the signed book will be the name of the war. If you wish to set a longer war name, rename this book at an anvil after signing."
   war-book-name: "War against "
   war-book-content: "Replace this page with a brief description of your war reasons.\n\n"
@@ -581,6 +581,7 @@ messages:
   error-mercenary-remove-not-mayor: "§cOnly mayors and co-mayors are allowed to remove mercenaries from a war."
   error-mercenary-remove-war-over: "§cYou cannot remove mercenaries from a war that is already over."
   error-mercenary-remove-not-in-war: "§eThat player is not a mercenary in this war."
+  error-mercenary-remove-is-mercenary: "§eYou can't remove a mercenary as a mercenary :facepalm:"
   mercenary-acceptinvite-usage: "Usage: /t war mercenary accept <war name>"
   error-merc-invite-not-found: "§cYou don't have any pending invitations."
   war-debug-create-usage: "Usage: /wd <war_name> <caller_nation> <target_nation>"
@@ -624,5 +625,5 @@ discord:
   webhook_url: # the webhook url
   ping-role-id: # the role id to ping
   war-declaration-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"{war-description} \",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Declaration: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n}"
-  war-started-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Started: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
-  war-ended-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"The war has ended with the following result: **{war-result}** <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"Attacker final score\",\n \"value\": \"🗡 {attacker-score} / {attacker-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender final score\",\n \"value\": \"🗡 {defender-score} / {defender-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Ended: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"  
+  war-started-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"{war-description} <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Started: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"
+  war-ended-embed: "{\n \"content\": \"{ping-role}\",\n \"embeds\": [\n {\n \"description\": \"The war has ended with the following result: **{war-result}** <@&1065277203182538783>\",\n \"fields\": [\n {\n \"name\": \"Attacker\",\n \"value\": \"{attacker} {attacker-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender\",\n \"value\": \"{defender} {defender-nation}\",\n \"inline\": true\n },\n {\n \"name\": \"War Goal\",\n \"value\": \"{war-goal}\",\n \"inline\": true\n },\n {\n \"name\": \"Attacker final score\",\n \"value\": \"🗡 {attacker-score} / {attacker-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"Defender final score\",\n \"value\": \"🗡 {defender-score} / {defender-score-cap}\",\n \"inline\": true\n },\n {\n \"name\": \"War Chest\",\n \"value\": \"{war-chest-money}G / {war-chest-claims} claims\",\n \"inline\": true\n }\n ],\n \"author\": {\n \"name\": \"UnitedWar\"\n },\n \"title\": \"War Ended: {war-name}\",\n \"color\": 9247001,\n \"footer\": {\n \"text\": \"{timer-info}\"\n }\n }\n ]\n }"
