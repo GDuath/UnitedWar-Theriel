@@ -94,7 +94,7 @@ public class GriefZoneManager implements Listener {
 
                         griefZones.add(griefZone);
 
-                        if (townBlockType == "warcamp")
+                        if (townBlockType.equals("warcamp"))
                             addWarcampBlock(townBlock);
                     }
                 }
@@ -254,7 +254,8 @@ public class GriefZoneManager implements Listener {
     public void addWarcampBlock(TownBlock townBlock) {
         warCamps.putIfAbsent(townBlock.getTownOrNull().getUUID(), townBlock);
     }
-        public TownBlock getWarcampBlock(UUID townId) {
+
+    public TownBlock getWarcampBlock(UUID townId) {
         return warCamps.getOrDefault(townId, null);
     }
 

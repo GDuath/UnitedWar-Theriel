@@ -57,6 +57,7 @@ public class WarManager implements Listener {
             for (War war : wars) {
                 if (war.getIs_active()) {
                     activeWars.add(war);
+                    forcePvpInTowns(war);
                     (new WarStartEvent(war)).callEvent();
                 } else {
                     pendingWars.add(war);
@@ -93,6 +94,8 @@ public class WarManager implements Listener {
             if (warCanBeStarted(war)) {
                 startingWars.add(war);
             }
+            if (war.getState_changed())
+                saveWarToDatabase(war);
         }
         pendingWars.removeAll(startingWars);
         activeWars.addAll(startingWars);
