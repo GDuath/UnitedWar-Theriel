@@ -14,6 +14,7 @@ import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+import org.unitedlands.util.WarLivesMetadata;
 
 public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
 
@@ -67,6 +68,11 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
             var town = towny.getTown(townId);
             if (town != null) {
                 String townString = town.getName();
+                if(plugin.getSiegeManager().isTownOccupied(townId)) {
+                    townString = "§r§7§m" + townString;
+                } else {
+                    townString = "§r§c" + townString;
+                }
                 if (town.hasNation()) {
                     var tag = town.getNationOrNull().getTag();
                     if (tag == null || tag.isEmpty()) {
@@ -81,6 +87,11 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
             var town = towny.getTown(townId);
             if (town != null) {
                 String townString = town.getName();
+                if(plugin.getSiegeManager().isTownOccupied(townId)) {
+                    townString = "§r§7§m" + townString;
+                } else {
+                    townString = "§r§a" + townString;
+                }
                 if (town.hasNation()) {
                     var tag = town.getNationOrNull().getTag();
                     if (tag == null || tag.isEmpty()) {
@@ -94,20 +105,37 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
 
         for (UUID townId : war.getAttacking_mercenaries()) {
             var resident = towny.getResident(townId);
-            if (resident != null)
-                attackerMercenaryNames.add(resident.getName());
+
+            if (resident != null) {
+                String name = resident.getName();
+                int lives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+                if(lives < 1) {
+                    name = "§r§7§m" + name;
+                } else {
+                    name = "§r§c" + name;
+                }
+                attackerMercenaryNames.add(name);
+            }
         }
         for (UUID townId : war.getDefending_mercenaries()) {
             var resident = towny.getResident(townId);
-            if (resident != null)
-                defenderMercenaryNames.add(resident.getName());
+            if (resident != null) {
+                String name = resident.getName();
+                int lives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+                if(lives < 1) {
+                    name = "§r§7§m" + name;
+                } else {
+                    name = "§r§a" + name;
+                }
+                defenderMercenaryNames.add(name);
+            }
         }
         replacements.put("attacking-towns", String.join(", ", attackerTownNames));
         replacements.put("defending-towns", String.join(", ", defenderTownNames));
         replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
         replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
 
-        Messenger.sendMessageListTemplate(((Player) sender), "war-participants", replacements, false);
+        Messenger.sendMessageListTemplate(sender, "war-participants", replacements, false);
 
     }
 
