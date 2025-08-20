@@ -14,6 +14,7 @@ import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+import org.unitedlands.util.WarLivesMetadata;
 
 public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
 
@@ -104,13 +105,30 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
 
         for (UUID townId : war.getAttacking_mercenaries()) {
             var resident = towny.getResident(townId);
-            if (resident != null)
-                attackerMercenaryNames.add(resident.getName());
+
+            if (resident != null) {
+                String name = resident.getName();
+                int lives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+                if(lives < 1) {
+                    name = "§r§7§m" + name;
+                } else {
+                    name = "§r§c" + name;
+                }
+                attackerMercenaryNames.add(name);
+            }
         }
         for (UUID townId : war.getDefending_mercenaries()) {
             var resident = towny.getResident(townId);
-            if (resident != null)
-                defenderMercenaryNames.add(resident.getName());
+            if (resident != null) {
+                String name = resident.getName();
+                int lives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
+                if(lives < 1) {
+                    name = "§r§7§m" + name;
+                } else {
+                    name = "§r§a" + name;
+                }
+                defenderMercenaryNames.add(name);
+            }
         }
         replacements.put("attacking-towns", String.join(", ", attackerTownNames));
         replacements.put("defending-towns", String.join(", ", defenderTownNames));
