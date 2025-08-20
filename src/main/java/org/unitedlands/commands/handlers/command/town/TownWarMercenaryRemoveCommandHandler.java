@@ -1,9 +1,6 @@
 package org.unitedlands.commands.handlers.command.town;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -17,6 +14,8 @@ import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.Resident;
+import org.unitedlands.util.WarLivesMetadata;
 
 public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
 
@@ -63,12 +62,12 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessageTemplate((Player)sender, "mercenary-remove-usage", null, true);
+            Messenger.sendMessageTemplate(sender, "mercenary-remove-usage", null, true);
             return;
         }
 
-        var player = (Player) sender;
-        var resident = TownyAPI.getInstance().getResident(player);
+        Player player = (Player) sender;
+        Resident resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
             Messenger.sendMessageTemplate(sender, "error-resident-data", null, true);
             return;
@@ -97,13 +96,15 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
         }
 
         OfflinePlayer mercenary = Bukkit.getOfflinePlayer(args[1]);
-        if (mercenary == null) {
-            Messenger.sendMessage(player, "§cPlayer " + args[1] + " doesn't exist.", true);
+
+        Set<UUID> attackingMercenaryList = war.getAttacking_mercenaries();
+        Set<UUID> defendingMercenaryList = war.getDefending_mercenaries();
+
+        if(attackingMercenaryList.contains(player.getUniqueId())
+        || defendingMercenaryList.contains(player.getUniqueId())) {
+            Messenger.sendMessageTemplate(sender, "error-mercenary-remove-is-mercenary", null, true);
             return;
         }
-
-        var attackingMercenaryList = war.getAttacking_mercenaries();
-        var defendingMercenaryList = war.getDefending_mercenaries();
 
         if (!attackingMercenaryList.contains(mercenary.getUniqueId())
                 && !defendingMercenaryList.contains(mercenary.getUniqueId())) {
@@ -111,15 +112,10 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        if (playerWarSide == WarSide.ATTACKER) {
-            attackingMercenaryList.remove(mercenary.getUniqueId());
-            war.setAttacking_mercenaries(attackingMercenaryList);
-            war.setState_changed(true);
-        } else if (playerWarSide == WarSide.DEFENDER) {
-            defendingMercenaryList.remove(mercenary.getUniqueId());
-            war.setDefending_mercenaries(defendingMercenaryList);
-            war.setState_changed(true);
-        }
+        Resident mercRes = TownyAPI.getInstance().getResident(mercenary);
+        UUID warId = war.getId();
+
+        WarLivesMetadata.setWarLivesMetaData(mercRes, warId, 0);
 
         Messenger.sendMessageTemplate(sender,"mercenary-remove-success", Map.of("mercenary-name",mercenary.getName()), true);
 
