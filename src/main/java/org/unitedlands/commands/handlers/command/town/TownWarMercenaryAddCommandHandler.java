@@ -1,8 +1,6 @@
 package org.unitedlands.commands.handlers.command.town;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -15,6 +13,7 @@ import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.Resident;
 
 public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
 
@@ -45,12 +44,12 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessageTemplate((Player) sender, "mercenary-add-usage", null, true);
+            Messenger.sendMessageTemplate(sender, "mercenary-add-usage", null, true);
             return;
         }
 
-        var player = (Player) sender;
-        var resident = TownyAPI.getInstance().getResident(player);
+        Player player = (Player) sender;
+        Resident resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
             Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
             return;
@@ -78,8 +77,8 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        Integer maxMercenaryCount = 0;
-        var currentMercenaryCount = 0;
+        int maxMercenaryCount = 0;
+        int currentMercenaryCount = 0;
         if (playerWarSide == WarSide.ATTACKER) {
             maxMercenaryCount = plugin.getConfig().getInt(
                     "war-goal-settings." + war.getWar_goal().toString().toLowerCase() + ".max-attacker-mercenaries");
@@ -102,16 +101,25 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
         if (mercenary == player) {
-            Messenger.sendMessageTemplate((Player) sender, "error-add-mercenary-is-resident", null, true);
+            Messenger.sendMessageTemplate(sender, "error-add-mercenary-is-resident", null, true);
             return;
         }
 
-        var attackingMercenaryList = war.getAttacking_mercenaries();
-        var defendingMercenaryList = war.getDefending_mercenaries();
+        Set<UUID> attackingMercenaryList = war.getAttacking_mercenaries();
+        Set<UUID> defendingMercenaryList = war.getDefending_mercenaries();
 
         if (attackingMercenaryList.contains(mercenary.getUniqueId())
                 || defendingMercenaryList.contains(mercenary.getUniqueId())) {
             Messenger.sendMessageTemplate(sender, "error-add-mercenary-already-added", null, true);
+            return;
+        }
+
+        Set<UUID> attackingPlayerList = war.getAttacking_players();
+        Set<UUID> defendingPlayerList = war.getDefending_players();
+
+        if (attackingPlayerList.contains(mercenary.getUniqueId())
+                || defendingPlayerList.contains(mercenary.getUniqueId())) {
+            Messenger.sendMessageTemplate(sender, "error-add-mercenary-is-resident", null, true);
             return;
         }
 
