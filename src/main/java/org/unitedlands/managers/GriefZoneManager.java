@@ -1,11 +1,13 @@
 package org.unitedlands.managers;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -17,8 +19,8 @@ import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.GriefZone;
 import org.unitedlands.events.WarEndEvent;
-import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.listeners.GriefZoneBlockDropListener;
+import org.unitedlands.models.War;
 import org.unitedlands.util.Logger;
 
 import com.palmergames.bukkit.towny.Towny;
@@ -45,69 +47,163 @@ public class GriefZoneManager implements Listener {
         this.griefZoneBlockDropListener = new GriefZoneBlockDropListener();
     }
 
-    public void registerGriefZonesOnWarStart(Set<UUID> townIds) {
+    // public void registerGriefZonesOnWarStart(Set<UUID> townIds) {
+
+    //     // Do this task on a different thread, since towns might have thousands of town blocks
+    //     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+
+    //         ConfigurationSection griefSettings = plugin.getConfig().getConfigurationSection("grief-zone-settings");
+    //         Set<String> griefZoneTypes = griefSettings.getKeys(false);
+
+    //         for (UUID id : townIds) {
+    //             Town town = TownyAPI.getInstance().getTown(id);
+    //             if (town == null)
+    //                 continue;
+
+    //             // Cycle all town blocks to find the ones which are of one of the types defined as 
+    //             // grief zone blocks (e. g. fortress, warcamp...)
+    //             for (TownBlock townBlock : town.getTownBlocks()) {
+    //                 String townBlockType = townBlock.getType().getName();
+    //                 if (griefZoneTypes.contains(townBlockType)) {
+
+    //                     // The zone might have already been registered in another war. Don't
+    //                     // register it again.
+    //                     if (isGriefZoneAlreadyRegistered(townBlock.getCoord()))
+    //                         continue;
+
+    //                     int griefZoneRadius = griefSettings.getInt(townBlockType + ".radius", 0);
+
+    //                     GriefZone griefZone = new GriefZone();
+    //                     griefZone.setTownId(id);
+    //                     griefZone.setType(townBlockType);
+    //                     griefZone.setWorld(townBlock.getWorldCoord().getWorldName());
+    //                     griefZone.setCenterTownBlockCoord(townBlock.getWorldCoord());
+
+    //                     // Get the town blocks around the grief zone as defined by the zone radius of this type
+    //                     var surroundingTownBlocks = getTownBlocksInRadius(townBlock, griefZoneRadius);
+    //                     if (!surroundingTownBlocks.isEmpty()) {
+    //                         // Only include town blocks that belong to the same town as the grief zone block, not e.g.
+    //                         // war camps that have been placed adjacently
+    //                         var validTownBlocks = new HashSet<TownBlock>();
+    //                         for (var surroundingTownBlock : surroundingTownBlocks) {
+    //                             if (surroundingTownBlock.getTownOrNull() != town)
+    //                                 continue;
+    //                             validTownBlocks.add(surroundingTownBlock);
+    //                         }
+    //                         griefZone.setTownBlockCoords(
+    //                                 validTownBlocks.stream().map(TownBlock::getWorldCoord).collect(Collectors.toSet()));
+    //                     }
+
+    //                     griefZones.add(griefZone);
+
+    //                     if (townBlockType.equals("warcamp"))
+    //                         addWarcampBlock(townBlock);
+    //                 }
+    //             }
+
+    //             createWarStartTownSnapshots(id);
+    //             if (plugin.getSiegeManager().isSiegeEnabled(town.getUUID())) {
+    //                 toggleGriefing(id, "on");
+    //             } else {
+    //                 toggleGriefing(id, "off");
+    //             }
+    //         }
+    //     });
+
+    // }
+
+    public CompletableFuture<Void> registerGriefZonesOnWarStart(Set<UUID> townIds) {
 
         // Do this task on a different thread, since towns might have thousands of town blocks
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
 
+        CompletableFuture<Void> resultFuture = new CompletableFuture<>();
+        CompletableFuture.supplyAsync(() -> {
             ConfigurationSection griefSettings = plugin.getConfig().getConfigurationSection("grief-zone-settings");
             Set<String> griefZoneTypes = griefSettings.getKeys(false);
+
+            List<GriefZone> newZones = new ArrayList<>();
+            Map<UUID, Boolean> griefingToggles = new HashMap<>();
+            Set<WorldCoord> warcampCoords = new HashSet<>();
 
             for (UUID id : townIds) {
                 Town town = TownyAPI.getInstance().getTown(id);
                 if (town == null)
                     continue;
 
-                // Cycle all town blocks to find the ones which are of one of the types defined as 
-                // grief zone blocks (e. g. fortress, warcamp...)
                 for (TownBlock townBlock : town.getTownBlocks()) {
                     String townBlockType = townBlock.getType().getName();
-                    if (griefZoneTypes.contains(townBlockType)) {
+                    if (!griefZoneTypes.contains(townBlockType))
+                        continue;
 
-                        // The zone might have already been registered in another war. Don't
-                        // register it again.
-                        if (isGriefZoneAlreadyRegistered(townBlock.getCoord()))
-                            continue;
+                    if (isGriefZoneAlreadyRegistered(townBlock.getCoord()))
+                        continue;
 
-                        int griefZoneRadius = griefSettings.getInt(townBlockType + ".radius", 0);
+                    int griefZoneRadius = griefSettings.getInt(townBlockType + ".radius", 0);
 
-                        GriefZone griefZone = new GriefZone();
-                        griefZone.setTownId(id);
-                        griefZone.setType(townBlockType);
-                        griefZone.setWorld(townBlock.getWorldCoord().getWorldName());
-                        griefZone.setCenterTownBlockCoord(townBlock.getWorldCoord());
+                    GriefZone griefZone = new GriefZone();
+                    griefZone.setTownId(id);
+                    griefZone.setType(townBlockType);
+                    griefZone.setWorld(townBlock.getWorldCoord().getWorldName());
+                    griefZone.setCenterTownBlockCoord(townBlock.getWorldCoord());
 
-                        // Get the town blocks around the grief zone as defined by the zone radius of this type
-                        var surroundingTownBlocks = getTownBlocksInRadius(townBlock, griefZoneRadius);
-                        if (!surroundingTownBlocks.isEmpty()) {
-                            // Only include town blocks that belong to the same town as the grief zone block, not e.g.
-                            // war camps that have been placed adjacently
-                            var validTownBlocks = new HashSet<TownBlock>();
-                            for (var surroundingTownBlock : surroundingTownBlocks) {
-                                if (surroundingTownBlock.getTownOrNull() != town)
-                                    continue;
-                                validTownBlocks.add(surroundingTownBlock);
-                            }
-                            griefZone.setTownBlockCoords(
-                                    validTownBlocks.stream().map(TownBlock::getWorldCoord).collect(Collectors.toSet()));
-                        }
+                    var surroundingTownBlocks = getTownBlocksInRadius(townBlock, griefZoneRadius);
+                    if (!surroundingTownBlocks.isEmpty()) {
+                        Set<WorldCoord> validCoords = surroundingTownBlocks.stream()
+                                .filter(tb -> tb.getTownOrNull() == town)
+                                .map(TownBlock::getWorldCoord)
+                                .collect(Collectors.toSet());
+                        griefZone.setTownBlockCoords(validCoords);
+                    }
 
-                        griefZones.add(griefZone);
+                    newZones.add(griefZone);
 
-                        if (townBlockType.equals("warcamp"))
-                            addWarcampBlock(townBlock);
+                    if (townBlockType.equals("warcamp")) {
+                        warcampCoords.add(townBlock.getWorldCoord());
                     }
                 }
 
-                createWarStartTownSnapshots(id);
-                if (plugin.getSiegeManager().isSiegeEnabled(town.getUUID())) {
-                    toggleGriefing(id, "on");
-                } else {
-                    toggleGriefing(id, "off");
-                }
+                // Just store toggle decision
+                boolean siegeEnabled = plugin.getSiegeManager().isSiegeEnabled(town.getUUID());
+                griefingToggles.put(id, siegeEnabled);
             }
+
+            return new Result(newZones, griefingToggles, warcampCoords);
+        }).thenAccept(result -> {
+
+            // Run on main thread
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    // Apply zones
+                    for (GriefZone zone : result.newZones) {
+                        griefZones.add(zone);
+                    }
+
+                    // Add warcamp blocks
+                    for (WorldCoord coord : result.warcampCoords) {
+                        TownBlock block = TownyAPI.getInstance().getTownBlock(coord);
+                        if (block != null) {
+                            addWarcampBlock(block);
+                        }
+                    }
+
+                    // Snapshots + toggle griefing
+                    for (Map.Entry<UUID, Boolean> entry : result.griefingToggles.entrySet()) {
+                        UUID townId = entry.getKey();
+                        createWarStartTownSnapshots(townId);
+                        toggleGriefing(townId, entry.getValue() ? "on" : "off");
+                    }
+
+                    resultFuture.complete(null); // ✅ only complete after sync work finishes
+                } catch (Exception ex) {
+                    resultFuture.completeExceptionally(ex);
+                }
+            });
+        }).exceptionally(ex -> {
+            resultFuture.completeExceptionally(ex);
+            return null;
         });
 
+        return resultFuture;
     }
 
     public void createWarStartTownSnapshots(UUID townId) {
@@ -192,6 +288,7 @@ public class GriefZoneManager implements Listener {
 
     public void toggleGriefing(UUID townId, String toggle) {
 
+        Logger.log("Toggling grief zone for " + townId + " " + toggle);
         List<GriefZone> townGriefZones = griefZones.stream().filter(zone -> zone.getTownId().equals(townId))
                 .collect(Collectors.toList());
         ConfigurationSection griefSettings = plugin.getConfig().getConfigurationSection("grief-zone-settings");
@@ -268,15 +365,16 @@ public class GriefZoneManager implements Listener {
         return false;
     }
 
-    @EventHandler
-    public void onWarStart(WarStartEvent event) {
+    public void doWarStart(War war) {
         Set<UUID> townIds = new HashSet<>();
-        townIds.addAll(event.getWar().getAttacking_towns());
-        townIds.addAll(event.getWar().getDefending_towns());
+        townIds.addAll(war.getAttacking_towns());
+        townIds.addAll(war.getDefending_towns());
 
         registerGriefZonesOnWarStart(townIds);
+        registerListeners();
+    }
 
-        //Only start tracking events while a war is going on
+    public void registerListeners() {
         if (!listenersRegistered) {
             Bukkit.getPluginManager().registerEvents(griefZoneBlockDropListener, plugin);
             listenersRegistered = true;
@@ -315,5 +413,21 @@ public class GriefZoneManager implements Listener {
         griefZones.removeAll(townGriefZones);
         warCamps.remove(townId);
     }
+
+    //#region Async DTO to carry async results back to sync
+
+    private static class Result {
+        final List<GriefZone> newZones;
+        final Map<UUID, Boolean> griefingToggles;
+        final Set<WorldCoord> warcampCoords;
+
+        Result(List<GriefZone> newZones, Map<UUID, Boolean> griefingToggles, Set<WorldCoord> warcampCoords) {
+            this.newZones = newZones;
+            this.griefingToggles = griefingToggles;
+            this.warcampCoords = warcampCoords;
+        }
+    }
+
+    //#endregion
 
 }

@@ -425,11 +425,16 @@ messages:
   war-participants:
     - "§c§m+|✦                          §r§c§l[§f§l War Info §c§l]§c§m                           |✦+"
     - "§6§l{war-name}"
-    - "§7{war-description}"
     - "§c§lAttacking towns: §r§c{attacking-towns}"
     - "§4§lAttacking mercenaries: §r§4{attacking-mercs}"
     - "§a§lDefending towns: §r§a{defending-towns}"
     - "§2§lDefending mercenaries: §r§2{defending-mercs}"
+    - "§c§m+|✦                                 +✦+                                 |✦+"
+  war-players:
+    - "§c§m+|✦                          §r§c§l[§f§l War Info §c§l]§c§m                           |✦+"
+    - "§6§l{war-name}"
+    - "§c§lAttacking players: {attacking-players}"
+    - "§a§lDefending players: §r§a{defending-players}"
     - "§c§m+|✦                                 +✦+                                 |✦+"
   town-captured: "§6§l{war-name}§r§f: The town of {town-name} succumbed to the siege of the attacking armies and was captured!"
   resident-nation-joined-war: "§bYour nation has joined the war!"
@@ -468,6 +473,7 @@ messages:
     - "§f§o{event-description}"
     - "§7This event has now ended and all effects have been removed."
     - "§c§m+|✦                                 +✦+                                 |✦+"
+  event-siege-suspended: "§6Due to an ongoing war event, sieged are currently suspended. Check \"/t war event\" for details."
 
   # +---------------------------------------------+ #
   # |               Mobilisation                  | #

@@ -6,7 +6,7 @@
 
   <groupId>org.unitedlands</groupId>
   <artifactId>UnitedWar</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.5</version>
   <name>UnitedWar</name>
 
   <properties>

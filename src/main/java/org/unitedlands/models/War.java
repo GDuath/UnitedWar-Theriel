@@ -249,18 +249,22 @@ public class War implements Identifiable {
         for (UUID townId : townIds) {
             Town town = TownyAPI.getInstance().getTown(townId);
             if (town != null) {
-                var militaryRanks = UnitedWar.getInstance().getConfig().getConfigurationSection("military-ranks").getKeys(false);
+                var militaryRanks = UnitedWar.getInstance().getConfig().getConfigurationSection("military-ranks")
+                        .getKeys(false);
                 for (Resident resident : town.getResidents()) {
-                    if (residentHasMilitaryRank(resident, militaryRanks))
-                        residentIds.add(resident.getUUID());
+                    if (!residentHasMilitaryRank(resident, militaryRanks))
+                        continue;
+                    if (UnitedWar.getInstance().getSiegeManager().isTownOccupied(townId))
+                        continue;
+                        
+                    residentIds.add(resident.getUUID());
                 }
             }
         }
         return residentIds;
     }
 
-    public boolean residentHasMilitaryRank(Resident resident, Set<String> ranks)
-    {
+    public boolean residentHasMilitaryRank(Resident resident, Set<String> ranks) {
         var intersection = new ArrayList<String>(resident.getTownRanks());
         intersection.retainAll(ranks);
         return intersection.size() > 0;
@@ -346,7 +350,7 @@ public class War implements Identifiable {
     }
 
     //#endregion
-    
+
     //#region Getters / setters
 
     public UUID getId() {

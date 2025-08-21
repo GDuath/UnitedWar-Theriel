@@ -1,7 +1,5 @@
 package org.unitedlands.listeners;
 
-import com.palmergames.bukkit.towny.object.Resident;
-
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
@@ -72,8 +70,8 @@ public class PlayerDeathListener implements Listener {
             return;
 
         // Get the killer's and victim's military ranks
-        String victimMilitaryRank = getMilitaryRank(victimRes);
-        String killerMilitaryRank = getMilitaryRank(killerRes);
+        String victimMilitaryRank = plugin.getWarManager().getMilitaryRank(victimRes);
+        String killerMilitaryRank = plugin.getWarManager().getMilitaryRank(killerRes);
 
         // Skip if the killer is a civilian
         if (killerMilitaryRank.equals("default")) {
@@ -232,16 +230,5 @@ public class PlayerDeathListener implements Listener {
         return killer;
     }
 
-    private String getMilitaryRank(Resident resident) {
-        var ranks = plugin.getWarManager().getMilitaryRanks();
-        var townRanks = resident.getTownRanks();
-        var nationRanks = resident.getNationRanks();
-        for (var level : ranks.keySet()) {
-            for (var rank : ranks.get(level)) {
-                if (townRanks.contains(rank) || nationRanks.contains(rank))
-                    return rank;
-            }
-        }
-        return "default";
-    }
+
 }

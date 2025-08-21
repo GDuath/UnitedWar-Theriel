@@ -130,10 +130,10 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler {
                 defenderMercenaryNames.add(name);
             }
         }
-        replacements.put("attacking-towns", String.join(", ", attackerTownNames));
-        replacements.put("defending-towns", String.join(", ", defenderTownNames));
-        replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
-        replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
+        replacements.put("attacking-towns", String.join("§r, ", attackerTownNames));
+        replacements.put("defending-towns", String.join("§r, ", defenderTownNames));
+        replacements.put("attacking-mercs", String.join("§r, ", attackerMercenaryNames));
+        replacements.put("defending-mercs", String.join("§r, ", defenderMercenaryNames));
 
         Messenger.sendMessageListTemplate(sender, "war-participants", replacements, false);
 

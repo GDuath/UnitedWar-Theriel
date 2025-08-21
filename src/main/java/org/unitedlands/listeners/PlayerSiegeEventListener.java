@@ -1,7 +1,7 @@
 package org.unitedlands.listeners;
 
-import java.util.HashMap;
 import java.util.List;
+
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -198,16 +198,17 @@ public class PlayerSiegeEventListener implements Listener {
         ItemStack chestplate = player.getInventory().getChestplate();
 
         if (chestplate != null && chestplate.getType() == Material.ELYTRA) {
-            player.getInventory().setChestplate(null);
+
+            //player.getInventory().setChestplate(null);
             player.setVelocity(new Vector());
 
-            HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(chestplate);
-            for (ItemStack leftover : leftovers.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), leftover);
-            }
+            // HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(chestplate);
+            // for (ItemStack leftover : leftovers.values()) {
+            //     player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+            // }
 
             Messenger.sendMessage(player,
-                    "§cElytras are disabled in warzones. Your elytra has been removed and placed in your inventory.",
+                    "§cElytras are disabled in warzones.",
                     true);
         }
     }
