@@ -127,19 +127,21 @@ public class SiegeManager implements Listener {
 
         for (UUID townId : towns) {
             
+            boolean newTownStatus = newStatus;
+
             if (isTownOccupied(townId)) {
-                newStatus = false;
+                newTownStatus = false;
             }
 
             var currentStatus = siegeEnabled.computeIfAbsent(townId, k -> true);
-            if (!currentStatus.equals(newStatus)) {
-                siegeEnabled.put(townId, newStatus);
+            if (!currentStatus.equals(newTownStatus)) {
+                siegeEnabled.put(townId, newTownStatus);
 
                 var town = TownyAPI.getInstance().getTown(townId);
                 if (town == null)
                     continue;
 
-                if (newStatus == false) {
+                if (newTownStatus == false) {
                     plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "off");
                 } else {
                     plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "on");

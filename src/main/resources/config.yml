@@ -6,6 +6,7 @@
 
 # CAUTION! Developer mode will drop all database tables on startup. DO NOT USE IN PRODUCTION.
 developer-mode: true
+debug-output: true
 
 # Database connection settings.
 mysql:
