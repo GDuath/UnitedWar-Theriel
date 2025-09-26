@@ -247,6 +247,8 @@ public class WarEventManager {
                     if (currentTime >= currentEvent.getScheduledStartTime()
                             && currentTime < currentEvent.getScheduledEndTime()) {
                         currentEvent.setActive(true);
+                        Bukkit.getPluginManager().registerEvents((Listener) currentEvent, plugin);
+                        Logger.log("Registered listeners for event: " + currentEvent.getDisplayname());
                     } else {
                         removeCurrentEvent();
                     }
@@ -260,7 +262,6 @@ public class WarEventManager {
             Logger.logError("Failed to load war event record: " + ex.getMessage());
             return null;
         });
-        ;
     }
 
     private void saveEventRecord() {

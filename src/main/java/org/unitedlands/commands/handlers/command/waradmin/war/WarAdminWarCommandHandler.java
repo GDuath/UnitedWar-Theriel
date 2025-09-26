@@ -23,6 +23,8 @@ public class WarAdminWarCommandHandler extends BaseCommandHandler {
     private void registerSubHandler() {
         subhandlers.put("create", new WarAdminWarCreateSubcommandHandler(plugin));
         subhandlers.put("end", new WarAdminWarEndSubcommandHandler(plugin));
+        subhandlers.put("rebuildplayerlist", new WarAdminWarRebuildPlayerlistSubcommandHandler(plugin));
+        subhandlers.put("siegechunkinfo", new WarAdminWarSiegeChunkInfoSubcommandHandler(plugin));
     }
 
     @Override

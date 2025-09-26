@@ -112,7 +112,7 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        Resident mercRes = TownyAPI.getInstance().getResident(mercenary);
+        Resident mercRes = TownyAPI.getInstance().getResident(mercenary.getUniqueId());
         UUID warId = war.getId();
 
         WarLivesMetadata.setWarLivesMetaData(mercRes, warId, 0);

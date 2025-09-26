@@ -1,6 +1,7 @@
 package org.unitedlands.managers;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,7 +24,6 @@ import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
-import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
 import org.unitedlands.util.Logger;
@@ -57,19 +57,43 @@ public class WarManager implements Listener {
             for (War war : wars) {
                 if (war.getIs_active()) {
                     activeWars.add(war);
-                    (new WarStartEvent(war)).callEvent();
+                    forcePvpInTowns(war);
                 } else {
                     pendingWars.add(war);
                 }
-                war.buildPlayerLists();
             }
             Logger.log("Loaded " + wars.size() + " war(s) from the database.");
 
             loadTownImmunities();
 
             // Once the wars have loaded, proceed to load the other database entities
-            plugin.getSiegeManager().loadSiegeChunks();
+            CompletableFuture<Void> siegeChunkLoadFuture = plugin.getSiegeManager().loadSiegeChunks();
             plugin.getWarEventManager().loadEventRecord();
+
+            // Lastly, rebuild the player list
+            for (War war : pendingWars) {
+                war.buildPlayerLists();
+            }
+
+            for (War war : activeWars) {
+
+                Set<UUID> townIds = new HashSet<>();
+                townIds.addAll(war.getAttacking_towns());
+                townIds.addAll(war.getDefending_towns());
+
+                CompletableFuture<Void> griefZoneRegistrationFuture = plugin.getGriefZoneManager()
+                        .registerGriefZonesOnWarStart(townIds);
+
+                CompletableFuture.allOf(griefZoneRegistrationFuture, siegeChunkLoadFuture).thenRun(() -> {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        Logger.log("Grief zones for war " + war.getTitle() + " loaded, starting war...");
+                        plugin.getGriefZoneManager().registerListeners();
+                        plugin.getSiegeManager().calculateTownOccupation(townIds);
+                        plugin.getSiegeManager().doWarStart(war);
+                        war.buildPlayerLists();
+                    });
+                });
+            }
 
         }).exceptionally(e -> {
             Logger.logError("Failed to load wars from the database: " + e.getMessage());
@@ -93,6 +117,8 @@ public class WarManager implements Listener {
             if (warCanBeStarted(war)) {
                 startingWars.add(war);
             }
+            if (war.getState_changed())
+                saveWarToDatabase(war);
         }
         pendingWars.removeAll(startingWars);
         activeWars.addAll(startingWars);
@@ -125,9 +151,9 @@ public class WarManager implements Listener {
         boolean attackerOnline = false;
         boolean defenderOnline = false;
 
-        var attackingPlayers = war.getAttacking_players();
+        var attackingPlayers = new HashSet<>(war.getAttacking_players());
         attackingPlayers.addAll(war.getAttacking_mercenaries());
-        var defendingPlayers = war.getDefending_players();
+        var defendingPlayers = new HashSet<>(war.getDefending_players());
         defendingPlayers.addAll(war.getDefending_mercenaries());
 
         for (UUID playerId : onlinePlayers) {
@@ -185,7 +211,9 @@ public class WarManager implements Listener {
         assignWarLivesToParticipants(war);
         forcePvpInTowns(war);
         forceDisableFlight(war);
-        (new WarStartEvent(war)).callEvent();
+
+        plugin.getGriefZoneManager().doWarStart(war);
+        plugin.getSiegeManager().doWarStart(war);
 
         sendWarStartNotification(war);
         sendWarStartDiscordNotification(war);
@@ -954,6 +982,19 @@ public class WarManager implements Listener {
             result.computeIfAbsent(level, v -> new ArrayList<String>()).add(configRank);
         }
         return result;
+    }
+
+    public String getMilitaryRank(Resident resident) {
+        var ranks = plugin.getWarManager().getMilitaryRanks();
+        var townRanks = resident.getTownRanks();
+        var nationRanks = resident.getNationRanks();
+        for (var level : ranks.keySet()) {
+            for (var rank : ranks.get(level)) {
+                if (townRanks.contains(rank) || nationRanks.contains(rank))
+                    return rank;
+            }
+        }
+        return "default";
     }
 
     //#endregion

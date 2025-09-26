@@ -2,9 +2,11 @@ package org.unitedlands.managers;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -19,7 +21,6 @@ import org.unitedlands.events.SiegeChunkHealthChangeEvent;
 import org.unitedlands.events.TownOccupationEvent;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
-import org.unitedlands.events.WarStartEvent;
 import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
@@ -56,50 +57,66 @@ public class SiegeManager implements Listener {
         this.playerSiegeEventListener = new PlayerSiegeEventListener(plugin);
     }
 
-    public void loadSiegeChunks() {
+    public CompletableFuture<Void> loadSiegeChunks() {
         Logger.log("Loading siege chunks...");
         var siegeChunkDbService = plugin.getDatabaseManager().getSiegeChunkDbService();
 
+        CompletableFuture<Void> resultFuture = new CompletableFuture<>();
+
         siegeChunkDbService.getAllAsync().thenAccept(loadedSiegeChunks -> {
-            Set<Town> towns = new HashSet<>();
-            for (var siegeChunk : loadedSiegeChunks) {
-                var world = Bukkit.getWorld(siegeChunk.getWorld());
-                if (world == null) {
-                    Logger.logError("World not found for siege chunk: " + siegeChunk.getChunkKey());
-                    continue;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    Set<Town> towns = new HashSet<>();
+
+                    for (var siegeChunk : loadedSiegeChunks) {
+                        var world = Bukkit.getWorld(siegeChunk.getWorld());
+                        if (world == null) {
+                            Logger.logError("World not found for siege chunk: " + siegeChunk.getChunkKey());
+                            continue;
+                        }
+
+                        var coord = new WorldCoord(world, siegeChunk.getX(), siegeChunk.getZ());
+                        var townBlock = TownyAPI.getInstance().getTownBlock(coord);
+                        if (townBlock == null) {
+                            Logger.logError("TownBlock not found for siege chunk: " + siegeChunk.getChunkKey());
+                            continue;
+                        }
+                        siegeChunk.setTownBlock(townBlock);
+
+                        var town = townBlock.getTownOrNull();
+                        siegeChunk.setTown(town);
+
+                        siegeChunks.put(siegeChunk.getChunkKey(), siegeChunk);
+
+                        createChunkHealthBar(siegeChunk);
+                        updateHealthBar(siegeChunk);
+
+                        if (town != null) {
+                            towns.add(town);
+                        }
+                    }
+
+                    towns.forEach(town -> calculateTownOccupation(town.getUUID()));
+                    Logger.log("Loaded " + loadedSiegeChunks.size() + " siege chunks from database.");
+
+                    resultFuture.complete(null);
+                } catch (Exception ex) {
+                    Logger.logError("Failed to load siege chunks: " + ex.getMessage());
+                    ex.printStackTrace();
+                    resultFuture.completeExceptionally(ex);
                 }
-
-                var coord = new WorldCoord(world, siegeChunk.getX(), siegeChunk.getZ());
-                var townBlock = TownyAPI.getInstance().getTownBlock(coord);
-                if (townBlock == null) {
-                    Logger.logError("TownBlock not found for siege chunk: " + siegeChunk.getChunkKey());
-                    continue;
-                }
-                siegeChunk.setTownBlock(townBlock);
-
-                var town = townBlock.getTownOrNull();
-                siegeChunk.setTown(town);
-
-                siegeChunks.put(siegeChunk.getChunkKey(), siegeChunk);
-
-                createChunkHealthBar(siegeChunk);
-                updateHealthBar(siegeChunk);
-
-                if (town != null) {
-                    towns.add(town);
-                }
-            }
-
-            towns.forEach(town -> calculateTownOccupation(town.getUUID()));
-            Logger.log("Loaded " + loadedSiegeChunks.size() + " siege chunks from database.");
+            });
         }).exceptionally(ex -> {
             Logger.logError("Failed to load siege chunks: " + ex.getMessage());
             ex.printStackTrace();
+            resultFuture.completeExceptionally(ex);
             return null;
         });
+
+        return resultFuture;
     }
 
-    public void toggleSieges(War war, WarSide warSide, boolean enabled) {
+    public void toggleSieges(War war, WarSide warSide, boolean newStatus) {
 
         Set<UUID> towns = new HashSet<>();
 
@@ -109,19 +126,22 @@ public class SiegeManager implements Listener {
             towns = war.getDefending_towns();
 
         for (UUID townId : towns) {
+            
+            boolean newTownStatus = newStatus;
 
-            if (isTownOccupied(townId))
-                enabled = false;
+            if (isTownOccupied(townId)) {
+                newTownStatus = false;
+            }
 
             var currentStatus = siegeEnabled.computeIfAbsent(townId, k -> true);
-            if (!currentStatus.equals(enabled)) {
-                siegeEnabled.put(townId, enabled);
+            if (!currentStatus.equals(newTownStatus)) {
+                siegeEnabled.put(townId, newTownStatus);
 
                 var town = TownyAPI.getInstance().getTown(townId);
                 if (town == null)
                     continue;
 
-                if (enabled == false) {
+                if (newTownStatus == false) {
                     plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "off");
                 } else {
                     plugin.getGriefZoneManager().toggleGriefing(town.getUUID(), "on");
@@ -135,17 +155,32 @@ public class SiegeManager implements Listener {
     public void handleSiegeChunks() {
         if (!siegeChunks.isEmpty()) {
             for (var set : siegeChunks.entrySet()) {
+
                 var siegeChunk = set.getValue();
 
                 if (siegeChunk.getOccupied())
                     continue;
 
-                if (!isSiegeEnabled(siegeChunk.getTown().getUUID()))
-                    continue;
-
-                // Change health depending on relative player counts
                 var attackingPlayers = siegeChunk.getPlayersInChunk().get(WarSide.ATTACKER);
                 var defendingPlayers = siegeChunk.getPlayersInChunk().get(WarSide.DEFENDER);
+
+                if (!isSiegeEnabled(siegeChunk.getTown().getUUID())) {
+                    for (var id : attackingPlayers) {
+                        var player = Bukkit.getPlayer(id);
+                        if (player == null || !player.isOnline())
+                            return;
+                        player.sendMessage(
+                                "§cYou cannot siege here, either because this town is already occupied, or because there is no enemy online.");
+                    }
+                    for (var id : defendingPlayers) {
+                        var player = Bukkit.getPlayer(id);
+                        if (player == null || !player.isOnline())
+                            return;
+                        player.sendMessage(
+                                "§6You cannot heal here, either because this town is already occupied, or because there is no enemy online.");
+                    }
+                    continue;
+                }
 
                 Integer healthChange = 0;
                 if (attackingPlayers.size() > defendingPlayers.size()) {
@@ -289,8 +324,9 @@ public class SiegeManager implements Listener {
             if (siegeChunks.containsKey(key)) {
                 addPlayerToSiegeChunk(player, key);
             } else {
-                if (createSiegeChunk(targetBlock, player))
+                if (createSiegeChunk(targetBlock, player)) {
                     addPlayerToSiegeChunk(player, key);
+                }
             }
         }
     }
@@ -477,9 +513,14 @@ public class SiegeManager implements Listener {
     }
 
     private void addPlayerToChunkPlayerList(SiegeChunk siegeChunk, WarSide side, Player player) {
-        var chunkPlayers = siegeChunk.getPlayersInChunk().get(side);
+        var chunkSet = siegeChunk.getPlayersInChunk();
+        var chunkPlayers = chunkSet.computeIfAbsent(side, k -> new LinkedHashSet<UUID>());
         if (!chunkPlayers.contains(player.getUniqueId())) {
+
             chunkPlayers.add(player.getUniqueId());
+            chunkSet.put(side, chunkPlayers);
+            siegeChunk.setPlayersInChunk(chunkSet);
+
             addViewerToHealthBar(player, siegeChunk.getChunkKey());
         }
     }
@@ -575,10 +616,10 @@ public class SiegeManager implements Listener {
 
     //#region Event listeners
 
-    @EventHandler
-    public void onWarStart(WarStartEvent event) {
+    public void doWarStart(War war) {
         // Only start tracking player siege events while a war is going on
         if (!playerSiegeEventListenerRegistered) {
+            Logger.log("Registering siege listeners...");
             Bukkit.getPluginManager().registerEvents(playerSiegeEventListener, plugin);
             playerSiegeEventListenerRegistered = true;
         }
@@ -637,12 +678,20 @@ public class SiegeManager implements Listener {
         return coord.getWorldName() + ":" + coord.getX() + ":" + coord.getZ();
     }
 
+    public SiegeChunk getSiegeChunk(WorldCoord coord) {
+        return siegeChunks.get(getChunkKey(coord));
+    }
+
     public boolean isSiegeEnabled(UUID townId) {
         if (isTownOccupied(townId))
             return false;
         if (plugin.getConfig().getBoolean("siege-settings.override-activity-requirement", false))
             return true;
         return siegeEnabled.computeIfAbsent(townId, k -> false);
+    }
+
+    public void calculateTownOccupation(Set<UUID> townIds) {
+        townIds.forEach(townId -> calculateTownOccupation(townId));
     }
 
     public void calculateTownOccupation(UUID townId) {
