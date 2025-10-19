@@ -2,9 +2,9 @@ package org.unitedlands.listeners;
 
 import java.util.List;
 
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -19,6 +19,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarSide;
@@ -40,6 +41,9 @@ public class PlayerSiegeEventListener implements Listener {
     public void onPlayerChangePlot(PlayerChangePlotEvent event) {
         if (!plugin.getWarManager().isPlayerInActiveWar(event.getPlayer().getUniqueId()))
             return;
+        if (event.getPlayer().hasPotionEffect(PotionEffectType.INVISIBILITY) || event.getPlayer().isInvisible())
+            return;
+
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
 
@@ -70,6 +74,18 @@ public class PlayerSiegeEventListener implements Listener {
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), fromPlot, toPlot);
+    }
+
+    @EventHandler
+    public void onPlayerTeleportWarning(PlayerTeleportEvent event) {
+        var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
+        if (toPlot.getTownOrNull() != null) {
+            var town = toPlot.getTownOrNull();
+            if (plugin.getWarManager().isTownInActiveWar(town.getUUID())) {
+                Messenger.sendMessageTemplate(event.getPlayer(), "warning-warzone", null, true);
+                event.getPlayer().playSound(event.getTo(), Sound.ITEM_TRIDENT_RETURN, 1f, 1f);
+            }
+        }
     }
 
     @EventHandler

@@ -437,6 +437,7 @@ messages:
     - "§c§lAttacking players: {attacking-players}"
     - "§a§lDefending players: §r§a{defending-players}"
     - "§c§m+|✦                                 +✦+                                 |✦+"
+  chunk-captured: "§6A chunk in the town of §e{town-name} ({chunk-coords}) §6has been captured!"
   town-captured: "§6§l{war-name}§r§f: The town of {town-name} succumbed to the siege of the attacking armies and was captured!"
   resident-nation-joined-war: "§bYour nation has joined the war!"
   war-call-send-success: "§bCall to War sent to ally. The call will automatically expire in 5 minutes."
@@ -449,6 +450,7 @@ messages:
   mercenary-invite-sent: "§bInvitation sent to {mercenary-name}. It will automatically expire in 5 minutes."
   mercenary-invite-received: "§bYou've received an invitation to join as a mercenary for the {war-side} side of {war-name}. Use \"/t war acceptinvite <warname>\" to accept."
   war-call-ally-send-success: "§bCall to War sent to ally. The call will automatically expire in 5 minutes."
+  warning-warzone: "§eWARNING: You have teleported to an active war zone. §cYou may lose your inventory when getting killed in this area."
 
   # +---------------------------------------------+ #
   # |                War Events                   | #
