@@ -25,6 +25,7 @@ import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,6 +44,15 @@ public class PlayerDeathListener implements Listener {
             return;
 
         Player victim = event.getEntity();
+
+        List<String> worldBlacklist = plugin.getConfig().getStringList("world-blacklist");
+        if (worldBlacklist != null && !worldBlacklist.isEmpty()) {
+            // Don't process the event if it happened in a blacklisted world
+            String world = victim.getLocation().getWorld().getName();
+            if (worldBlacklist.contains(world)) {
+                return;
+            }
+        }
 
         // Check if this is a death caused by an entity
         EntityDamageEvent damageEvent = victim.getLastDamageCause();
@@ -130,12 +140,13 @@ public class PlayerDeathListener implements Listener {
                 Logger.logError(ex.getMessage());
             }
 
-
             if (victimWarSide == WarSide.ATTACKER && killerWarSide == WarSide.DEFENDER) {
-                var warScoreEvent = new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, scoreType, message, silent, adjustedReward);
+                var warScoreEvent = new WarScoreEvent(war, killer.getUniqueId(), WarSide.DEFENDER, scoreType, message,
+                        silent, adjustedReward);
                 warScoreEvent.callEvent();
             } else if (victimWarSide == WarSide.DEFENDER && killerWarSide == WarSide.ATTACKER) {
-                var warScoreEvent = new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, scoreType, message, silent, adjustedReward);
+                var warScoreEvent = new WarScoreEvent(war, killer.getUniqueId(), WarSide.ATTACKER, scoreType, message,
+                        silent, adjustedReward);
                 warScoreEvent.callEvent();
             } else {
                 return;
@@ -229,6 +240,5 @@ public class PlayerDeathListener implements Listener {
 
         return killer;
     }
-
 
 }

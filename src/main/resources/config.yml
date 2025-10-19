@@ -49,6 +49,11 @@ mobilisation:
 # +---------------------------------------------+ #
 ###################################################
 
+# Ignore these worlds for pvp scoring
+world-blacklist:
+  - world_arena1
+  - world_arena2
+
 # Duration of war immunity for towns that come out of a defensice war
 war-immunity-duration: 5 # in minutes
 
