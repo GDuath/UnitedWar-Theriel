@@ -18,7 +18,6 @@ import org.unitedlands.models.War;
 import org.unitedlands.util.WarLivesMetadata;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 public class GraveManager implements Listener {
@@ -34,47 +33,83 @@ public class GraveManager implements Listener {
         if (!plugin.getConfig().getBoolean("enable-war-grave-control", true)) return;
 
         Player victim = event.getPlayer();
-        if (victim == null) return;
 
         Map<War, WarSide> victimWars = plugin.getWarManager().getActivePlayerWars(victim.getUniqueId());
-        if (victimWars == null || victimWars.isEmpty()) return;
 
         var damageEvent = victim.getLastDamageCause();
         if (!(damageEvent instanceof EntityDamageByEntityEvent damageByEntity)) return;
 
         Player killer = PlayerDeathListener.findKillingPlayer(victim, damageByEntity);
         if (killer == null) {
-            plugin.getLogger().info("[GraveManager] " + victim.getName() + " died during war, but no killer found. Creating grave.");
+            var land = getLandSideAndTownName(victim.getLocation(), null);
+            plugin.getLogger().info(String.format(
+                    "[GraveManager] %s died during war in %s land (%s), but no killer found. Creating grave.",
+                    victim.getName(),
+                    land.getLeft() == null ? "wild" : land.getLeft().toString().toLowerCase(),
+                    land.getRight()
+            ));
             return;
         }
 
         Map<War, WarSide> killerWars = plugin.getWarManager().getActivePlayerWars(killer.getUniqueId());
 
         boolean punishThirdParty = plugin.getConfig().getBoolean("punish-third-party-interference", true);
-        boolean victimInWar = !victimWars.isEmpty();
-        boolean killerInWar = killerWars != null && !killerWars.isEmpty();
+        boolean victimInWar = (victimWars != null) && !victimWars.isEmpty();
+        boolean killerInWar = (killerWars != null) && !killerWars.isEmpty();
 
         // If a third party kills a war participant, force grave creation.
         if (punishThirdParty && victimInWar && !killerInWar) {
             plugin.getLogger().info(String.format(
-                    "[GraveManager] %s (neutral) killed %s (war participant). Creating grave.",
-                    killer.getName(), victim.getName()
+                    "[GraveManager] %s (neutral) killed %s (war participant) at %s. Creating grave.",
+                    killer.getName(), victim.getName(), getLandSideAndTownName(victim.getLocation(), null).getRight()
             ));
             return;
         }
 
         // If a war participant kills a third party, force items to floor.
         if (punishThirdParty && !victimInWar && killerInWar) {
+
+            // Determine if death location is a warzone.
+            var tb = TownyAPI.getInstance().getTownBlock(victim.getLocation());
+            if (tb != null && tb.hasTown() && tb.getTownOrNull() != null) {
+                var warzoneTown = tb.getTownOrNull();
+
+                // Civilian protection: victim is a resident of the warzone town.
+                var vRes = TownyAPI.getInstance().getResident(victim);
+                boolean victimIsCivilianOfWarzoneTown =
+                        vRes != null && vRes.hasTown() && vRes.getTownOrNull() != null
+                                && vRes.getTownOrNull().getUUID().equals(warzoneTown.getUUID());
+
+                // Also verify the chunk belongs to a warzone.
+                boolean isWarLand = plugin.getWarManager().getActiveWars().stream()
+                        .anyMatch(w -> {
+                            var side = w.getTownWarSide(warzoneTown.getUUID());
+                            return side != null && side != WarSide.NONE;
+                        });
+
+                if (isWarLand && victimIsCivilianOfWarzoneTown) {
+                    // Civilian is in their own town, create grave.
+                    plugin.getLogger().info(String.format(
+                            "[GraveManager] %s (civilian of %s) was killed by %s in their own town. Creating grave.",
+                            victim.getName(), warzoneTown.getName(), killer.getName()
+                    ));
+                    return;
+                }
+            }
+
+            // True outsider standing in warzone, not a resident.
             Pair<WarSide, String> land = getLandSideAndTownName(victim.getLocation(), null);
             if (land.getLeft() != null) {
                 plugin.getLogger().info(String.format(
-                        "[GraveManager] %s (neutral) was killed by %s (war participant) in warzone (%s). Dropping items.",
+                        "[GraveManager] %s (neutral outsider) was killed by %s (war participant) in a warzone (%s). Dropping items.",
                         victim.getName(), killer.getName(), land.getRight()
                 ));
                 event.setCancelled(true);
                 return;
             }
         }
+
+        if (victimWars == null || victimWars.isEmpty()) return;
 
         for (var entry : victimWars.entrySet()) {
             War war = entry.getKey();
@@ -106,9 +141,9 @@ public class GraveManager implements Listener {
                 return;
             }
 
-            boolean killerInSameWar = Objects.requireNonNull(killerWars).containsKey(war)
-                    || war.getAttacking_mercenaries().contains(killer.getUniqueId())
-                    || war.getDefending_mercenaries().contains(killer.getUniqueId());
+            boolean killerInSameWar = (killerWars != null && killerWars.containsKey(war))
+                            || war.getAttacking_mercenaries().contains(killer.getUniqueId())
+                            || war.getDefending_mercenaries().contains(killer.getUniqueId());
 
             if (!killerInSameWar) continue;
 
@@ -123,13 +158,13 @@ public class GraveManager implements Listener {
             if (isFriendlyLand) {
                 if (plugin.getConfig().getBoolean("war-graves.in-friendly-land", true)) {
                     plugin.getLogger().info(String.format(
-                            "[GraveManager] %s died in friendly land (%s). Creating grave.",
-                            victim.getName(), landTown
+                            "[GraveManager] %s killed %s in friendly land (%s). Creating grave.",
+                            killer.getName(), victim.getName(), landTown
                     ));
                 } else {
                     plugin.getLogger().info(String.format(
-                            "[GraveManager] %s died in friendly land (%s). Dropping items.",
-                            victim.getName(), landTown
+                            "[GraveManager] %s killed %s in friendly land (%s). Dropping items.",
+                            killer.getName(), victim.getName(), landTown
                     ));
                     event.setCancelled(true);
                 }
@@ -139,8 +174,8 @@ public class GraveManager implements Listener {
             if (isHostileLand) {
                 if (!plugin.getConfig().getBoolean("war-graves.in-hostile-land", false)) {
                     plugin.getLogger().info(String.format(
-                            "[GraveManager] %s died in hostile land (%s). Dropping items.",
-                            victim.getName(), landTown
+                            "[GraveManager] %s killed %s in hostile land (%s). Dropping items.",
+                            killer.getName(), victim.getName(), landTown
                     ));
                     event.setCancelled(true);
                     return;
@@ -150,8 +185,9 @@ public class GraveManager implements Listener {
             if (isWildLand) {
                 if (!plugin.getConfig().getBoolean("war-graves.in-wild-land", false)) {
                     plugin.getLogger().info(String.format(
-                            "[GraveManager] %s died in wild land. Dropping items.",
-                            victim.getName()
+                            "[GraveManager] %s (side: %s) was killed by %s (side: %s) in wild land. Dropping items.",
+                            victim.getName(), victimSide,
+                            killer.getName(), war.getPlayerWarSide(killer.getUniqueId())
                     ));
                     event.setCancelled(true);
                     return;
@@ -191,7 +227,10 @@ public class GraveManager implements Listener {
 
         // Otherwise, check all active wars and flag it as war land (no specific side).
         boolean isWarLand = plugin.getWarManager().getActiveWars().stream()
-                .anyMatch(war -> war.getAttacking_towns().contains(townId) || war.getDefending_towns().contains(townId));
+                .anyMatch(war -> {
+                    var side = war.getTownWarSide(townId);
+                    return side != null && side != WarSide.NONE;
+                });
 
         return new ImmutablePair<>(isWarLand ? WarSide.NONE : null, town.getName());
     }
