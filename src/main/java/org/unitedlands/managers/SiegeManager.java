@@ -126,7 +126,7 @@ public class SiegeManager implements Listener {
             towns = war.getDefending_towns();
 
         for (UUID townId : towns) {
-            
+
             boolean newTownStatus = newStatus;
 
             if (isTownOccupied(townId)) {
@@ -276,6 +276,23 @@ public class SiegeManager implements Listener {
                         siegeChunk.setOccupied(true);
                         siegeChunk.setOccupation_time(System.currentTimeMillis());
 
+                        Set<UUID> players = new HashSet<>();
+                        players.addAll(war.getAttacking_players());
+                        players.addAll(war.getAttacking_mercenaries());
+                        players.addAll(war.getDefending_players());
+                        players.addAll(war.getDefending_mercenaries());
+
+                        var townName = siegeChunk.getTown().getName();
+                        var coords = siegeChunk.getX() + ", " + siegeChunk.getZ();
+                        Map<String, String> replacements = Map.of("town-name", townName, "chunk-coords", coords);
+                        for (UUID playerId : players)
+                        {
+                            var player = Bukkit.getPlayer(playerId);
+                            if (player != null && player.isOnline()) {
+                                Messenger.sendMessageTemplate(player, "chunk-captured", replacements, true);
+                            }
+                        }
+
                         var town = townBlock.getTownOrNull();
                         if (town == null)
                             return;
@@ -289,10 +306,10 @@ public class SiegeManager implements Listener {
                             };
                             townOccupationEvent.callEvent();
 
-                            Map<String, String> replacements = new HashMap<>();
-                            replacements.put("war-name", war.getCleanTitle());
-                            replacements.put("town-name", town.getName());
-                            Messenger.broadcastMessageTemplate("town-captured", replacements, true);
+                            Map<String, String> replacements2 = new HashMap<>();
+                            replacements2.put("war-name", war.getCleanTitle());
+                            replacements2.put("town-name", town.getName());
+                            Messenger.broadcastMessageTemplate("town-captured", replacements2, true);
                         }
 
                     } else {
