@@ -78,7 +78,11 @@ public class PlayerSiegeEventListener implements Listener {
 
     @EventHandler
     public void onPlayerTeleportWarning(PlayerTeleportEvent event) {
+        if (event.getTo() == null)
+            return;
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getTo());
+        if (toPlot == null)
+            return;
         if (toPlot.getTownOrNull() != null) {
             var town = toPlot.getTownOrNull();
             if (plugin.getWarManager().isTownInActiveWar(town.getUUID())) {
