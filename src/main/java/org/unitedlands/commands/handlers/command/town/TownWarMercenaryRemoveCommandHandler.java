@@ -80,7 +80,7 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[0]), true);
+            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name", args[0]), true);
             return;
         }
 
@@ -89,7 +89,18 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        WarSide playerWarSide = war.getPlayerWarSide(player.getUniqueId());
+        var playerTown = TownyAPI.getInstance().getTown(player);
+        if (playerTown == null) {
+            Messenger.sendMessageTemplate(sender, "error-town-data", null, true);
+            return;
+        }
+
+        WarSide playerWarSide = WarSide.NONE;
+        if (war.getDeclaring_town_id().equals(playerTown.getUUID()) || war.getAttacking_towns().contains(playerTown.getUUID())) {
+            playerWarSide = WarSide.ATTACKER;
+        } else if (war.getTarget_town_id().equals(playerTown.getUUID()) || war.getDefending_towns().contains(playerTown.getUUID())) {
+            playerWarSide = WarSide.DEFENDER;
+        }
         if (playerWarSide == WarSide.NONE) {
             Messenger.sendMessageTemplate(sender, "error-resident-not-in-war", null, true);
             return;
@@ -100,8 +111,8 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
         Set<UUID> attackingMercenaryList = war.getAttacking_mercenaries();
         Set<UUID> defendingMercenaryList = war.getDefending_mercenaries();
 
-        if(attackingMercenaryList.contains(player.getUniqueId())
-        || defendingMercenaryList.contains(player.getUniqueId())) {
+        if (attackingMercenaryList.contains(player.getUniqueId())
+                || defendingMercenaryList.contains(player.getUniqueId())) {
             Messenger.sendMessageTemplate(sender, "error-mercenary-remove-is-mercenary", null, true);
             return;
         }
@@ -117,11 +128,13 @@ public class TownWarMercenaryRemoveCommandHandler extends BaseCommandHandler {
 
         WarLivesMetadata.setWarLivesMetaData(mercRes, warId, 0);
 
-        Messenger.sendMessageTemplate(sender,"mercenary-remove-success", Map.of("mercenary-name",mercenary.getName()), true);
+        Messenger.sendMessageTemplate(sender, "mercenary-remove-success", Map.of("mercenary-name", mercenary.getName()),
+                true);
 
         if (mercenary.isOnline()) {
             Player onlineMercenary = Bukkit.getPlayer(mercenary.getUniqueId());
-            Messenger.sendMessageTemplate(onlineMercenary, "mercenary-resident-removed-success", Map.of("war-side",playerWarSide.toString().toLowerCase(),"war-name",war.getTitle()), true);
+            Messenger.sendMessageTemplate(onlineMercenary, "mercenary-resident-removed-success",
+                    Map.of("war-side", playerWarSide.toString().toLowerCase(), "war-name", war.getTitle()), true);
         }
     }
 

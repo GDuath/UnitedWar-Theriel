@@ -52,10 +52,6 @@ public class TownWarSurrenderCommandHandler extends BaseCommandHandler {
         }
 
         Player player = (Player) sender;
-        if (plugin.getWarManager().getAllPlayerWars(player.getUniqueId()).size() == 0) {
-            Messenger.sendMessageTemplate(((Player) sender), "error-not-in-war", null, true);
-            return;
-        }
 
         Resident resident = TownyAPI.getInstance().getResident(player);
         if (!resident.isMayor()) {

@@ -71,7 +71,18 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        WarSide playerWarSide = war.getPlayerWarSide(player.getUniqueId());
+        var playerTown = TownyAPI.getInstance().getTown(player);
+        if (playerTown == null) {
+            Messenger.sendMessageTemplate(sender, "error-town-data", null, true);
+            return;
+        }
+
+        WarSide playerWarSide = WarSide.NONE;
+        if (war.getDeclaring_town_id().equals(playerTown.getUUID()) || war.getAttacking_towns().contains(playerTown.getUUID())) {
+            playerWarSide = WarSide.ATTACKER;
+        } else if (war.getTarget_town_id().equals(playerTown.getUUID()) || war.getDefending_towns().contains(playerTown.getUUID())) {
+            playerWarSide = WarSide.DEFENDER;
+        }
         if (playerWarSide == WarSide.NONE) {
             Messenger.sendMessageTemplate(sender, "error-resident-not-in-war", null, true);
             return;
