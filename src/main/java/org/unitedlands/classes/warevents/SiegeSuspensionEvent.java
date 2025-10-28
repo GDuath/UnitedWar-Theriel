@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.unitedlands.events.SiegeChunkHealthChangeEvent;
-import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 
 public class SiegeSuspensionEvent extends BaseWarEvent {
