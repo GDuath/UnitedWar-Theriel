@@ -91,10 +91,10 @@ war-goal-settings:
     max-attacker-mercenaries: 5
     max-defender-mercenaries: 5
     warchest:
-      attacker-money-contribution: 0.1 # in percentage of town balance
-      defender-money-contribution: 0.1
-      attacker-claims-contribution: 0.0 # in percentage of town bonus claims
-      defender-claims-contribution: 0.0
+      attacker-money-contribution: 0.05 # in percentage of town balance
+      defender-money-contribution: 0.05
+      attacker-claims-contribution: 0.05 # in percentage of town bonus claims
+      defender-claims-contribution: 0.05
       additional-bonus-claims: 0
     scorecaps:
       attacker: 10000
@@ -102,16 +102,16 @@ war-goal-settings:
   plunder:
     warmup-time: 86400 # in seconds
     duration: 259200 # in seconds
-    cost: 10 # mobilisation points
-    attacker-call-nation: false
+    cost: 30 # mobilisation points
+    attacker-call-nation: true
     attacker-call-allies: false
-    defender-call-nation: false
-    defender-call-allies: false
+    defender-call-nation: true
+    defender-call-allies: true
     war-lives: 5
     max-attacker-mercenaries: 5
     max-defender-mercenaries: 5
     warchest:
-      attacker-money-contribution: 0.5 # in percentage of town balance
+      attacker-money-contribution: 0.25 # in percentage of town balance
       defender-money-contribution: 0.25
       attacker-claims-contribution: 0.0 # in percentage of town bonus claims
       defender-claims-contribution: 0.0
