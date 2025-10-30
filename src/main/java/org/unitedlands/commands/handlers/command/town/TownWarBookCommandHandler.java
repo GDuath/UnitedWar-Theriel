@@ -11,16 +11,12 @@ import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarGoal;
-import org.unitedlands.classes.WarSide;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
-import org.unitedlands.util.WarImmunityMetadata;
-
+import org.unitedlands.util.WarGoalValidator;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
-import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 
 public class TownWarBookCommandHandler extends BaseCommandHandler {
@@ -56,53 +52,28 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        var towny = TownyAPI.getInstance();
-        Player player = (Player) sender;
-        Resident resident = towny.getResident(player);
-        if (resident == null) {
-            Messenger.sendMessageTemplate(sender, "error-resident-data", null, true);
-            return;
-        }
-
-        var playerTown = towny.getTown(player);
-        if (playerTown == null) {
-            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
-            return;
-        }
-
-        if (!resident.isMayor()) {
-            Messenger.sendMessageTemplate(sender, "error-resident-not-mayor", null, true);
-            return;
-        }
-
-        if (playerTown.isNeutral()) {
-            Messenger.sendMessageTemplate(sender, "error-resident-town-neutral", null, true);
-            return;
-        }
-
-        var targetTown = towny.getTown(args[0]);
-        if (targetTown == null) {
-            Messenger.sendMessageTemplate(sender, "error-town-not-found", Map.of("town-name", args[0]), true);
-            return;
-        }
-
-        var immunityExpirationTime = WarImmunityMetadata.getImmunityMetaDataFromTown(targetTown);
-        Logger.log(immunityExpirationTime + "");
-        if (System.currentTimeMillis() < immunityExpirationTime) {
-            Messenger.sendMessageTemplate(sender, "error-target-town-immune", null, true);
-            return;
-        }
-
-        if (playerTown.getUUID().equals(targetTown.getUUID())) {
-            Messenger.sendMessageTemplate(sender, "error-target-town-is-resident-town", null, true);
-            return;
-        }
-
         var warGoal = WarGoal.SUPERIORITY;
         try {
             warGoal = WarGoal.valueOf(args[1]);
         } catch (Exception ex) {
             Messenger.sendMessageTemplate(sender, "error-unknown-war-goal", Map.of("war-goal-name", args[1]), true);
+            return;
+        }
+
+        var player = (Player) sender;
+        var playerTown = TownyAPI.getInstance().getTown(player);
+        if (playerTown == null) {
+            Messenger.sendMessageTemplate(player, "error-resident-town-not-found", null, true);
+            return;
+        }
+
+        var targetTown = TownyAPI.getInstance().getTown(args[0]);
+        if (targetTown == null) {
+            Messenger.sendMessageTemplate(player, "error-town-not-found", Map.of("town-name", args[0]), true);
+            return;
+        }
+
+        if (!WarGoalValidator.isWarGoalValid(warGoal, playerTown, targetTown, player)) {
             return;
         }
 
@@ -123,94 +94,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        switch (warGoal) {
-            case SUPERIORITY:
-                handleDefaultWar(player, playerTown, targetTown);
-                break;
-            case SKIRMISH:
-                handleSkirmishWar(player, playerTown, targetTown);
-                break;
-            case PLUNDER:
-                handlePlunderWar(player, playerTown, targetTown);
-                break;
-            case CONQUEST:
-                handleConquestWar(player, playerTown, targetTown);
-                break;
-            default:
-                Messenger.sendMessageTemplate(sender, "error-war-goal-not-implemented", null, true);
-                break;
-        }
-    }
-
-    private void handleDefaultWar(Player player, Town playerTown, Town targetTown) {
-
-        var targetNation = targetTown.getNationOrNull();
-        var playerNation = playerTown.getNationOrNull();
-
-        if (playerNation != null && !playerTown.isCapital()) {
-            Messenger.sendMessageTemplate(player, "error-resident-town-not-capital-war-goal", null, true);
-            return;
-        }
-
-        if (playerNation != null && targetNation != null && playerNation.getAllies().contains(targetNation)) {
-            Messenger.sendMessageTemplate(player, "error-target-town-nation-allied", null, true);
-            return;
-        }
-
-        if (playerNation != null && targetNation != null && targetNation.getUUID().equals(playerNation.getUUID())) {
-            Messenger.sendMessageTemplate(player, "error-target-town-nation-war-goal", null, true);
-            return;
-        }
-
-        if (targetNation != null) {
-            if (targetNation.isNeutral()) {
-                Messenger.sendMessageTemplate(player, "error-target-nation-neutral", null, true);
-                return;
-            }
-        } else {
-            if (targetTown.isNeutral()) {
-                Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
-                return;
-            }
-        }
-
-        var targetTownWars = plugin.getWarManager().getAllTownWars(targetTown.getUUID());
-        if (targetTownWars.values().stream().anyMatch(w -> w.equals(WarSide.DEFENDER))) {
-            Messenger.sendMessageTemplate(player, "error-target-town-in-defensive-war", null, true);
-            return;
-        }
-
-        createDeclarationBook(player, playerTown, targetTown, WarGoal.SUPERIORITY);
-    }
-
-    private void handleSkirmishWar(Player player, Town playerTown, Town targetTown) {
-
-        if (targetTown.isNeutral()) {
-            Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
-            return;
-        }
-
-        createDeclarationBook(player, playerTown, targetTown, WarGoal.SKIRMISH);
-    }
-
-    private void handlePlunderWar(Player player, Town playerTown, Town targetTown) {
-
-        if (targetTown.isNeutral()) {
-            Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
-            return;
-        }
-
-        createDeclarationBook(player, playerTown, targetTown, WarGoal.PLUNDER);
-    }
-
-    private void handleConquestWar(Player player, Town playerTown, Town targetTown) {
-
-        if (targetTown.isNeutral()) {
-            Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
-            return;
-        }
-
-        createDeclarationBook(player, playerTown, targetTown, WarGoal.CONQUEST);
+        createDeclarationBook(player, playerTown, targetTown, warGoal);
     }
 
     private void createDeclarationBook(Player player, Town playerTown, Town targetTown, WarGoal warGoal) {

@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -13,6 +14,7 @@ import org.unitedlands.classes.WarBookData;
 import org.unitedlands.commands.handlers.BaseCommandHandler;
 import org.unitedlands.util.Logger;
 import org.unitedlands.util.Messenger;
+import org.unitedlands.util.WarGoalValidator;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -30,7 +32,6 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
         return options;
     }
 
-    
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
 
@@ -60,14 +61,21 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
             return;
         }
 
-        // TODO: Further validation checks, e.g. if the towns still exists
+        var declaringTown = TownyAPI.getInstance().getTown(warBookData.getAttackerTownId());
+        if (declaringTown == null) {
+            Messenger.sendMessageTemplate(player, "error-town-not-found", Map.of("town-name", warBookData.getAttackerTownId().toString()), true);
+            return;
+        }
 
-        Logger.log(warBookData.getWarName());
-        Logger.log(warBookData.getWarDescription());
-        Logger.log(warBookData.getAttackerTownId().toString());
-        Logger.log(warBookData.getTargetTownId().toString());
-        Logger.log(warBookData.getWarGoal().toString());
-        Logger.log(warBookData.isWarBook() + "");
+        var targetTown = TownyAPI.getInstance().getTown(warBookData.getTargetTownId());
+        if (targetTown == null) {
+            Messenger.sendMessageTemplate(player, "error-town-not-found", Map.of("town-name", warBookData.getTargetTownId().toString()), true);
+            return;
+        }
+
+        if (!WarGoalValidator.isWarGoalValid(warBookData.getWarGoal(), declaringTown, targetTown, player)) {
+            return;
+        }
 
         plugin.getWarManager().createWar(warBookData.getWarName(), warBookData.getWarDescription(),
                 warBookData.getAttackerTownId(), warBookData.getTargetTownId(), warBookData.getWarGoal());
