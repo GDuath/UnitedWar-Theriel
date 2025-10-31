@@ -162,6 +162,10 @@ public class WarBookData {
             description += PlainTextComponentSerializer.plainText().serialize(page) + " ";
         }
 
-        return description;
+        return description.toString()
+                .replace("\r", " ") 
+                .replace("\n", " ") 
+                .replaceAll("\\s+", " ") 
+                .trim(); 
     }
 }
