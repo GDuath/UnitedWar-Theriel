@@ -72,9 +72,22 @@ public class TownWarSurrenderCommandHandler extends BaseCommandHandler {
         }
 
         Confirmation.runOnAccept(() -> {
-            WarSide warSide = war.getPlayerWarSide(player.getUniqueId());
-            if (warSide == WarSide.NONE || warSide == WarSide.BOTH)
+            // WarSide warSide = war.getPlayerWarSide(player.getUniqueId());
+            // if (warSide == WarSide.NONE || warSide == WarSide.BOTH)
+            //     return;
+
+            WarSide warSide = WarSide.NONE;
+            if (war.getDeclaring_town_id().equals(playerTown.getUUID())) {
+                warSide = WarSide.ATTACKER;
+            } else if (war.getTarget_town_id().equals(playerTown.getUUID())) {
+                warSide = WarSide.DEFENDER;
+            }
+
+            if (warSide == WarSide.NONE) {
+                Messenger.sendMessageTemplate(sender, "error-surrender-not-subject", null, true);
                 return;
+            }
+
             if (warSide == WarSide.ATTACKER) {
                 var defenderMaxCap = war.getDefender_score_cap();
                 war.setDefender_score(defenderMaxCap);
