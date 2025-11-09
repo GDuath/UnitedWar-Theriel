@@ -591,6 +591,7 @@ messages:
   error-add-mercenary-max: "§cThis war side has reached the maximum number of mercenaries."
   error-add-mercenary-is-resident: "§eYou can't add yourself as a mercenary :facepalm:"
   error-add-mercenary-already-added: "§eThat player has already been hired as a mercenary for this war."
+  error-add-mercenary-already-in-war: "§eThat player's town is already in the war."
   mercenary-remove-usage: "Usage: /t war removemercenary <war_name> <player_name>"
   error-mercenary-remove-not-mayor: "§cOnly mayors and co-mayors are allowed to remove mercenaries from a war."
   error-mercenary-remove-war-over: "§cYou cannot remove mercenaries from a war that is already over."
