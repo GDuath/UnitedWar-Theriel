@@ -55,8 +55,20 @@ public class PlayerSiegeEventListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (!plugin.getWarManager().isPlayerInActiveWar(event.getPlayer().getUniqueId()))
             return;
+
         var toPlot = TownyAPI.getInstance().getTownBlock(event.getPlayer().getLocation());
         plugin.getSiegeManager().updatePlayerInChunk(event.getPlayer(), null, toPlot);
+
+        // Send a reminder of onging war events to players that log on
+        if (plugin.getWarEventManager().isEventActive()) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                var player = event.getPlayer();
+                var currentEvent = plugin.getWarEventManager().getCurrentEvent();
+                Messenger.sendMessageListTemplate(player, "event-info-active", currentEvent.getMessagePlaceholders(),
+                        false);
+                player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.0f, 1.0f);
+            }, 20);
+        }
     }
 
     @EventHandler

@@ -285,6 +285,15 @@ public class WarEventManager {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.0f, 1.0f);
         }
+
+        Logger.log("event test 1");
+        if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var embed = plugin.getConfig().getString("discord.war-event-schedule-embed");
+            if (embed != null) {
+                Logger.log("event test 1");
+                Messenger.sendDiscordEmbed(embed, currentEvent.getMessagePlaceholders());
+            }
+        }
     }
 
     private void sendEventStartNotification() {
@@ -292,12 +301,26 @@ public class WarEventManager {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_HIT_GROUND, 1.0f, 1.0f);
         }
+
+        if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var embed = plugin.getConfig().getString("discord.war-event-start-embed");
+            if (embed != null) {
+                Messenger.sendDiscordEmbed(embed, currentEvent.getMessagePlaceholders());
+            }
+        }
     }
 
     private void sendEventEndNotification() {
         Messenger.broadcastMessageListTemplate("event-info-ended", currentEvent.getMessagePlaceholders(), false);
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_RETURN, 1.0f, 1.0f);
+        }
+
+        if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var embed = plugin.getConfig().getString("discord.war-event-end-embed");
+            if (embed != null) {
+                Messenger.sendDiscordEmbed(embed, currentEvent.getMessagePlaceholders());
+            }
         }
     }
 
