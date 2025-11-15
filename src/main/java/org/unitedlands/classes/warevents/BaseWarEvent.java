@@ -84,11 +84,11 @@ public abstract class BaseWarEvent implements Listener {
         replacements.put("event-description", getDescription());
         replacements.put("event-duration", Formatter.formatDuration(getDuration()));
         if (!isActive) {
-            replacements.put("timer-info", "Event will start in in §e"
-                    + Formatter.formatDuration(scheduledStartTime - System.currentTimeMillis()) + " §7and last §e" + Formatter.formatDuration(getDuration() * 1000) + ".");
+            replacements.put("timer-info", "Event will start in in "
+                    + Formatter.formatDuration(scheduledStartTime - System.currentTimeMillis()) + " and last " + Formatter.formatDuration(getDuration() * 1000) + ".");
         } else {
             replacements.put("timer-info",
-                    "Event will end in §e" + Formatter.formatDuration(scheduledEndTime - System.currentTimeMillis()) + ".");
+                    "Event will end in " + Formatter.formatDuration(scheduledEndTime - System.currentTimeMillis()) + ".");
         }
         return replacements;
     }

@@ -78,9 +78,11 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
         }
 
         WarSide playerWarSide = WarSide.NONE;
-        if (war.getDeclaring_town_id().equals(playerTown.getUUID()) || war.getAttacking_towns().contains(playerTown.getUUID())) {
+        if (war.getDeclaring_town_id().equals(playerTown.getUUID())
+                || war.getAttacking_towns().contains(playerTown.getUUID())) {
             playerWarSide = WarSide.ATTACKER;
-        } else if (war.getTarget_town_id().equals(playerTown.getUUID()) || war.getDefending_towns().contains(playerTown.getUUID())) {
+        } else if (war.getTarget_town_id().equals(playerTown.getUUID())
+                || war.getDefending_towns().contains(playerTown.getUUID())) {
             playerWarSide = WarSide.DEFENDER;
         }
         if (playerWarSide == WarSide.NONE) {
@@ -132,6 +134,15 @@ public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
                 || defendingPlayerList.contains(mercenary.getUniqueId())) {
             Messenger.sendMessageTemplate(sender, "error-add-mercenary-is-resident", null, true);
             return;
+        }
+
+        var mercenaryTown = TownyAPI.getInstance().getTown(mercenary);
+        if (mercenaryTown != null) {
+            if (war.getAttacking_towns().contains(mercenaryTown.getUUID())
+                    || war.getDefending_towns().contains(mercenaryTown.getUUID())) {
+                Messenger.sendMessageTemplate(sender, "error-add-mercenary-already-in-war", null, true);
+                return;
+            }
         }
 
         var invite = new MercenaryInvite();
