@@ -1,10 +1,7 @@
 package org.unitedlands.listeners;
 
-import java.util.stream.Collectors;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.Container;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;

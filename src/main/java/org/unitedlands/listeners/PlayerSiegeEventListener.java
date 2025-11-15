@@ -19,7 +19,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarSide;
@@ -40,8 +39,6 @@ public class PlayerSiegeEventListener implements Listener {
     @EventHandler
     public void onPlayerChangePlot(PlayerChangePlotEvent event) {
         if (!plugin.getWarManager().isPlayerInActiveWar(event.getPlayer().getUniqueId()))
-            return;
-        if (event.getPlayer().hasPotionEffect(PotionEffectType.INVISIBILITY) || event.getPlayer().isInvisible())
             return;
 
         var fromPlot = TownyAPI.getInstance().getTownBlock(event.getFrom());

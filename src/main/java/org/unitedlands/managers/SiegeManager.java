@@ -9,11 +9,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.potion.PotionEffectType;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarScoreType;
 import org.unitedlands.classes.WarSide;
@@ -285,8 +287,7 @@ public class SiegeManager implements Listener {
                         var townName = siegeChunk.getTown().getName();
                         var coords = siegeChunk.getX() + ", " + siegeChunk.getZ();
                         Map<String, String> replacements = Map.of("town-name", townName, "chunk-coords", coords);
-                        for (UUID playerId : players)
-                        {
+                        for (UUID playerId : players) {
                             var player = Bukkit.getPlayer(playerId);
                             if (player != null && player.isOnline()) {
                                 Messenger.sendMessageTemplate(player, "chunk-captured", replacements, true);
@@ -330,12 +331,21 @@ public class SiegeManager implements Listener {
     //#endregion
 
     public void updatePlayerInChunk(Player player, TownBlock previousBlock, TownBlock targetBlock) {
+
+        // Always remove players from siege chunks
         if (previousBlock != null) {
             String key = getChunkKey(previousBlock);
             if (siegeChunks.containsKey(key)) {
                 removePlayerFromSiegeChunk(player, key);
             }
         }
+
+        // Only add players to siege chunk if they're not invisible or in survival game mode
+        if (player.getGameMode() != GameMode.SURVIVAL)
+            return;
+        if (player.hasPotionEffect(PotionEffectType.INVISIBILITY) || player.isInvisible())
+            return;
+
         if (targetBlock != null) {
             String key = getChunkKey(targetBlock);
             if (siegeChunks.containsKey(key)) {

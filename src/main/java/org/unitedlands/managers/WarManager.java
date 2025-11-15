@@ -9,6 +9,7 @@ import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.metadata.CustomDataField;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -106,8 +107,9 @@ public class WarManager implements Listener {
     public void handleWars() {
 
         // Online player check needs to be done before a pending war gets activated
-        Set<UUID> onlinePlayers = Bukkit.getOnlinePlayers().stream().map(Player::getUniqueId)
+        Set<UUID> onlinePlayers = Bukkit.getOnlinePlayers().stream().filter(p -> p.getGameMode() == GameMode.SURVIVAL).map(Player::getUniqueId)
                 .collect(Collectors.toSet());
+                
         for (War war : activeWars) {
             checkOnlinePlayers(war, onlinePlayers);
         }
