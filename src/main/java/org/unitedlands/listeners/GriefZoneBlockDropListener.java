@@ -1,7 +1,10 @@
 package org.unitedlands.listeners;
 
+import java.util.stream.Collectors;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.Container;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,9 +20,9 @@ public class GriefZoneBlockDropListener implements Listener {
         var chunk = event.getBlock().getChunk();
         if (UnitedWar.getInstance().getGriefZoneManager().isChunkInAnyGriefingZone(chunk)) {
             
-            // Allow shulkers and chests to be broken
-            var blockType = event.getBlock().getType().toString();
-            if (blockType.contains("SHULKER") || blockType.contains("CHEST"))
+            // Allow chests/chulkers to be broken
+            String blockType = event.getBlockState().getBlockData().getAsString();
+            if (blockType.contains("chest") || blockType.contains("shulker"))
                 return;
 
             event.setCancelled(true);
