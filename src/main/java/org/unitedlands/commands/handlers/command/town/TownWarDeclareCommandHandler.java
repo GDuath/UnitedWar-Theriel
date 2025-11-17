@@ -10,19 +10,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarBookData;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Logger;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarGoalValidator;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class TownWarDeclareCommandHandler extends BaseCommandHandler {
+public class TownWarDeclareCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarDeclareCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarDeclareCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

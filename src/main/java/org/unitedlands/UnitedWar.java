@@ -3,15 +3,16 @@ package org.unitedlands;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.exceptions.KeyAlreadyRegisteredException;
 import org.bukkit.plugin.java.JavaPlugin;
+
 import org.unitedlands.commands.WarAdminCommands;
 import org.unitedlands.commands.TownWarCommands;
 import org.unitedlands.commands.TownWarcampCommands;
-import org.unitedlands.commands.WarDebugCommands;
 import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.listeners.TownyEventListener;
 import org.unitedlands.managers.*;
 import org.unitedlands.schedulers.WarScheduler;
+import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.MobilisationMetadata;
 
 import java.util.Objects;
@@ -38,12 +39,16 @@ public class UnitedWar extends JavaPlugin {
     private TaskScheduler taskScheduler;
     private WarScheduler warScheduler;
 
+    private MessageProvider messageProvider;
+
     @Override
     public void onEnable() {
 
         instance = this;
 
         saveDefaultConfig();
+
+        messageProvider = new MessageProvider(getConfig());
 
         createSchedulers();
         createManagers();
@@ -94,13 +99,11 @@ public class UnitedWar extends JavaPlugin {
     }
 
     private void registerCommands() {
-        var debugCommands = new WarDebugCommands(this);
-        Objects.requireNonNull(getCommand("wardebug")).setExecutor(debugCommands);
-        Objects.requireNonNull(getCommand("wardebug")).setTabCompleter(debugCommands);
-        new TownWarCommands(this);
-        new TownWarcampCommands(this);
 
-        var warAdminCommands = new WarAdminCommands(this);
+        new TownWarCommands(this, messageProvider);
+        new TownWarcampCommands(this, messageProvider);
+
+        var warAdminCommands = new WarAdminCommands(this, messageProvider);
         Objects.requireNonNull(getCommand("waradmin")).setExecutor(warAdminCommands);
         Objects.requireNonNull(getCommand("waradmin")).setTabCompleter(warAdminCommands);
     }
@@ -139,6 +142,10 @@ public class UnitedWar extends JavaPlugin {
 
     public TaskScheduler getTaskScheduler() {
         return taskScheduler;
+    }
+
+    public MessageProvider getMessageProvider() {
+        return messageProvider;
     }
 
     @Override

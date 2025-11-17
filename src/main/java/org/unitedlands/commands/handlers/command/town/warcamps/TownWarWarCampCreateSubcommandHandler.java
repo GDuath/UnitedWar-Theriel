@@ -3,7 +3,6 @@ package org.unitedlands.commands.handlers.command.town.warcamps;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.http.WebSocket.Listener;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,12 +14,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.events.ChunkBackupQueuedEvent;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -47,13 +48,13 @@ import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
 
-public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler implements Listener {
+public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler<UnitedWar> implements Listener {
 
     private Set<WorldCoord> queuedWarcampChunkBackups = new HashSet<>();
 
-    public TownWarWarCampCreateSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
-
+    public TownWarWarCampCreateSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
+        
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 

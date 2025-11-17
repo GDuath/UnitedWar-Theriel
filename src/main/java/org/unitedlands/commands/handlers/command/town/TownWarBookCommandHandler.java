@@ -9,9 +9,10 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarGoal;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
 import org.unitedlands.util.WarGoalValidator;
@@ -19,10 +20,10 @@ import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
 import com.palmergames.bukkit.towny.object.Town;
 
-public class TownWarBookCommandHandler extends BaseCommandHandler {
+public class TownWarBookCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarBookCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarBookCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

@@ -9,7 +9,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
@@ -17,10 +18,10 @@ import org.unitedlands.util.WarLivesMetadata;
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class WarAdminWarLivesCommandHandler extends BaseCommandHandler {
+public class WarAdminWarLivesCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminWarLivesCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminWarLivesCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

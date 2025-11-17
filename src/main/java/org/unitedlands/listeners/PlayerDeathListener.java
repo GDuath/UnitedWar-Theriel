@@ -21,7 +21,7 @@ import org.unitedlands.events.WarScoreEvent;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 

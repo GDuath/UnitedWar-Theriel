@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarSide;
+import org.unitedlands.utils.Logger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;

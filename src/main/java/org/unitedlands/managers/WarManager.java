@@ -27,7 +27,7 @@ import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarImmunityMetadata;
 

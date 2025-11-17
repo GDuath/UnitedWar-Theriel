@@ -26,7 +26,7 @@ import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 

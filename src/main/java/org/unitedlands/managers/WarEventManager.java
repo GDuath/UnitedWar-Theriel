@@ -16,7 +16,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.warevents.BaseWarEvent;
 import org.unitedlands.models.WarEventRecord;
 
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 import org.unitedlands.util.Messenger;
 import org.bukkit.event.HandlerList;
 

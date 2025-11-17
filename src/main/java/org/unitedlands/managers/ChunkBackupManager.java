@@ -11,7 +11,7 @@ import org.bukkit.ChunkSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.events.ChunkBackupQueuedEvent;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.TownBlock;

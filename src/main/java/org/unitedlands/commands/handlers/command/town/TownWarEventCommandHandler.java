@@ -5,13 +5,14 @@ import java.util.List;
 
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.util.Messenger;
 
-public class TownWarEventCommandHandler extends BaseCommandHandler {
+public class TownWarEventCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarEventCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarEventCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

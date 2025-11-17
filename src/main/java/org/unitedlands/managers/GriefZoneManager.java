@@ -21,7 +21,7 @@ import org.unitedlands.classes.GriefZone;
 import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.listeners.GriefZoneBlockDropListener;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.TownyAPI;

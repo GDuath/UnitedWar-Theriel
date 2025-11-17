@@ -6,16 +6,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.util.Messenger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Town;
 
-public class WarAdminImmunityCommandHandler extends BaseCommandHandler {
+public class WarAdminImmunityCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminImmunityCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminImmunityCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

@@ -8,9 +8,10 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
@@ -18,10 +19,10 @@ import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class TownWarSurrenderCommandHandler extends BaseCommandHandler {
+public class TownWarSurrenderCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarSurrenderCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarSurrenderCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

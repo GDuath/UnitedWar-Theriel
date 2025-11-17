@@ -10,18 +10,19 @@ import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
-public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandler {
+public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminWarSiegeChunkInfoSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminWarSiegeChunkInfoSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

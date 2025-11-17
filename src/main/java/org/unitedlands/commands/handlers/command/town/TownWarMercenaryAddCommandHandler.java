@@ -7,18 +7,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.MercenaryInvite;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler {
+public class TownWarMercenaryAddCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarMercenaryAddCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarMercenaryAddCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

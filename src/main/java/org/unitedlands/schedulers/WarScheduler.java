@@ -2,7 +2,7 @@ package org.unitedlands.schedulers;
 
 import org.bukkit.scheduler.BukkitTask;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 
 public class WarScheduler {
 

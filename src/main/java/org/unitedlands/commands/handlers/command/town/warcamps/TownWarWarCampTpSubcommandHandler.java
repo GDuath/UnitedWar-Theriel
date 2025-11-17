@@ -12,18 +12,19 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 
-public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
+public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarWarCampTpSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarWarCampTpSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

@@ -7,22 +7,24 @@ import java.util.List;
 import java.util.Map;
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.commands.handlers.ICommandHandler;
+import org.unitedlands.classes.BaseSubcommandHandler;
+import org.unitedlands.interfaces.ICommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.util.Messenger;
 
-public class TownWarWarCampCommandHandler extends BaseCommandHandler {
+public class TownWarWarCampCommandHandler extends BaseSubcommandHandler<UnitedWar> {
 
-    private final Map<String, ICommandHandler> subhandlers = new HashMap<>();
-
-    public TownWarWarCampCommandHandler(UnitedWar plugin) {
-        super(plugin);
-        registerSubHandler();
+    public TownWarWarCampCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
-    private void registerSubHandler() {
-        subhandlers.put("create", new TownWarWarCampCreateSubcommandHandler(plugin));
-        subhandlers.put("tp", new TownWarWarCampTpSubcommandHandler(plugin));
+    private final Map<String, org.unitedlands.interfaces.ICommandHandler> subhandlers = new HashMap<>();
+
+
+    @Override
+    protected void registerSubHandlers() {
+        subhandlers.put("create", new TownWarWarCampCreateSubcommandHandler(plugin, messageProvider));
+        subhandlers.put("tp", new TownWarWarCampTpSubcommandHandler(plugin, messageProvider));
     }
 
     @Override

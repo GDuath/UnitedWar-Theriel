@@ -7,14 +7,15 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
-public class WarAdminWarRebuildPlayerlistSubcommandHandler extends BaseCommandHandler {
+public class WarAdminWarRebuildPlayerlistSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminWarRebuildPlayerlistSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminWarRebuildPlayerlistSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

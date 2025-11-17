@@ -8,19 +8,20 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
 
-public class TownWarCallAllyCommandHandler extends BaseCommandHandler {
+public class TownWarCallAllyCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarCallAllyCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarCallAllyCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

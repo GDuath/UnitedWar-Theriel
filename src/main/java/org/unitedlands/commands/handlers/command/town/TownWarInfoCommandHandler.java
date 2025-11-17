@@ -7,14 +7,15 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.util.Messenger;
 
-public class TownWarInfoCommandHandler extends BaseCommandHandler {
+public class TownWarInfoCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarInfoCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarInfoCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override

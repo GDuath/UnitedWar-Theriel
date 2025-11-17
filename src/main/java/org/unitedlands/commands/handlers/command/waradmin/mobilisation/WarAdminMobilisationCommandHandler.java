@@ -9,7 +9,8 @@ import java.util.stream.Stream;
 
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.util.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
 
@@ -17,10 +18,10 @@ import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
 
-public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
+public class WarAdminMobilisationCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminMobilisationCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminMobilisationCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
