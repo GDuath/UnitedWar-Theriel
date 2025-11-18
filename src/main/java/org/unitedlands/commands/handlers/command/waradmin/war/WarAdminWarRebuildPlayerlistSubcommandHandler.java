@@ -2,15 +2,15 @@ package org.unitedlands.commands.handlers.command.waradmin.war;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 public class WarAdminWarRebuildPlayerlistSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
@@ -32,21 +32,20 @@ public class WarAdminWarRebuildPlayerlistSubcommandHandler extends BaseCommandHa
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length != 1) {
-            Messenger.sendMessage((Player) sender, "Usage: /wa war rebuildplayerlist <war_name>",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-playerlist-usage"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessage((Player) sender, "War not found.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-war-not-found"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         war.buildPlayerLists();
         war.setState_changed(true);
 
-        Messenger.sendMessage((Player) sender, "Player list for war " + war.getTitle() + " rebuilt.", true);
+        Messenger.sendMessage(sender, messageProvider.get("messages.wa-playerlist-rebuilt"), Map.of("war-name", war.getTitle()), messageProvider.get("messages.prefix"));
     }
 
 }

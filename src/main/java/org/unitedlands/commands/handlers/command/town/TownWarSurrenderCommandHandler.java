@@ -13,7 +13,7 @@ import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
@@ -42,13 +42,15 @@ public class TownWarSurrenderCommandHandler extends BaseCommandHandler<UnitedWar
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 1) {
-            Messenger.sendMessageTemplate(((Player) sender), "surrender-usage", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.surrender-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessageTemplate(((Player) sender), "error-war-not-found", Map.of("war-name", args[0]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-not-found"),
+                    Map.of("war-name", args[0]), messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -56,26 +58,26 @@ public class TownWarSurrenderCommandHandler extends BaseCommandHandler<UnitedWar
 
         Resident resident = TownyAPI.getInstance().getResident(player);
         if (!resident.isMayor()) {
-            Messenger.sendMessageTemplate(sender, "error-resident-not-mayor", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-resident-not-mayor"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var playerTown = TownyAPI.getInstance().getTown(player);
         if (playerTown == null) {
-            Messenger.sendMessageTemplate(sender, "error-town-data", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-town-data"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         if (!war.getDeclaring_town_id().equals(playerTown.getUUID())
                 && !war.getTarget_town_id().equals(playerTown.getUUID())) {
-            Messenger.sendMessageTemplate(sender, "error-surrender-not-subject", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-surrender-not-subject"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         Confirmation.runOnAccept(() -> {
-            // WarSide warSide = war.getPlayerWarSide(player.getUniqueId());
-            // if (warSide == WarSide.NONE || warSide == WarSide.BOTH)
-            //     return;
 
             WarSide warSide = WarSide.NONE;
             if (war.getDeclaring_town_id().equals(playerTown.getUUID())) {
@@ -85,7 +87,8 @@ public class TownWarSurrenderCommandHandler extends BaseCommandHandler<UnitedWar
             }
 
             if (warSide == WarSide.NONE) {
-                Messenger.sendMessageTemplate(sender, "error-surrender-not-subject", null, true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.error-surrender-not-subject"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
 
@@ -99,7 +102,8 @@ public class TownWarSurrenderCommandHandler extends BaseCommandHandler<UnitedWar
                 war.setWar_result(WarResult.SURRENDER_DEFENDER);
             }
             war.setState_changed(true);
-            Messenger.sendMessageTemplate(player, "surrender-done", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.surrender-done"), null,
+                    messageProvider.get("messages.prefix"));
         }).setTitle(
                 "§cSurrendering will end the war and give your enemy the win. Continue?")
                 .setDuration(60).sendTo(player);

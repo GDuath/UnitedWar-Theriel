@@ -72,13 +72,13 @@ public class UnitedWar extends JavaPlugin {
 
     private void createManagers() {
         databaseManager = new DatabaseManager(this);
-        warManager = new WarManager(this);
-        warEventManager = new WarEventManager(this);
+        warManager = new WarManager(this, messageProvider);
+        warEventManager = new WarEventManager(this, messageProvider);
         warDeclarationManager = new WarDeclarationManager(this);
-        siegeManager = new SiegeManager(this);
+        siegeManager = new SiegeManager(this, messageProvider);
         chunkBackupManager = new ChunkBackupManager(this);
         griefZoneManager = new GriefZoneManager(this);
-        mobilisationManager = new MobilisationManager(this);
+        mobilisationManager = new MobilisationManager(this, messageProvider);
     }
 
     private void createSchedulers() {
@@ -88,13 +88,13 @@ public class UnitedWar extends JavaPlugin {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new ServerEventListener(this), this);
-        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(this, messageProvider), this);
         getServer().getPluginManager().registerEvents(new TownyEventListener(this), this);
         getServer().getPluginManager().registerEvents(warManager, this);
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
         getServer().getPluginManager().registerEvents(siegeManager, this);
         getServer().getPluginManager().registerEvents(griefZoneManager, this);
-        getServer().getPluginManager().registerEvents(new MobilisationManager(this), this);
+        getServer().getPluginManager().registerEvents(new MobilisationManager(this, messageProvider), this);
         getServer().getPluginManager().registerEvents(new GraveManager(this), this);
     }
 

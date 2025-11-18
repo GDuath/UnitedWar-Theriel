@@ -5,6 +5,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.utils.Logger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -14,9 +15,11 @@ public class WarGoalValidator {
 
     @SuppressWarnings("unused")
     private static final UnitedWar plugin;
+    private static final MessageProvider messageProvider;
 
     static {
         plugin = UnitedWar.getPlugin(UnitedWar.class);
+        messageProvider = plugin.getMessageProvider();
     }
 
     public static boolean isWarGoalValid(WarGoal warGoal, Town playerTown, Town targetTown, Player player) {
@@ -27,24 +30,24 @@ public class WarGoalValidator {
 
         Resident resident = towny.getResident(player);
         if (resident == null) {
-            Messenger.sendMessageTemplate(player, "error-resident-data", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-resident-data"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
         // Basic checks - is the player a mayor, is the declaring town neutral, and is declaring and target town the same?
 
         if (!resident.isMayor()) {
-            Messenger.sendMessageTemplate(player, "error-resident-not-mayor", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-resident-not-mayor"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
         if (playerTown.isNeutral()) {
-            Messenger.sendMessageTemplate(player, "error-resident-town-neutral", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-resident-town-neutral"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
         if (playerTown.getUUID().equals(targetTown.getUUID())) {
-            Messenger.sendMessageTemplate(player, "error-target-town-is-resident-town", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-is-resident-town"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
@@ -53,7 +56,7 @@ public class WarGoalValidator {
         var immunityExpirationTime = WarImmunityMetadata.getImmunityMetaDataFromTown(targetTown);
         Logger.log(immunityExpirationTime + "");
         if (System.currentTimeMillis() < immunityExpirationTime) {
-            Messenger.sendMessageTemplate(player, "error-target-town-immune", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-immune"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
@@ -61,7 +64,7 @@ public class WarGoalValidator {
 
         var targetTownWars = plugin.getWarManager().getAllTownWars(targetTown.getUUID());
         if (targetTownWars.values().stream().anyMatch(w -> w.equals(WarSide.DEFENDER))) {
-            Messenger.sendMessageTemplate(player, "error-target-town-in-defensive-war", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-in-defensive-war"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
@@ -75,7 +78,7 @@ public class WarGoalValidator {
             case SKIRMISH:
                 return isTownWarValid(player, playerTown, targetTown);
             default:
-                Messenger.sendMessageTemplate(player, "error-war-goal-not-implemented", null, true);
+                Messenger.sendMessage(player, messageProvider.get("messages.error-war-goal-not-implemented"), null, messageProvider.get("messages.prefix"));
                 return false;
         }
 
@@ -87,28 +90,28 @@ public class WarGoalValidator {
         var playerNation = playerTown.getNationOrNull();
 
         if (playerNation != null && !playerTown.isCapital()) {
-            Messenger.sendMessageTemplate(player, "error-resident-town-not-capital-war-goal", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-resident-town-not-capital-war-goal"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
         if (playerNation != null && targetNation != null && playerNation.getAllies().contains(targetNation)) {
-            Messenger.sendMessageTemplate(player, "error-target-town-nation-allied", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-nation-allied"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
         if (playerNation != null && targetNation != null && targetNation.getUUID().equals(playerNation.getUUID())) {
-            Messenger.sendMessageTemplate(player, "error-target-town-nation-war-goal", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-nation-war-goal"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 
         if (targetNation != null) {
             if (targetNation.isNeutral()) {
-                Messenger.sendMessageTemplate(player, "error-target-nation-neutral", null, true);
+                Messenger.sendMessage(player, messageProvider.get("messages.error-target-nation-neutral"), null, messageProvider.get("messages.prefix"));
                 return false;
             }
         } else {
             if (targetTown.isNeutral()) {
-                Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
+                Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-neutral"), null, messageProvider.get("messages.prefix"));
                 return false;
             }
         }
@@ -119,7 +122,7 @@ public class WarGoalValidator {
     private static boolean isTownWarValid(Player player, Town playerTown, Town targetTown) {
 
         if (targetTown.isNeutral()) {
-            Messenger.sendMessageTemplate(player, "error-target-town-neutral", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-target-town-neutral"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 

@@ -12,7 +12,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
@@ -50,7 +50,8 @@ public class WarAdminWarLivesCommandHandler extends BaseCommandHandler<UnitedWar
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            Messenger.sendMessage(sender, "warlives-usage", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.warlives-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -59,7 +60,8 @@ public class WarAdminWarLivesCommandHandler extends BaseCommandHandler<UnitedWar
         Resident res = TownyUniverse.getInstance().getResident(offlinePlayer.getUniqueId());
 
         if (res == null) {
-            Messenger.sendMessageTemplate(sender, "player-not-found", Map.of("0", playerName), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.player-not-found"), Map.of("0", playerName),
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -68,40 +70,46 @@ public class WarAdminWarLivesCommandHandler extends BaseCommandHandler<UnitedWar
         switch (action) {
             case "delete" -> handleWarLivesDelete(sender, res, args);
             case "set" -> handleWarLivesSet(sender, res, args);
-            default -> Messenger.sendMessage(sender, "warlives-usage", true);
+            default -> Messenger.sendMessage(sender, messageProvider.get("messages.warlives-usage"), null,
+                    messageProvider.get("messages.prefix"));
         }
     }
 
     // Helper class to remove lives from correct war.
     private void handleWarLivesDelete(CommandSender sender, Resident res, String[] args) {
         if (args.length != 3) {
-            Messenger.sendMessage(sender, "warlives-usage", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.warlives-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         String warTitleArg = args[2].replace(" ", "_");
         var war = UnitedWar.getInstance().getWarManager().getWarByName(warTitleArg);
         if (war == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         WarLivesMetadata.removeWarLivesMetaData(res, war.getId());
 
-        Messenger.sendMessageTemplate(sender, "warlives-delete", Map.of("0", res.getName(), "2", war.getTitle()), true);
+        Messenger.sendMessage(sender, messageProvider.get("messages.warlives-delete"),
+                Map.of("0", res.getName(), "2", war.getTitle()), messageProvider.get("messages.prefix"));
     }
 
     // Helper class to set warlives for the correct war.
     private void handleWarLivesSet(CommandSender sender, Resident res, String[] args) {
         if (args.length != 4) {
-            Messenger.sendMessage(sender, "warlives-usage", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.warlives-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         String warTitleArg = args[2].replace(" ", "_");
         War war = UnitedWar.getInstance().getWarManager().getWarByName(warTitleArg);
         if (war == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -109,14 +117,16 @@ public class WarAdminWarLivesCommandHandler extends BaseCommandHandler<UnitedWar
         try {
             amount = Integer.parseInt(args[3]);
         } catch (NumberFormatException e) {
-            Messenger.sendMessageTemplate(sender, "not-a-number", Map.of("0", args[3]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.not-a-number"), Map.of("0", args[3]),
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         WarLivesMetadata.setWarLivesMetaData(res, war.getId(), amount);
 
-        Messenger.sendMessageTemplate(sender, "warlives-set",
-                Map.of("0", res.getName(), "1", String.valueOf(amount), "2", war.getTitle()), true);
+        Messenger.sendMessage(sender, messageProvider.get("messages.warlives-set"),
+                Map.of("0", res.getName(), "1", String.valueOf(amount), "2", war.getTitle()),
+                messageProvider.get("messages.prefix"));
     }
 
 }

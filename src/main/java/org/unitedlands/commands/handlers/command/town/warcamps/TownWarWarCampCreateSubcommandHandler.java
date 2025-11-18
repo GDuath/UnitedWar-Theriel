@@ -22,7 +22,7 @@ import org.unitedlands.events.ChunkBackupQueuedEvent;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
 import org.unitedlands.utils.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
@@ -74,30 +74,26 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler<Un
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length != 1) {
-            Messenger.sendMessage((Player) sender,
-                    "Usage: /t war warcamp create <warname>",
-                    true);
+            Messenger.sendMessage(sender, "Usage: /t war warcamp create <warname>", null, messageProvider.get("messages.prefix"));
             return;
         }
 
         Player player = (Player) sender;
         var town = TownyAPI.getInstance().getTown(player);
         if (town == null) {
-            Messenger.sendMessage(player, "§cError retrieving your town. Please contact an admin to look into this.",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-town-data-missing"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         if (!plugin.getWarManager().isTownInPendingWar(town.getUUID())
                 || plugin.getWarManager().isTownInActiveWar(town.getUUID())) {
-            Messenger.sendMessage((Player) sender,
-                    "§cYou can only do this in the warmup phase of a war, with no other wars active.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-warcamp-warmup"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         var existingTownBlock = TownyAPI.getInstance().getTownBlock(player);
         if (existingTownBlock != null && existingTownBlock.getTownOrNull() != null) {
-            Messenger.sendMessage((Player) sender, "§cThis plot already belongs to a town!", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-warcamp-plot-taken"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -107,16 +103,14 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler<Un
 
         if (warcampBlockCount != null) {
             if (warcampBlockCount.getValue() >= 1) {
-                Messenger.sendMessage((Player) sender,
-                        "§cWou already own a war camp. Towns can only have one war camp at a time.", true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.error-warcamp-existing"), null, messageProvider.get("messages.prefix"));
                 return;
             }
         }
 
         Confirmation.runOnAccept(() -> {
             createWarCamp(player, town);
-        }).setTitle(
-                "§7This will create a war camp until all wars your town is in are completed. You cannot move or delete the war camp manually. Continue?")
+        }).setTitle(messageProvider.get("messages.warcamp-confirm"))
                 .setDuration(60).sendTo(player);
 
     }
@@ -134,10 +128,8 @@ public class TownWarWarCampCreateSubcommandHandler extends BaseCommandHandler<Un
 
         queuedWarcampChunkBackups.add(townBlock.getWorldCoord());
         plugin.getChunkBackupManager().snapshotChunks(Set.of(townBlock), town.getUUID(), "warcamp");
-
-        Messenger.sendMessage(player,
-                "§bCreating war camp. Use '/t war warcamp tp' to get here while the camp is not occupied by the enemy.",
-                true);
+        
+        Messenger.sendMessage(player, messageProvider.get("messages.warcamp-creating"), null, messageProvider.get("messages.prefix"));
     }
 
     @SuppressWarnings("deprecation")

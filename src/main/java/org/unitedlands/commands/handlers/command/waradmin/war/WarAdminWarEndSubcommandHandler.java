@@ -5,12 +5,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 public class WarAdminWarEndSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
@@ -32,14 +31,13 @@ public class WarAdminWarEndSubcommandHandler extends BaseCommandHandler<UnitedWa
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length != 1) {
-            Messenger.sendMessage((Player) sender, "Usage: /wa war end <war_name>",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-warend-usage"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessage((Player) sender, "War not found.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-war-not-found"), null, messageProvider.get("messages.prefix"));
             return;
         }
 

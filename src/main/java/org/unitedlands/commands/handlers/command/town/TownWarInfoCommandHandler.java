@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
@@ -10,7 +11,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 public class TownWarInfoCommandHandler extends BaseCommandHandler<UnitedWar> {
 
@@ -35,21 +36,23 @@ public class TownWarInfoCommandHandler extends BaseCommandHandler<UnitedWar> {
         if (args.length == 0) {
             var playerWars = plugin.getWarManager().getAllPlayerWars(((Player) sender).getUniqueId());
             if (playerWars.isEmpty()) {
-                Messenger.sendMessageTemplate(((Player) sender), "info-not-in-war", null, true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.info-not-in-war"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             } else {
                 for (var war : playerWars.keySet()) {
-                    Messenger.sendMessageListTemplate(((Player) sender), "war-info", war.getMessagePlaceholders(),
-                            false);
+                    Messenger.sendMessage(sender, messageProvider.getList("messages.war-info"),
+                            war.getMessagePlaceholders(), null);
                 }
             }
         } else if (args.length >= 1) {
             War war = plugin.getWarManager().getWarByName(args[0]);
             if (war != null) {
-                Messenger.sendMessageListTemplate(((Player) sender), "war-info", war.getMessagePlaceholders(),
-                        false);
+                Messenger.sendMessage(sender, messageProvider.getList("messages.war-info"),
+                        war.getMessagePlaceholders(), null);
             } else {
-                Messenger.sendMessageTemplate(((Player)sender), "error-war-not-found", null, true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.error-war-not-found"),
+                        Map.of("war-name", args[0]), messageProvider.get("messages.prefix"));
             }
         }
     }

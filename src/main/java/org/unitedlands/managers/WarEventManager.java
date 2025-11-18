@@ -15,14 +15,16 @@ import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.warevents.BaseWarEvent;
 import org.unitedlands.models.WarEventRecord;
-
+import org.unitedlands.util.MessageProvider;
+import org.unitedlands.utils.DiscordService;
 import org.unitedlands.utils.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 import org.bukkit.event.HandlerList;
 
 public class WarEventManager {
 
     private final UnitedWar plugin;
+    private final MessageProvider messageProvider;
 
     private Set<String> eventRegister = new HashSet<>();
     private Map<String, Double> eventChances = new HashMap<>();
@@ -32,8 +34,9 @@ public class WarEventManager {
     private BaseWarEvent currentEvent = null;
     private WarEventRecord currentEventRecord = null;
 
-    public WarEventManager(UnitedWar plugin) {
+    public WarEventManager(UnitedWar plugin, MessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
         buildEventRegister();
     }
 
@@ -185,7 +188,7 @@ public class WarEventManager {
 
     public void forceEvent(Player sender, String eventName, Integer warmup) {
         if (!eventRegister.contains(eventName)) {
-            Messenger.sendMessage(sender, "This internal event name is not registered", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-warevents-unregistered"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -281,45 +284,49 @@ public class WarEventManager {
     //#region Notification methods
 
     private void sendEventPickNotification() {
-        Messenger.broadcastMessageListTemplate("event-info-scheduled", currentEvent.getMessagePlaceholders(), false);
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.event-info-scheduled"), currentEvent.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.0f, 1.0f);
         }
 
-        Logger.log("event test 1");
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            var pingrole = plugin.getConfig().getString("discord.ping-role-id");
             var embed = plugin.getConfig().getString("discord.war-event-schedule-embed");
             if (embed != null) {
-                Logger.log("event test 1");
-                Messenger.sendDiscordEmbed(embed, currentEvent.getMessagePlaceholders());
+                DiscordService.sendDiscordEmbed(webhookUrl, embed, pingrole, currentEvent.getMessagePlaceholders());
             }
         }
     }
 
     private void sendEventStartNotification() {
-        Messenger.broadcastMessageListTemplate("event-info-active", currentEvent.getMessagePlaceholders(), false);
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.event-info-active"), currentEvent.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_HIT_GROUND, 1.0f, 1.0f);
         }
 
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            var pingrole = plugin.getConfig().getString("discord.ping-role-id");
             var embed = plugin.getConfig().getString("discord.war-event-start-embed");
             if (embed != null) {
-                Messenger.sendDiscordEmbed(embed, currentEvent.getMessagePlaceholders());
+                DiscordService.sendDiscordEmbed(webhookUrl, embed, pingrole, currentEvent.getMessagePlaceholders());
             }
         }
     }
 
     private void sendEventEndNotification() {
-        Messenger.broadcastMessageListTemplate("event-info-ended", currentEvent.getMessagePlaceholders(), false);
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.event-info-ended"), currentEvent.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_RETURN, 1.0f, 1.0f);
         }
 
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            var pingrole = plugin.getConfig().getString("discord.ping-role-id");
             var embed = plugin.getConfig().getString("discord.war-event-end-embed");
             if (embed != null) {
-                Messenger.sendDiscordEmbed(embed, currentEvent.getMessagePlaceholders());
+                DiscordService.sendDiscordEmbed(webhookUrl, embed, pingrole, currentEvent.getMessagePlaceholders());
             }
         }
     }

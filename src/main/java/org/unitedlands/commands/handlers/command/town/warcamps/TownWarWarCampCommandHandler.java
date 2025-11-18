@@ -10,7 +10,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseSubcommandHandler;
 import org.unitedlands.interfaces.ICommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 public class TownWarWarCampCommandHandler extends BaseSubcommandHandler<UnitedWar> {
 
@@ -58,7 +58,7 @@ public class TownWarWarCampCommandHandler extends BaseSubcommandHandler<UnitedWa
         ICommandHandler subhandler = subhandlers.get(subcommand);
 
         if (subhandler == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null, messageProvider.get("messages.prefix"));
             return;
         }
 

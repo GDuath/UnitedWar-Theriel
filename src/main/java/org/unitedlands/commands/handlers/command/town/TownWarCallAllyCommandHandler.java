@@ -13,7 +13,7 @@ import org.unitedlands.classes.CallToWar;
 import org.unitedlands.classes.WarSide;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
@@ -54,7 +54,8 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler<UnitedWar>
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessageTemplate(sender, "war-call-send-usage", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.war-call-send-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -62,31 +63,36 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler<UnitedWar>
 
         Nation ally = TownyAPI.getInstance().getNation(args[0]);
         if (ally == null) {
-            Messenger.sendMessageTemplate(sender, "error-nation-not-found", Map.of("nation-name",args[0]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-nation-not-found"),
+                    Map.of("nation-name", args[0]), messageProvider.get("messages.prefix"));
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[1]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name",args[1]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-not-found"),
+                    Map.of("war-name", args[1]), messageProvider.get("messages.prefix"));
             return;
         }
 
         if (war.getIs_active() || war.getIs_ended()) {
-            Messenger.sendMessageTemplate(sender, "error-war-call-send-ally-not-pending", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-call-send-ally-not-pending"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var allyCapital = ally.getCapital();
         if (war.getAttacking_towns().contains(allyCapital.getUUID())
                 || war.getDefending_towns().contains(allyCapital.getUUID())) {
-            Messenger.sendMessageTemplate(sender, "error-war-call-send-nation-already-in-war", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-call-send-nation-already-in-war"),
+                    null, messageProvider.get("messages.prefix"));
             return;
         }
 
         var playerTown = TownyAPI.getInstance().getTown(player);
         if (playerTown == null) {
-            Messenger.sendMessageTemplate(sender, "error-town-data", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-town-data"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -97,13 +103,15 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler<UnitedWar>
             warSide = WarSide.DEFENDER;
 
         if (warSide == WarSide.NONE) {
-            Messenger.sendMessageTemplate(sender, "error-war-side-data", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-side-data"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var playerNation = playerTown.getNationOrNull();
         if (playerNation == null) {
-            Messenger.sendMessageTemplate(sender, "error-resident-nation-data", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-resident-nation-data"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -115,10 +123,12 @@ public class TownWarCallAllyCommandHandler extends BaseCommandHandler<UnitedWar>
 
         plugin.getWarManager().addCallToWar(ctw);
 
-        Messenger.sendMessageTemplate(sender, "war-call-send-success", null, true);
+        Messenger.sendMessage(sender, messageProvider.get("messages.war-call-send-success"), null,
+                messageProvider.get("messages.prefix"));
         Player allyKing = ally.getKing().getPlayer();
         if (allyKing != null)
-            Messenger.sendMessageTemplate(allyKing, "war-call-receive", null, true);
+            Messenger.sendMessage(allyKing, messageProvider.get("messages.war-call-receive"), null,
+                    messageProvider.get("messages.prefix"));
 
     }
 

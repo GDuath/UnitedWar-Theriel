@@ -17,7 +17,7 @@ import org.unitedlands.commands.handlers.command.waradmin.warlives.WarAdminWarLi
 import org.unitedlands.interfaces.ICommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.utils.Formatter;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 import java.util.*;
 
 public class WarAdminCommands implements CommandExecutor, TabCompleter {
@@ -69,11 +69,10 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, @NotNull Command cmd, @NotNull String label,
             String @NotNull [] args) {
         if (!sender.hasPermission("united.war.admin")) {
-            Messenger.sendMessage(sender, "no-permission", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.no-permission"), null, messageProvider.get("messages.prefix"));
             return true;
         }
 
-        // TODO: Send help message
         if (args.length == 0)
             return false;
 
@@ -81,7 +80,7 @@ public class WarAdminCommands implements CommandExecutor, TabCompleter {
         ICommandHandler handler = handlers.get(subcommand);
 
         if (handler == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 

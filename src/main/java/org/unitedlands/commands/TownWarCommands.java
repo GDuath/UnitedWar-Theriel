@@ -26,13 +26,12 @@ import org.unitedlands.commands.handlers.command.town.TownWarPlayersCommandHandl
 import org.unitedlands.commands.handlers.command.town.TownWarSurrenderCommandHandler;
 import org.unitedlands.interfaces.ICommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 import org.unitedlands.utils.Formatter;
 
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
 import com.palmergames.bukkit.towny.object.AddonCommand;
-
 
 public class TownWarCommands implements CommandExecutor, TabCompleter {
 
@@ -91,7 +90,6 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
             String[] args) {
 
-        // TODO: Send help message
         if (args.length == 0)
             return false;
 
@@ -99,7 +97,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         ICommandHandler handler = handlers.get(subcommand);
 
         if (handler == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 

@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 public class WarAdminWarEventsClearSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
@@ -24,9 +23,7 @@ public class WarAdminWarEventsClearSubcommandHandler extends BaseCommandHandler<
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length != 0) {
-            Messenger.sendMessage((Player) sender,
-                    "Usage: /wa warevents clear",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-warevents-clear-usage"), null, messageProvider.get("messages.prefix"));
             return;
         }
 

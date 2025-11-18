@@ -18,12 +18,11 @@ import org.unitedlands.commands.handlers.command.town.warcamps.TownWarWarCampTpS
 import org.unitedlands.interfaces.ICommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.utils.Formatter;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
 import com.palmergames.bukkit.towny.object.AddonCommand;
-
 
 public class TownWarcampCommands implements CommandExecutor, TabCompleter {
 
@@ -80,7 +79,8 @@ public class TownWarcampCommands implements CommandExecutor, TabCompleter {
         ICommandHandler handler = handlers.get(subcommand);
 
         if (handler == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null,
+                    messageProvider.get("messages.prefix"));
             return false;
         }
 

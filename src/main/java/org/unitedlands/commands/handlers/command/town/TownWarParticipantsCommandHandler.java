@@ -12,7 +12,7 @@ import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import org.unitedlands.util.WarLivesMetadata;
@@ -44,7 +44,8 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
             war = plugin.getWarManager().getAllPlayerWars(player.getUniqueId()).keySet().stream().findFirst()
                     .orElse(null);
             if (war == null) {
-                Messenger.sendMessageTemplate((Player) sender, "info-not-in-war", null, true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.info-not-in-war"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
         }
@@ -52,7 +53,8 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
         if (args.length >= 1) {
             war = plugin.getWarManager().getWarByName(args[0]);
             if (war == null) {
-                Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name", args[0]), true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.error-war-not-found"),
+                        Map.of("war-name", args[0]), messageProvider.get("messages.prefix"));
                 return;
             }
         }
@@ -69,10 +71,10 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
             var town = towny.getTown(townId);
             if (town != null) {
                 String townString = town.getName();
-                if(plugin.getSiegeManager().isTownOccupied(townId)) {
-                    townString = "§r§7§m" + townString;
+                if (plugin.getSiegeManager().isTownOccupied(townId)) {
+                    townString = "<gray><strikethrough>" + townString + "</strikethrough></gray>";
                 } else {
-                    townString = "§r§c" + townString;
+                    townString = "<red>" + townString + "</red>";
                 }
                 if (town.hasNation()) {
                     var tag = town.getNationOrNull().getTag();
@@ -88,10 +90,10 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
             var town = towny.getTown(townId);
             if (town != null) {
                 String townString = town.getName();
-                if(plugin.getSiegeManager().isTownOccupied(townId)) {
-                    townString = "§r§7§m" + townString;
+                if (plugin.getSiegeManager().isTownOccupied(townId)) {
+                    townString = "<gray><strikethrough>" + townString + "</strikethrough></gray>";
                 } else {
-                    townString = "§r§a" + townString;
+                    townString = "<green>" + townString + "</green>";
                 }
                 if (town.hasNation()) {
                     var tag = town.getNationOrNull().getTag();
@@ -110,10 +112,10 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
             if (resident != null) {
                 String name = resident.getName();
                 int lives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
-                if(lives < 1) {
-                    name = "§r§7§m" + name;
+                if (lives < 1) {
+                    name = "<gray><strikethrough>" + name + "</strikethrough></gray>";
                 } else {
-                    name = "§r§c" + name;
+                    name = "<dark_red>" + name + "</dark_red>";
                 }
                 attackerMercenaryNames.add(name);
             }
@@ -123,21 +125,21 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
             if (resident != null) {
                 String name = resident.getName();
                 int lives = WarLivesMetadata.getWarLivesMetaData(resident, war.getId());
-                if(lives < 1) {
-                    name = "§r§7§m" + name;
+                if (lives < 1) {
+                    name = "<gray><strikethrough>" + name + "</strikethrough></gray>";
                 } else {
-                    name = "§r§a" + name;
+                    name = "<dark_green>" + name + "</dark_green>";
                 }
                 defenderMercenaryNames.add(name);
             }
         }
-        replacements.put("attacking-towns", String.join("§r, ", attackerTownNames));
-        replacements.put("defending-towns", String.join("§r, ", defenderTownNames));
-        replacements.put("attacking-mercs", String.join("§r, ", attackerMercenaryNames));
-        replacements.put("defending-mercs", String.join("§r, ", defenderMercenaryNames));
+        replacements.put("attacking-towns", String.join(", ", attackerTownNames));
+        replacements.put("defending-towns", String.join(", ", defenderTownNames));
+        replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
+        replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
 
-        Messenger.sendMessageListTemplate(sender, "war-participants", replacements, false);
-
+        Messenger.sendMessage(sender, messageProvider.getList("messages.war-participants"), replacements,
+                messageProvider.get("messages.prefix"));
     }
 
 }

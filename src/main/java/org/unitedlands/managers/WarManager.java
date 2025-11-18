@@ -27,8 +27,10 @@ import org.unitedlands.events.WarEndEvent;
 import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.models.War;
 import org.unitedlands.models.WarScoreRecord;
+import org.unitedlands.utils.DiscordService;
 import org.unitedlands.utils.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
+import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.WarImmunityMetadata;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -39,6 +41,7 @@ import org.unitedlands.util.WarLivesMetadata;
 public class WarManager implements Listener {
 
     private final UnitedWar plugin;
+    private final MessageProvider messageProvider;
 
     private Set<War> pendingWars = new HashSet<>();
     private Set<War> activeWars = new HashSet<>();
@@ -48,8 +51,9 @@ public class WarManager implements Listener {
 
     private Map<UUID, Long> townImmunities = new HashMap<>();
 
-    public WarManager(UnitedWar plugin) {
+    public WarManager(UnitedWar plugin, MessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
     }
 
     public void loadWars() {
@@ -107,9 +111,10 @@ public class WarManager implements Listener {
     public void handleWars() {
 
         // Online player check needs to be done before a pending war gets activated
-        Set<UUID> onlinePlayers = Bukkit.getOnlinePlayers().stream().filter(p -> p.getGameMode() == GameMode.SURVIVAL).map(Player::getUniqueId)
+        Set<UUID> onlinePlayers = Bukkit.getOnlinePlayers().stream().filter(p -> p.getGameMode() == GameMode.SURVIVAL)
+                .map(Player::getUniqueId)
                 .collect(Collectors.toSet());
-                
+
         for (War war : activeWars) {
             checkOnlinePlayers(war, onlinePlayers);
         }
@@ -284,8 +289,8 @@ public class WarManager implements Listener {
             var player = Bukkit.getPlayer(playerId);
             if (player != null) {
                 if (player.isFlying()) {
-                    Messenger.sendMessage(player, "§cYou're now at war. Flight will be deactivated in 5 seconds.",
-                            true);
+                    Messenger.sendMessage(player, messageProvider.get("messages.flight-disable"), null,
+                            messageProvider.get("messages.prefix"));
                 }
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     player.setAllowFlight(false);
@@ -749,7 +754,8 @@ public class WarManager implements Listener {
     //#region Notification methods
 
     private void sendWarDeclaredNotification(War war) {
-        Messenger.broadcastMessageListTemplate("war-declared", war.getMessagePlaceholders(), false);
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.war-declared"),
+                war.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_6, 1.0f, 1.0f);
         }
@@ -757,15 +763,19 @@ public class WarManager implements Listener {
 
     private void sendWarDeclaredDiscordNotification(War war) {
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            var pingrole = plugin.getConfig().getString("discord.ping-role-id");
             var embed = plugin.getConfig().getString("discord.war-declaration-embed");
             if (embed != null) {
-                Messenger.sendDiscordEmbed(embed, war.getMessagePlaceholders());
+                DiscordService.sendDiscordEmbed(webhookUrl, embed, pingrole, war.getMessagePlaceholders());
             }
+
         }
     }
 
     private void sendWarStartNotification(War war) {
-        Messenger.broadcastMessageTemplate("war-started", war.getMessagePlaceholders(), false);
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.war-started"),
+                war.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_7, 1.0f, 1.0f);
         }
@@ -773,15 +783,18 @@ public class WarManager implements Listener {
 
     private void sendWarStartDiscordNotification(War war) {
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            var pingrole = plugin.getConfig().getString("discord.ping-role-id");
             var embed = plugin.getConfig().getString("discord.war-started-embed");
             if (embed != null) {
-                Messenger.sendDiscordEmbed(embed, war.getMessagePlaceholders());
+                DiscordService.sendDiscordEmbed(webhookUrl, embed, pingrole, war.getMessagePlaceholders());
             }
         }
     }
 
     private void sendWarEndNotification(War war) {
-        Messenger.broadcastMessageListTemplate("war-ended", war.getMessagePlaceholders(), false);
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.war-ended"),
+                war.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_2, 1.0f, 1.0f);
         }
@@ -789,9 +802,11 @@ public class WarManager implements Listener {
 
     private void sendWarEndDiscordNotification(War war) {
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+            var webhookUrl = plugin.getConfig().getString("discord.webhook_url");
+            var pingrole = plugin.getConfig().getString("discord.ping-role-id");
             var embed = plugin.getConfig().getString("discord.war-ended-embed");
             if (embed != null) {
-                Messenger.sendDiscordEmbed(embed, war.getMessagePlaceholders());
+                DiscordService.sendDiscordEmbed(webhookUrl, embed, pingrole, war.getMessagePlaceholders());
             }
         }
     }
@@ -1020,7 +1035,7 @@ public class WarManager implements Listener {
             if (player != null) {
                 Map<String, String> replacements = new HashMap<>();
                 replacements.put("score", event.getFinalScore().toString());
-                Messenger.sendMessageTemplate(player, event.getMessage(), replacements, true);
+                Messenger.sendMessage(player, event.getMessage(), replacements, messageProvider.get("messages.prefix"));
             }
         }
 
