@@ -34,6 +34,7 @@ public class WarAdminReloadCommandHandler extends BaseCommandHandler<UnitedWar> 
         plugin.getWarScheduler().shutdown();
         Messenger.sendMessage(sender, messageProvider.get("messages.wa-reload-2"), null, messageProvider.get("messages.prefix"));
         plugin.reloadConfig();
+        plugin.getMessageProvider().reload(plugin.getConfig());
         plugin.getWarEventManager().buildEventRegister();
         Messenger.sendMessage(sender, messageProvider.get("messages.wa-reload-3"), null, messageProvider.get("messages.prefix"));
         plugin.getWarScheduler().initialize();

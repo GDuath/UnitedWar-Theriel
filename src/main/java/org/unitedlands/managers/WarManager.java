@@ -774,7 +774,7 @@ public class WarManager implements Listener {
     }
 
     private void sendWarStartNotification(War war) {
-        Messenger.sendMessage(Bukkit.getServer(), messageProvider.getList("messages.war-started"),
+        Messenger.sendMessage(Bukkit.getServer(), messageProvider.get("messages.war-started"),
                 war.getMessagePlaceholders());
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_7, 1.0f, 1.0f);

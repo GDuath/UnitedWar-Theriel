@@ -14,6 +14,7 @@ import org.unitedlands.managers.*;
 import org.unitedlands.schedulers.WarScheduler;
 import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.MobilisationMetadata;
+import org.unitedlands.utils.Logger;
 
 import java.util.Objects;
 
@@ -45,6 +46,14 @@ public class UnitedWar extends JavaPlugin {
     public void onEnable() {
 
         instance = this;
+
+        Logger.log("**************************");
+        Logger.log("    | |__  o _|_ _  _|    ");
+        Logger.log("    |_|| | |  |_(/_(_|    ");
+        Logger.log("                          ");
+        Logger.log("    | | _  __             ");
+        Logger.log("    |^|(_| |              ");
+        Logger.log("**************************");
 
         saveDefaultConfig();
 

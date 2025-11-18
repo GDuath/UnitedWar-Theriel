@@ -138,8 +138,7 @@ public class TownWarParticipantsCommandHandler extends BaseCommandHandler<United
         replacements.put("attacking-mercs", String.join(", ", attackerMercenaryNames));
         replacements.put("defending-mercs", String.join(", ", defenderMercenaryNames));
 
-        Messenger.sendMessage(sender, messageProvider.getList("messages.war-participants"), replacements,
-                messageProvider.get("messages.prefix"));
+        Messenger.sendMessage(sender, messageProvider.getList("messages.war-participants"), replacements);
     }
 
 }
