@@ -12,7 +12,6 @@ import org.bukkit.command.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.ICommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarDeclareCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarBookCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarCallAcceptCommandHandler;
@@ -25,39 +24,42 @@ import org.unitedlands.commands.handlers.command.town.TownWarMercenaryRemoveComm
 import org.unitedlands.commands.handlers.command.town.TownWarParticipantsCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarPlayersCommandHandler;
 import org.unitedlands.commands.handlers.command.town.TownWarSurrenderCommandHandler;
-import org.unitedlands.util.Formatter;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.interfaces.ICommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
+import org.unitedlands.utils.Formatter;
 
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
 import com.palmergames.bukkit.towny.object.AddonCommand;
 
-
 public class TownWarCommands implements CommandExecutor, TabCompleter {
 
     private final UnitedWar plugin;
+    private final IMessageProvider messageProvider;
     private final Map<String, ICommandHandler> handlers = new HashMap<>();
 
-    public TownWarCommands(UnitedWar plugin) {
+    public TownWarCommands(UnitedWar plugin, IMessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
         TownyCommandAddonAPI.addSubCommand(new AddonCommand(CommandType.TOWN, "war", this));
 
         registerHandlers();
     }
 
     private void registerHandlers() {
-        handlers.put("event", new TownWarEventCommandHandler(plugin));
-        handlers.put("book", new TownWarBookCommandHandler(plugin));
-        handlers.put("declare", new TownWarDeclareCommandHandler(plugin));
-        handlers.put("info", new TownWarInfoCommandHandler(plugin));
-        handlers.put("participants", new TownWarParticipantsCommandHandler(plugin));
-        handlers.put("players", new TownWarPlayersCommandHandler(plugin));
-        handlers.put("callally", new TownWarCallAllyCommandHandler(plugin));
-        handlers.put("acceptcall", new TownWarCallAcceptCommandHandler(plugin));
-        handlers.put("addmercenary", new TownWarMercenaryAddCommandHandler(plugin));
-        handlers.put("removemercenary", new TownWarMercenaryRemoveCommandHandler(plugin));
-        handlers.put("acceptinvite", new TownWarMercenaryAcceptInviteCommandHandler(plugin));
-        handlers.put("surrender", new TownWarSurrenderCommandHandler(plugin));
+        handlers.put("event", new TownWarEventCommandHandler(plugin, messageProvider));
+        handlers.put("book", new TownWarBookCommandHandler(plugin, messageProvider));
+        handlers.put("declare", new TownWarDeclareCommandHandler(plugin, messageProvider));
+        handlers.put("info", new TownWarInfoCommandHandler(plugin, messageProvider));
+        handlers.put("participants", new TownWarParticipantsCommandHandler(plugin, messageProvider));
+        handlers.put("players", new TownWarPlayersCommandHandler(plugin, messageProvider));
+        handlers.put("callally", new TownWarCallAllyCommandHandler(plugin, messageProvider));
+        handlers.put("acceptcall", new TownWarCallAcceptCommandHandler(plugin, messageProvider));
+        handlers.put("addmercenary", new TownWarMercenaryAddCommandHandler(plugin, messageProvider));
+        handlers.put("removemercenary", new TownWarMercenaryRemoveCommandHandler(plugin, messageProvider));
+        handlers.put("acceptinvite", new TownWarMercenaryAcceptInviteCommandHandler(plugin, messageProvider));
+        handlers.put("surrender", new TownWarSurrenderCommandHandler(plugin, messageProvider));
     }
 
     @Override
@@ -88,7 +90,6 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
             String[] args) {
 
-        // TODO: Send help message
         if (args.length == 0)
             return false;
 
@@ -96,7 +97,7 @@ public class TownWarCommands implements CommandExecutor, TabCompleter {
         ICommandHandler handler = handlers.get(subcommand);
 
         if (handler == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null, messageProvider.get("messages.prefix"));
             return false;
         }
 

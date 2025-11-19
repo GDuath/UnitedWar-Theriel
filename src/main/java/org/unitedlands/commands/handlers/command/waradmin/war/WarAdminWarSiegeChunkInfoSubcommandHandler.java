@@ -1,8 +1,10 @@
 package org.unitedlands.commands.handlers.command.waradmin.war;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,18 +12,19 @@ import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
-public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandler {
+public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminWarSiegeChunkInfoSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminWarSiegeChunkInfoSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -33,8 +36,8 @@ public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandl
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length != 0) {
-            Messenger.sendMessage((Player) sender, "Usage: /wa war siegechunkinfo",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-siegechunk-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -45,7 +48,8 @@ public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandl
         var siegeChunk = plugin.getSiegeManager().getSiegeChunk(coord);
 
         if (siegeChunk == null) {
-            Messenger.sendMessage((Player) sender, "§cNo active siege chunk at this location.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-siegechunk-no-siege"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -66,12 +70,13 @@ public class WarAdminWarSiegeChunkInfoSubcommandHandler extends BaseCommandHandl
                 defenderNames.add(resident.getName());
         }
 
-        Messenger.sendMessage((Player) sender, "§lSiege Chunk Info: ", true);
-        Messenger.sendMessage((Player) sender, "War: " + war.getCleanTitle(), true);
-        Messenger.sendMessage((Player) sender, "Attacking players: " + String.join(", ", attackerNames), true);
-        Messenger.sendMessage((Player) sender, "Defending players: " + String.join(", ", defenderNames), true);
-        Messenger.sendMessage((Player) sender, "Health: " + siegeChunk.getCurrent_health(), true);
+        Map<String, String> replacements = new HashMap<>();
+        replacements.put("war-name", war.getCleanTitle());
+        replacements.put("attackers", String.join(", ", attackerNames));
+        replacements.put("defenders", String.join(", ", defenderNames));
+        replacements.put("hp", siegeChunk.getCurrent_health().toString());
 
+        Messenger.sendMessage(sender, messageProvider.getList("messages.siegechunk-info"), replacements);
     }
 
 }

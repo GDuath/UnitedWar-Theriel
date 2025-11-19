@@ -2,6 +2,7 @@ package org.unitedlands.commands.handlers.command.town.warcamps;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -12,18 +13,19 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 
-public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
+public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarWarCampTpSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarWarCampTpSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -40,9 +42,7 @@ public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length > 1) {
-            Messenger.sendMessage((Player) sender,
-                    "Usage: /t war warcamp tp",
-                    true);
+            Messenger.sendMessage(sender, "Usage: /t war warcamp tp", null, messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -58,15 +58,15 @@ public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
         } else if (args.length == 1) {
             var town = TownyAPI.getInstance().getTown(args[0]);
             if (town == null) {
-                Messenger.sendMessage((Player) sender,
-                        "§cTown " + args[0] + " could not be found!", true);
+                Messenger.sendMessage(player, messageProvider.get("messages.error-town-not-found"),
+                        Map.of("town-name", args[0]), messageProvider.get("messages.prefix"));
                 return;
             }
 
             var playerWars = plugin.getWarManager().getAllPlayerWars(player.getUniqueId());
             if (playerWars == null || playerWars.isEmpty()) {
-                Messenger.sendMessage((Player) sender,
-                        "§cYou're not part of any war.", true);
+                Messenger.sendMessage(player, messageProvider.get("messages.error-not-part-of-war"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
 
@@ -78,16 +78,16 @@ public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
                     if (playerWarSide == WarSide.ATTACKER) {
                         warCampBlock = plugin.getGriefZoneManager().getWarcampBlock(town.getUUID());
                     } else {
-                        Messenger.sendMessage((Player) sender,
-                                "§cYou can't teleport to an enemy war camp.", true);
+                        Messenger.sendMessage(player, messageProvider.get("messages.error-warcamp-tp-enemy"), null,
+                                messageProvider.get("messages.prefix"));
                         return;
                     }
                 } else if (war.getDefending_towns().contains(town.getUUID())) {
                     if (playerWarSide == WarSide.DEFENDER) {
                         warCampBlock = plugin.getGriefZoneManager().getWarcampBlock(town.getUUID());
                     } else {
-                        Messenger.sendMessage((Player) sender,
-                                "§cYou can't teleport to an enemy war camp.", true);
+                        Messenger.sendMessage(player, messageProvider.get("messages.error-warcamp-tp-enemy"), null,
+                                messageProvider.get("messages.prefix"));
                         return;
                     }
                 }
@@ -96,14 +96,14 @@ public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
         }
 
         if (warCampBlock == null) {
-            Messenger.sendMessage((Player) sender,
-                    "§cThe town doesn't have a war camp set up.", true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-no-warcamp"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         if (plugin.getSiegeManager().isChunkOccupied(warCampBlock)) {
-            Messenger.sendMessage((Player) sender,
-                    "§cThe war camp is occupied, you cannot teleport there.", true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-warcamp-occupied"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -117,9 +117,8 @@ public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
         var tpLocation = new Location(world, locX, locY, locZ);
         Block startBlock = player.getLocation().getBlock();
 
-        Messenger.sendMessage((Player) sender,
-                "§bTeleporting in 3 seconds, please don't move...", true);
-
+        Messenger.sendMessage(player, messageProvider.get("messages.teleport"), null,
+                messageProvider.get("messages.prefix"));
         new BukkitRunnable() {
             int counter = 0;
             int maxExecutions = 3;
@@ -129,11 +128,12 @@ public class TownWarWarCampTpSubcommandHandler extends BaseCommandHandler {
                 counter++;
 
                 if (counter <= maxExecutions) {
-                    Messenger.sendMessage((Player) sender, "§b" + (maxExecutions - counter + 1) + "...", true);
+                    Messenger.sendMessage(player, (maxExecutions - counter + 1) + "...", null,
+                            messageProvider.get("messages.prefix"));
                 }
 
                 if (!player.getLocation().getBlock().equals(startBlock)) {
-                    Messenger.sendMessage((Player) sender, "§bTeleportation cancelled.", true);
+                    Messenger.sendMessage(player, messageProvider.get("messages.teleport-cancel"), null, messageProvider.get("messages.prefix"));
                     this.cancel();
                 }
 

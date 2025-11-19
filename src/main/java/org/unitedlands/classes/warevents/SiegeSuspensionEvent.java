@@ -3,8 +3,9 @@ package org.unitedlands.classes.warevents;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.unitedlands.UnitedWar;
 import org.unitedlands.events.SiegeChunkHealthChangeEvent;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 
 public class SiegeSuspensionEvent extends BaseWarEvent {
 
@@ -28,7 +29,8 @@ public class SiegeSuspensionEvent extends BaseWarEvent {
                 var player = Bukkit.getPlayer(id);
                 if (player != null && player.isOnline())
                 {
-                    Messenger.sendMessageTemplate(player, "event-siege-suspended", null, true);
+                    var messageProvider = UnitedWar.getInstance().getMessageProvider();
+                    Messenger.sendMessage(player, messageProvider.get("messages.event-siege-suspended"), null, messageProvider.get("messages.prefix"));
                 }
             }
         }

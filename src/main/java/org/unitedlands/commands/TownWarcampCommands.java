@@ -12,32 +12,35 @@ import org.bukkit.command.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.ICommandHandler;
+
 import org.unitedlands.commands.handlers.command.town.warcamps.TownWarWarCampCreateSubcommandHandler;
 import org.unitedlands.commands.handlers.command.town.warcamps.TownWarWarCampTpSubcommandHandler;
-import org.unitedlands.util.Formatter;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.interfaces.ICommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Formatter;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
 import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
 import com.palmergames.bukkit.towny.object.AddonCommand;
 
-
 public class TownWarcampCommands implements CommandExecutor, TabCompleter {
 
     private final UnitedWar plugin;
+    private final IMessageProvider messageProvider;
     private final Map<String, ICommandHandler> handlers = new HashMap<>();
 
-    public TownWarcampCommands(UnitedWar plugin) {
+    public TownWarcampCommands(UnitedWar plugin, IMessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
         TownyCommandAddonAPI.addSubCommand(new AddonCommand(CommandType.TOWN, "warcamp", this));
 
         registerHandlers();
     }
 
     private void registerHandlers() {
-        handlers.put("create", new TownWarWarCampCreateSubcommandHandler(plugin));
-        handlers.put("tp", new TownWarWarCampTpSubcommandHandler(plugin));
+        handlers.put("create", new TownWarWarCampCreateSubcommandHandler(plugin, messageProvider));
+        handlers.put("tp", new TownWarWarCampTpSubcommandHandler(plugin, messageProvider));
     }
 
     @Override
@@ -76,7 +79,8 @@ public class TownWarcampCommands implements CommandExecutor, TabCompleter {
         ICommandHandler handler = handlers.get(subcommand);
 
         if (handler == null) {
-            Messenger.sendMessage(sender, "invalid-command", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null,
+                    messageProvider.get("messages.prefix"));
             return false;
         }
 

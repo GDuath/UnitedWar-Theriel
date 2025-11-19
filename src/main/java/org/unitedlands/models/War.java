@@ -15,8 +15,8 @@ import org.unitedlands.classes.Identifiable;
 import org.unitedlands.classes.WarGoal;
 import org.unitedlands.classes.WarResult;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.util.Formatter;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
+import org.unitedlands.utils.Formatter;
 
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;

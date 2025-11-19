@@ -20,7 +20,7 @@ import org.unitedlands.services.SiegeChunkDbService;
 import org.unitedlands.services.WarDbService;
 import org.unitedlands.services.WarEventRecordDbService;
 import org.unitedlands.services.WarScoreRecordDbService;
-import org.unitedlands.util.Logger;
+import org.unitedlands.utils.Logger;
 
 public class DatabaseManager {
 

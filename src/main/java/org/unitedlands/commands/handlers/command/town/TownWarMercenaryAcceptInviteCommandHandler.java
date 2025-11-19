@@ -8,20 +8,21 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Messenger;
 import org.unitedlands.util.WarLivesMetadata;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class TownWarMercenaryAcceptInviteCommandHandler extends BaseCommandHandler {
+public class TownWarMercenaryAcceptInviteCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarMercenaryAcceptInviteCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarMercenaryAcceptInviteCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -50,26 +51,30 @@ public class TownWarMercenaryAcceptInviteCommandHandler extends BaseCommandHandl
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 1) {
-            Messenger.sendMessageTemplate((Player) sender, "mercenary-acceptinvite-usage", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.mercenary-acceptinvite-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var player = (Player) sender;
         var resident = TownyAPI.getInstance().getResident(player);
         if (resident == null) {
-            Messenger.sendMessageTemplate(sender, "error-resident-town-not-found", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-resident-town-not-found"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         War war = plugin.getWarManager().getWarByName(args[0]);
         if (war == null) {
-            Messenger.sendMessageTemplate(sender, "error-war-not-found", Map.of("war-name", args[0]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-not-found"),
+                    Map.of("war-name", args[0]), messageProvider.get("messages.prefix"));
             return;
         }
 
         var invite = plugin.getWarManager().getMercenaryInvite(war.getId(), player.getUniqueId());
         if (invite == null) {
-            Messenger.sendMessageTemplate(sender, "error-merc-invite-not-found", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-merc-invite-not-found"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -88,7 +93,8 @@ public class TownWarMercenaryAcceptInviteCommandHandler extends BaseCommandHandl
         }
 
         if (currentMercenaryCount >= maxMercenaryCount) {
-            Messenger.sendMessageTemplate(sender, "error-add-mercenary-max", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-add-mercenary-max"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -104,7 +110,8 @@ public class TownWarMercenaryAcceptInviteCommandHandler extends BaseCommandHandl
             war.setDefending_mercenaries(defendingMercenaryList);
             war.setState_changed(true);
         } else {
-            Messenger.sendMessageTemplate(sender, "error-war-side-data", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-war-side-data"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -120,13 +127,13 @@ public class TownWarMercenaryAcceptInviteCommandHandler extends BaseCommandHandl
 
         var invitingPlayer = Bukkit.getPlayer(invite.getSendingPlayerId());
         if (invitingPlayer != null) {
-            Messenger.sendMessageTemplate(invitingPlayer, "add-mercenary-success",
-                    Map.of("mercenary-name", player.getName()),
-                    true);
+            Messenger.sendMessage(invitingPlayer, messageProvider.get("messages.add-mercenary-success"),
+                    Map.of("mercenary-name", player.getName()), messageProvider.get("messages.prefix"));
         }
 
-        Messenger.sendMessageTemplate(player, "resident-mercenary-join-success",
-                Map.of("war-side", warside.toString().toLowerCase(), "war-name", war.getTitle()), true);
+        Messenger.sendMessage(sender, messageProvider.get("messages.resident-mercenary-join-success"),
+                Map.of("war-side", warside.toString().toLowerCase(), "war-name", war.getTitle()),
+                messageProvider.get("messages.prefix"));
     }
 
 }

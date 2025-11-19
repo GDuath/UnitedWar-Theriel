@@ -10,19 +10,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarBookData;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Logger;
+import org.unitedlands.utils.Messenger;
 import org.unitedlands.util.WarGoalValidator;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Resident;
 
-public class TownWarDeclareCommandHandler extends BaseCommandHandler {
+public class TownWarDeclareCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarDeclareCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarDeclareCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -36,7 +37,8 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 0) {
-            Messenger.sendMessageTemplate((Player) sender, "war-declare-usage", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.war-declare-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -44,32 +46,39 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler {
         Resident resident = TownyAPI.getInstance().getResident(player);
 
         if (!resident.isMayor()) {
-            Messenger.sendMessageTemplate(sender, "error-resident-not-mayor", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-resident-not-mayor"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var heldItem = player.getInventory().getItemInMainHand();
         if (heldItem == null || !heldItem.getType().equals(Material.WRITTEN_BOOK)) {
             Logger.log(heldItem.getType().toString());
-            Messenger.sendMessageTemplate(sender, "error-signed-war-book-missing", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-signed-war-book-missing"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         WarBookData warBookData = new WarBookData(heldItem);
         if (!warBookData.isWarBook()) {
-            Messenger.sendMessageTemplate(sender, "error-signed-war-book-missing", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-signed-war-book-missing"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var declaringTown = TownyAPI.getInstance().getTown(warBookData.getAttackerTownId());
         if (declaringTown == null) {
-            Messenger.sendMessageTemplate(player, "error-town-not-found", Map.of("town-name", warBookData.getAttackerTownId().toString()), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-town-not-found"),
+                    Map.of("town-name", warBookData.getAttackerTownId().toString()),
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         var targetTown = TownyAPI.getInstance().getTown(warBookData.getTargetTownId());
         if (targetTown == null) {
-            Messenger.sendMessageTemplate(player, "error-town-not-found", Map.of("town-name", warBookData.getTargetTownId().toString()), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-town-not-found"),
+                    Map.of("town-name", warBookData.getTargetTownId().toString()),
+                    messageProvider.get("messages.prefix"));
             return;
         }
 

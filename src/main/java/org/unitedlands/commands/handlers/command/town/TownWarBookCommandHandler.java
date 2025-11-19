@@ -9,20 +9,21 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarBookData;
 import org.unitedlands.classes.WarGoal;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
 import org.unitedlands.util.WarGoalValidator;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.confirmations.Confirmation;
 import com.palmergames.bukkit.towny.object.Town;
 
-public class TownWarBookCommandHandler extends BaseCommandHandler {
+public class TownWarBookCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarBookCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarBookCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
 
         if (args.length != 2) {
-            Messenger.sendMessageTemplate(sender, "book-command-usage", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.book-command-usage"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -56,20 +57,20 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
         try {
             warGoal = WarGoal.valueOf(args[1]);
         } catch (Exception ex) {
-            Messenger.sendMessageTemplate(sender, "error-unknown-war-goal", Map.of("war-goal-name", args[1]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-unknown-war-goal"), Map.of("war-goal-name", args[1]), messageProvider.get("messages.prefix"));
             return;
         }
 
         var player = (Player) sender;
         var playerTown = TownyAPI.getInstance().getTown(player);
         if (playerTown == null) {
-            Messenger.sendMessageTemplate(player, "error-resident-town-not-found", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-resident-town-not-found"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         var targetTown = TownyAPI.getInstance().getTown(args[0]);
         if (targetTown == null) {
-            Messenger.sendMessageTemplate(player, "error-town-not-found", Map.of("town-name", args[0]), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-town-not-found"), Map.of("town-name", args[0]), messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -83,14 +84,12 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
                 .getInt("war-goal-settings." + warGoal.toString().toLowerCase() + ".cost", 0);
 
         if (townMobilisation < minMobilisation) {
-            Messenger.sendMessageTemplate(sender, "error-under-min-mobilisation",
-                    Map.of("min-mobilisation", minMobilisation.toString()), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-under-min-mobilisation"), Map.of("min-mobilisation", minMobilisation.toString()), messageProvider.get("messages.prefix"));
             return;
         }
 
         if (mobilisationCost > townMobilisation) {
-            Messenger.sendMessageTemplate(sender, "error-insufficient-mobilisation",
-                    Map.of("costs", mobilisationCost.toString()), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-insufficient-mobilisation"), Map.of("costs", mobilisationCost.toString()), messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -115,9 +114,9 @@ public class TownWarBookCommandHandler extends BaseCommandHandler {
                 }
             }
 
-            Messenger.sendMessageTemplate(player, "war-book-created", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.war-book-created"), null, messageProvider.get("messages.prefix"));
 
-        }).setTitle("§7Creating this war declaration book will cost " + mobilisationCost + " mobilisation. Continue?")
+        }).setTitle("<gray>Creating this war declaration book will cost " + mobilisationCost + " mobilisation. Continue?")
                 .sendTo(player);
     }
 

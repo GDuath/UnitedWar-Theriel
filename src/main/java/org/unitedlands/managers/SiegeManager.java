@@ -26,8 +26,9 @@ import org.unitedlands.events.WarScoreEvent;
 import org.unitedlands.listeners.PlayerSiegeEventListener;
 import org.unitedlands.models.SiegeChunk;
 import org.unitedlands.models.War;
-import org.unitedlands.util.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Logger;
+import org.unitedlands.utils.Messenger;
+import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.WarLivesMetadata;
 
 import com.palmergames.bukkit.towny.TownyAPI;
@@ -43,6 +44,7 @@ import net.kyori.adventure.text.Component;
 public class SiegeManager implements Listener {
 
     private final UnitedWar plugin;
+    private final MessageProvider messageProvider;
     private final PlayerSiegeEventListener playerSiegeEventListener;
 
     private boolean playerSiegeEventListenerRegistered = false;
@@ -54,9 +56,10 @@ public class SiegeManager implements Listener {
     private Map<UUID, Boolean> siegeEnabled = new HashMap<UUID, Boolean>();
     private Map<UUID, Boolean> townOccupied = new HashMap<UUID, Boolean>();
 
-    public SiegeManager(UnitedWar plugin) {
+    public SiegeManager(UnitedWar plugin, MessageProvider messageProvider) {
         this.plugin = plugin;
-        this.playerSiegeEventListener = new PlayerSiegeEventListener(plugin);
+        this.messageProvider = messageProvider;
+        this.playerSiegeEventListener = new PlayerSiegeEventListener(plugin, messageProvider);
     }
 
     public CompletableFuture<Void> loadSiegeChunks() {
@@ -171,15 +174,13 @@ public class SiegeManager implements Listener {
                         var player = Bukkit.getPlayer(id);
                         if (player == null || !player.isOnline())
                             return;
-                        player.sendMessage(
-                                "§cYou cannot siege here, either because this town is already occupied, or because there is no enemy online.");
+                        Messenger.sendMessage(player, messageProvider.get("messages.error-siege-disabled"), null, messageProvider.get("messages.prefix"));
                     }
                     for (var id : defendingPlayers) {
                         var player = Bukkit.getPlayer(id);
                         if (player == null || !player.isOnline())
                             return;
-                        player.sendMessage(
-                                "§6You cannot heal here, either because this town is already occupied, or because there is no enemy online.");
+                        Messenger.sendMessage(player, messageProvider.get("messages.error-heal-disabled"), null, messageProvider.get("messages.prefix"));
                     }
                     continue;
                 }
@@ -290,7 +291,7 @@ public class SiegeManager implements Listener {
                         for (UUID playerId : players) {
                             var player = Bukkit.getPlayer(playerId);
                             if (player != null && player.isOnline()) {
-                                Messenger.sendMessageTemplate(player, "chunk-captured", replacements, true);
+                                Messenger.sendMessage(player, messageProvider.get("messages.chunk-captured"), replacements, messageProvider.get("messages.prefix"));
                             }
                         }
 
@@ -310,7 +311,7 @@ public class SiegeManager implements Listener {
                             Map<String, String> replacements2 = new HashMap<>();
                             replacements2.put("war-name", war.getCleanTitle());
                             replacements2.put("town-name", town.getName());
-                            Messenger.broadcastMessageTemplate("town-captured", replacements2, true);
+                            Messenger.sendMessage(Bukkit.getServer(), messageProvider.get("messages.town-captured"), replacements2, messageProvider.get("messages.prefix"));
                         }
 
                     } else {

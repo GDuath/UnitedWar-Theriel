@@ -6,7 +6,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import org.bukkit.event.Listener;
-import org.unitedlands.util.Formatter;
+import org.unitedlands.utils.Formatter;
 
 public abstract class BaseWarEvent implements Listener {
 

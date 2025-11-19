@@ -7,13 +7,14 @@ import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
 
-public class WarAdminWarEventsForceSubcommandHandler extends BaseCommandHandler {
+public class WarAdminWarEventsForceSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminWarEventsForceSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminWarEventsForceSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -31,9 +32,8 @@ public class WarAdminWarEventsForceSubcommandHandler extends BaseCommandHandler 
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length < 1) {
-            Messenger.sendMessage((Player) sender,
-                    "Usage: /wa warevents force <event_type> [warmup_in_minutes]",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-warevents-force-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -42,8 +42,8 @@ public class WarAdminWarEventsForceSubcommandHandler extends BaseCommandHandler 
             try {
                 warmup = Integer.parseInt(args[1]);
             } catch (Exception ex) {
-                Messenger.sendMessage((Player) sender,
-                    "§cInvalid optional warmup time, must be a number.", true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-warevents-time"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
         }

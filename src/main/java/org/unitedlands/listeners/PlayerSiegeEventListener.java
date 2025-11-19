@@ -22,18 +22,22 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.unitedlands.UnitedWar;
 import org.unitedlands.classes.WarSide;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.util.MessageProvider;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.event.PlayerChangePlotEvent;
+import com.palmergames.bukkit.towny.event.actions.TownyItemuseEvent;
 import com.palmergames.bukkit.towny.object.TownBlock;
 
 public class PlayerSiegeEventListener implements Listener {
 
     private final UnitedWar plugin;
+    private final MessageProvider messageProvider;
 
-    public PlayerSiegeEventListener(UnitedWar plugin) {
+    public PlayerSiegeEventListener(UnitedWar plugin, MessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
     }
 
     @EventHandler
@@ -61,8 +65,8 @@ public class PlayerSiegeEventListener implements Listener {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 var player = event.getPlayer();
                 var currentEvent = plugin.getWarEventManager().getCurrentEvent();
-                Messenger.sendMessageListTemplate(player, "event-info-active", currentEvent.getMessagePlaceholders(),
-                        false);
+                Messenger.sendMessage(player, messageProvider.getList("messages.event-info-active"),
+                        currentEvent.getMessagePlaceholders());
                 player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.0f, 1.0f);
             }, 20);
         }
@@ -95,7 +99,8 @@ public class PlayerSiegeEventListener implements Listener {
         if (toPlot.getTownOrNull() != null) {
             var town = toPlot.getTownOrNull();
             if (plugin.getWarManager().isTownInActiveWar(town.getUUID())) {
-                Messenger.sendMessageTemplate(event.getPlayer(), "warning-warzone", null, true);
+                Messenger.sendMessage(event.getPlayer(), messageProvider.get("messages.warning-warzone"), null,
+                        messageProvider.get("messages.prefix"));
                 event.getPlayer().playSound(event.getTo(), Sound.ITEM_TRIDENT_RETURN, 1f, 1f);
             }
         }
@@ -149,7 +154,8 @@ public class PlayerSiegeEventListener implements Listener {
 
         if (enemiesOnline) {
             event.setCancelled(true);
-            Messenger.sendMessageTemplate(player, "error-command-disabled", null, true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-command-disabled"), null,
+                    messageProvider.get("messages.prefix"));
         }
     }
 
@@ -159,7 +165,8 @@ public class PlayerSiegeEventListener implements Listener {
             return;
 
         if (isPlayerSubjectToWarZone(event.getPlayer())) {
-            Messenger.sendMessageTemplate(event.getPlayer(), "error-cannot-place-in-warzone", null, true);
+            Messenger.sendMessage(event.getPlayer(), messageProvider.get("messages.error-cannot-place-in-warzone"),
+                    null, messageProvider.get("messages.prefix"));
             event.setCancelled(true);
         }
     }
@@ -186,6 +193,26 @@ public class PlayerSiegeEventListener implements Listener {
         }
     }
 
+    // Override permission to use chorus fruit in towns that are war zones
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.HIGHEST)
+    public void onItemUse(TownyItemuseEvent event) {
+
+        if (event.getMaterial() != Material.CHORUS_FRUIT)
+            return;
+
+        var player = event.getPlayer();
+        if (!plugin.getWarManager().isPlayerInActiveWar(player.getUniqueId()))
+            return;
+        
+        if (!plugin.getConfig().getBoolean("warzone-pvp.allow-chorus-fruit", false))
+            return;
+
+        if (!isPlayerSubjectToWarZone(player))
+            return;
+
+        event.setCancelled(false);
+    }
+
     @EventHandler
     public void onToggleGlide(EntityToggleGlideEvent event) {
         if (event.getEntity() instanceof Player) {
@@ -198,7 +225,8 @@ public class PlayerSiegeEventListener implements Listener {
 
                 if (plugin.getConfig().getBoolean("warzone-pvp.disable-elytra", true)) {
                     event.setCancelled(true);
-                    Messenger.sendMessage(player, "§cYou can't use elytras in war zones!", true);
+                    Messenger.sendMessage(player, messageProvider.get("messages.error-elytra"), null,
+                            messageProvider.get("messages.prefix"));
                 }
             }
         }
@@ -212,7 +240,8 @@ public class PlayerSiegeEventListener implements Listener {
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             player.setVelocity(new Vector());
-            Messenger.sendMessage(player, "§cYou can't use riptide in war zones!", true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-riptide"), null,
+                    messageProvider.get("messages.prefix"));
         }, 2L);
 
     }
@@ -227,18 +256,9 @@ public class PlayerSiegeEventListener implements Listener {
         ItemStack chestplate = player.getInventory().getChestplate();
 
         if (chestplate != null && chestplate.getType() == Material.ELYTRA) {
-
-            //player.getInventory().setChestplate(null);
             player.setVelocity(new Vector());
-
-            // HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(chestplate);
-            // for (ItemStack leftover : leftovers.values()) {
-            //     player.getWorld().dropItemNaturally(player.getLocation(), leftover);
-            // }
-
-            Messenger.sendMessage(player,
-                    "§cElytras are disabled in warzones.",
-                    true);
+            Messenger.sendMessage(player, messageProvider.get("messages.error-elytra"), null,
+                    messageProvider.get("messages.prefix"));
         }
     }
 

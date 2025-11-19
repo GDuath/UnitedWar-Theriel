@@ -5,13 +5,14 @@ import java.util.List;
 
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
 
-public class TownWarEventCommandHandler extends BaseCommandHandler {
+public class TownWarEventCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public TownWarEventCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public TownWarEventCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -23,10 +24,12 @@ public class TownWarEventCommandHandler extends BaseCommandHandler {
     public void handleCommand(CommandSender sender, String[] args) {
         var event = plugin.getWarEventManager().getCurrentEvent();
         if (event == null) {
-            Messenger.sendMessageTemplate(sender, "event-info-no-event", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.event-info-no-event"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         } else {
-            Messenger.sendMessageListTemplate(sender, "event-info-active", event.getMessagePlaceholders(), false);
+            Messenger.sendMessage(sender, messageProvider.getList("messages.event-info-active"),
+                    event.getMessagePlaceholders());
         }
     }
 

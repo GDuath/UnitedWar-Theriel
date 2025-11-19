@@ -9,18 +9,19 @@ import java.util.stream.Stream;
 
 import org.bukkit.command.CommandSender;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.classes.BaseCommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
 import org.unitedlands.util.MobilisationMetadata;
 
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
 
-public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
+public class WarAdminMobilisationCommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminMobilisationCommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminMobilisationCommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -48,14 +49,13 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
         // /wa mobilisation [Town | Nation] delete
         // /wa mobilisation convert
         if (args.length < 1) {
-            Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-usage"), null,
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
-        if (args.length == 1)
-        {
-            if (args[0].equalsIgnoreCase("convert"))
-            {
+        if (args.length == 1) {
+            if (args[0].equalsIgnoreCase("convert")) {
                 plugin.getMobilisationManager().convertWarTokensToMobilisation();
             }
             return;
@@ -67,14 +67,16 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
         boolean isNation = TownyUniverse.getInstance().hasNation(name);
 
         if (!isTown && !isNation) {
-            Messenger.sendMessageTemplate(sender, "town-nation-not-found", Map.of("0", name), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.town-nation-not-found"), Map.of("0", name),
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         // DELETE command branch.
         if (action.equalsIgnoreCase("delete")) {
             if (args.length != 2) {
-                Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-usage"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
 
@@ -90,14 +92,16 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
                 MobilisationMetadata.removeMetaDataFromNation(Objects.requireNonNull(n));
             }
 
-            Messenger.sendMessageTemplate(sender, "mobilisation-delete", Map.of("0", entity), true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-delete"), Map.of("0", entity),
+                    messageProvider.get("messages.prefix"));
             return;
         }
 
         // SET command branch.
         if (action.equalsIgnoreCase("set")) {
             if (args.length != 3) {
-                Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-usage"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
 
@@ -105,11 +109,13 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
             try {
                 val = Integer.parseInt(args[2]);
             } catch (NumberFormatException ex) {
-                Messenger.sendMessageTemplate(sender, "not-a-number", Map.of("0", args[2]), true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.not-a-number"), Map.of("0", args[2]),
+                        messageProvider.get("messages.prefix"));
                 return;
             }
             if (val < 0 || val > 100) {
-                Messenger.sendMessage(sender, "mobilisation-number-invalid", true);
+                Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-number-invalid"), null,
+                        messageProvider.get("messages.prefix"));
                 return;
             }
 
@@ -124,13 +130,14 @@ public class WarAdminMobilisationCommandHandler extends BaseCommandHandler {
                 entity = n.getName();
             }
 
-            Messenger.sendMessageTemplate(sender, "mobilisation-set", Map.of("0", entity, "1", String.valueOf(val)),
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-set"),
+                    Map.of("0", entity, "1", String.valueOf(val)), messageProvider.get("messages.prefix"));
             return;
         }
 
         // Fallback message.
-        Messenger.sendMessageTemplate(sender, "mobilisation-usage", null, true);
+        Messenger.sendMessage(sender, messageProvider.get("messages.mobilisation-usage"), null,
+                messageProvider.get("messages.prefix"));
     }
 
 }

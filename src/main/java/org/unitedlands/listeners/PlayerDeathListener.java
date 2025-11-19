@@ -21,8 +21,9 @@ import org.unitedlands.events.WarScoreEvent;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 
-import org.unitedlands.util.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Logger;
+import org.unitedlands.utils.Messenger;
+import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.WarLivesMetadata;
 
 import java.util.List;
@@ -32,9 +33,11 @@ import java.util.UUID;
 public class PlayerDeathListener implements Listener {
 
     private final UnitedWar plugin;
+    private final MessageProvider messageProvider;
 
-    public PlayerDeathListener(UnitedWar plugin) {
+    public PlayerDeathListener(UnitedWar plugin, MessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
     }
 
     @EventHandler
@@ -171,14 +174,13 @@ public class PlayerDeathListener implements Listener {
 
                 if (currentLives == 0) {
                     // Already out of lives.
-                    Messenger.sendMessageTemplate(victim, "warlives-gone", Map.of("0", warName), true);
+                    Messenger.sendMessage(victim, messageProvider.get("messages.warlives-gone"), Map.of("0", warName), messageProvider.get("messages.prefix"));
                 } else if (adjustedNewLives == 0) {
                     // This death eliminated them.
-                    Messenger.sendMessageTemplate(victim, "warlives-final", Map.of("0", warName), true);
+                    Messenger.sendMessage(victim, messageProvider.get("messages.warlives-final"), Map.of("0", warName), messageProvider.get("messages.prefix"));
                 } else {
                     // Lives still remaining.
-                    Messenger.sendMessageTemplate(victim, "warlives-lost",
-                            Map.of("0", String.valueOf(adjustedNewLives), "1", warName), true);
+                    Messenger.sendMessage(victim, messageProvider.get("messages.warlives-lost"), Map.of("0", String.valueOf(adjustedNewLives), "1", warName), messageProvider.get("messages.prefix"));
                 }
             }
         }

@@ -14,8 +14,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.unitedlands.UnitedWar;
-import org.unitedlands.util.Logger;
-import org.unitedlands.util.Messenger;
+import org.unitedlands.utils.Logger;
+import org.unitedlands.utils.Messenger;
+import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.MobilisationMetadata;
 
 import java.util.Map;
@@ -23,9 +24,11 @@ import java.util.Map;
 public class MobilisationManager implements Listener {
 
     private final UnitedWar plugin;
+    private final MessageProvider messageProvider;
 
-    public MobilisationManager(UnitedWar plugin) {
+    public MobilisationManager(UnitedWar plugin, MessageProvider messageProvider) {
         this.plugin = plugin;
+        this.messageProvider = messageProvider;
     }
 
     public void convertWarTokensToMobilisation() {
@@ -96,11 +99,11 @@ public class MobilisationManager implements Listener {
                 Logger.log("Town " + town.getName() + " mobilisation: " + cur + "% → " + next + "%");
                 // Change message depending on if there is mobilisation gain or loss.
                 String key = town.isNeutral()
-                        ? "mobilisation-notification-lose"
-                        : "mobilisation-notification-gain";
+                        ? "messages.mobilisation-notification-lose"
+                        : "messages.mobilisation-notification-gain";
                 for (Resident res : town.getResidents()) {
                     if (res.isOnline() && res.getPlayer() != null)
-                        Messenger.sendMessageTemplate(res.getPlayer(), key, Map.of("0", town.getName()), false);
+                        Messenger.sendMessage(res.getPlayer(), messageProvider.get(key), Map.of("0", town.getName()));
                 }
             }
             MobilisationMetadata.setMobilisationForTown(town, next);
@@ -163,7 +166,7 @@ public class MobilisationManager implements Listener {
         if (mayor != null && mayor.isOnline()) {
             Player p = mayor.getPlayer();
             if (p != null) {
-                Messenger.sendMessageTemplate(p, "mobilisation-cost", Map.of("0", String.valueOf(paid)), true);
+                Messenger.sendMessage(p, messageProvider.get("messages.mobilisation-cost"), Map.of("0", String.valueOf(paid)), messageProvider.get("messages.prefix"));
             }
         }
     }
@@ -186,7 +189,7 @@ public class MobilisationManager implements Listener {
         if (king != null && king.isOnline()) {
             Player p = king.getPlayer();
             if (p != null) {
-                Messenger.sendMessageTemplate(p, "mobilisation-cost", Map.of("0", String.valueOf(paid)), true);
+                Messenger.sendMessage(p, messageProvider.get("messages.mobilisation-cost"), Map.of("0", String.valueOf(paid)), messageProvider.get("messages.prefix"));
             }
         }
     }

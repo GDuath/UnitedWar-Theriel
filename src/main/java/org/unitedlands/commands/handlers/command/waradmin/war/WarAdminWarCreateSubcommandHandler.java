@@ -3,22 +3,24 @@ package org.unitedlands.commands.handlers.command.waradmin.war;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.unitedlands.UnitedWar;
+import org.unitedlands.classes.BaseCommandHandler;
 import org.unitedlands.classes.WarGoal;
-import org.unitedlands.commands.handlers.BaseCommandHandler;
-import org.unitedlands.util.Messenger;
+
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
 
-public class WarAdminWarCreateSubcommandHandler extends BaseCommandHandler {
+public class WarAdminWarCreateSubcommandHandler extends BaseCommandHandler<UnitedWar> {
 
-    public WarAdminWarCreateSubcommandHandler(UnitedWar plugin) {
-        super(plugin);
+    public WarAdminWarCreateSubcommandHandler(UnitedWar plugin, IMessageProvider messageProvider) {
+        super(plugin, messageProvider);
     }
 
     @Override
@@ -42,24 +44,22 @@ public class WarAdminWarCreateSubcommandHandler extends BaseCommandHandler {
     @Override
     public void handleCommand(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            Messenger.sendMessage((Player) sender,
-                    "Usage: /wa createwar <attacking_town> <defending_town> <war_goal> [war_name] [war description ...]",
-                    true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.wa-warcreate-usage"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
         var attackerTown = TownyAPI.getInstance().getTown(args[0]);
         if (attackerTown == null) {
-            Messenger.sendMessage((Player) sender, "Attacker town not found.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-attacker-not-found"), null, messageProvider.get("messages.prefix"));
             return;
         }
         var defenderTown = TownyAPI.getInstance().getTown(args[1]);
         if (defenderTown == null) {
-            Messenger.sendMessage((Player) sender, "Defender town not found.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-defender-not-found"), null, messageProvider.get("messages.prefix"));
             return;
         }
         if (attackerTown.equals(defenderTown)) {
-            Messenger.sendMessage((Player) sender, "Attacker and defender towns cannot be the same.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-same-towns"), null, messageProvider.get("messages.prefix"));
             return;
         }
 
@@ -67,7 +67,7 @@ public class WarAdminWarCreateSubcommandHandler extends BaseCommandHandler {
         try {
             warGoal = WarGoal.valueOf(args[2]);
         } catch (Exception ex) {
-            Messenger.sendMessage((Player) sender, args[2] + " is not a recignized war goal.", true);
+            Messenger.sendMessage(sender, messageProvider.get("messages.error-wa-unknown-war-goal"), Map.of("goal-name", args[2]), messageProvider.get("messages.prefix"));
             return;
         }
 
