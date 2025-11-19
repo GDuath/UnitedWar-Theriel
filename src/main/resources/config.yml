@@ -345,6 +345,7 @@ warzone-pvp:
   disable-elytra: true
   disable-tp: false
   disable-pw: false
+  allow-chorus-fruit: false
   cooldowns:
     projectiles:
       ENDER_PEARL: 15 # in seconds

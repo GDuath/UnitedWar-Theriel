@@ -27,6 +27,7 @@ import org.unitedlands.utils.Messenger;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.event.PlayerChangePlotEvent;
+import com.palmergames.bukkit.towny.event.actions.TownyItemuseEvent;
 import com.palmergames.bukkit.towny.object.TownBlock;
 
 public class PlayerSiegeEventListener implements Listener {
@@ -64,7 +65,8 @@ public class PlayerSiegeEventListener implements Listener {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 var player = event.getPlayer();
                 var currentEvent = plugin.getWarEventManager().getCurrentEvent();
-                Messenger.sendMessage(player, messageProvider.getList("messages.event-info-active"), currentEvent.getMessagePlaceholders());
+                Messenger.sendMessage(player, messageProvider.getList("messages.event-info-active"),
+                        currentEvent.getMessagePlaceholders());
                 player.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.0f, 1.0f);
             }, 20);
         }
@@ -97,7 +99,8 @@ public class PlayerSiegeEventListener implements Listener {
         if (toPlot.getTownOrNull() != null) {
             var town = toPlot.getTownOrNull();
             if (plugin.getWarManager().isTownInActiveWar(town.getUUID())) {
-                Messenger.sendMessage(event.getPlayer(), messageProvider.get("messages.warning-warzone"), null, messageProvider.get("messages.prefix"));
+                Messenger.sendMessage(event.getPlayer(), messageProvider.get("messages.warning-warzone"), null,
+                        messageProvider.get("messages.prefix"));
                 event.getPlayer().playSound(event.getTo(), Sound.ITEM_TRIDENT_RETURN, 1f, 1f);
             }
         }
@@ -151,7 +154,8 @@ public class PlayerSiegeEventListener implements Listener {
 
         if (enemiesOnline) {
             event.setCancelled(true);
-            Messenger.sendMessage(player, messageProvider.get("messages.error-command-disabled"), null, messageProvider.get("messages.prefix"));
+            Messenger.sendMessage(player, messageProvider.get("messages.error-command-disabled"), null,
+                    messageProvider.get("messages.prefix"));
         }
     }
 
@@ -161,7 +165,8 @@ public class PlayerSiegeEventListener implements Listener {
             return;
 
         if (isPlayerSubjectToWarZone(event.getPlayer())) {
-            Messenger.sendMessage(event.getPlayer(), messageProvider.get("messages.error-cannot-place-in-warzone"), null, messageProvider.get("messages.prefix"));
+            Messenger.sendMessage(event.getPlayer(), messageProvider.get("messages.error-cannot-place-in-warzone"),
+                    null, messageProvider.get("messages.prefix"));
             event.setCancelled(true);
         }
     }
@@ -188,6 +193,26 @@ public class PlayerSiegeEventListener implements Listener {
         }
     }
 
+    // Override permission to use chorus fruit in towns that are war zones
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.HIGHEST)
+    public void onItemUse(TownyItemuseEvent event) {
+
+        if (event.getMaterial() != Material.CHORUS_FRUIT)
+            return;
+
+        var player = event.getPlayer();
+        if (!plugin.getWarManager().isPlayerInActiveWar(player.getUniqueId()))
+            return;
+        
+        if (!plugin.getConfig().getBoolean("warzone-pvp.allow-chorus-fruit", false))
+            return;
+
+        if (!isPlayerSubjectToWarZone(player))
+            return;
+
+        event.setCancelled(false);
+    }
+
     @EventHandler
     public void onToggleGlide(EntityToggleGlideEvent event) {
         if (event.getEntity() instanceof Player) {
@@ -200,7 +225,8 @@ public class PlayerSiegeEventListener implements Listener {
 
                 if (plugin.getConfig().getBoolean("warzone-pvp.disable-elytra", true)) {
                     event.setCancelled(true);
-                    Messenger.sendMessage(player, messageProvider.get("messages.error-elytra"), null, messageProvider.get("messages.prefix"));
+                    Messenger.sendMessage(player, messageProvider.get("messages.error-elytra"), null,
+                            messageProvider.get("messages.prefix"));
                 }
             }
         }
@@ -214,7 +240,8 @@ public class PlayerSiegeEventListener implements Listener {
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             player.setVelocity(new Vector());
-            Messenger.sendMessage(player, messageProvider.get("messages.error-riptide"), null, messageProvider.get("messages.prefix"));
+            Messenger.sendMessage(player, messageProvider.get("messages.error-riptide"), null,
+                    messageProvider.get("messages.prefix"));
         }, 2L);
 
     }
@@ -230,7 +257,8 @@ public class PlayerSiegeEventListener implements Listener {
 
         if (chestplate != null && chestplate.getType() == Material.ELYTRA) {
             player.setVelocity(new Vector());
-            Messenger.sendMessage(player, messageProvider.get("messages.error-elytra"), null, messageProvider.get("messages.prefix"));
+            Messenger.sendMessage(player, messageProvider.get("messages.error-elytra"), null,
+                    messageProvider.get("messages.prefix"));
         }
     }
 
