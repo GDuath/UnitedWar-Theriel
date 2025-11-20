@@ -2,6 +2,10 @@ package org.unitedlands;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.exceptions.KeyAlreadyRegisteredException;
+
+import org.bukkit.Bukkit;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import org.unitedlands.commands.WarAdminCommands;
@@ -11,6 +15,7 @@ import org.unitedlands.listeners.PlayerDeathListener;
 import org.unitedlands.listeners.ServerEventListener;
 import org.unitedlands.listeners.TownyEventListener;
 import org.unitedlands.managers.*;
+import org.unitedlands.managers.interfaces.IGraveManager;
 import org.unitedlands.schedulers.WarScheduler;
 import org.unitedlands.util.MessageProvider;
 import org.unitedlands.util.MobilisationMetadata;
@@ -37,6 +42,7 @@ public class UnitedWar extends JavaPlugin {
     private ChunkBackupManager chunkBackupManager;
     private GriefZoneManager griefZoneManager;
     private MobilisationManager mobilisationManager;
+    private IGraveManager graveManager;
     private TaskScheduler taskScheduler;
     private WarScheduler warScheduler;
 
@@ -88,6 +94,20 @@ public class UnitedWar extends JavaPlugin {
         chunkBackupManager = new ChunkBackupManager(this);
         griefZoneManager = new GriefZoneManager(this);
         mobilisationManager = new MobilisationManager(this, messageProvider);
+
+        getLogger().info("Attempting to find grave manager plugins...");
+
+        Plugin angelChest = Bukkit.getPluginManager().getPlugin("AngelChest");
+        if (angelChest != null && angelChest.isEnabled()) {
+            Logger.log("AngelChest found, enabling integration.");
+            graveManager = new AngelChestGraveManager(this);
+        }
+
+        Plugin axGraves = Bukkit.getPluginManager().getPlugin("AxGraves");
+        if (axGraves != null && axGraves.isEnabled()) {
+            Logger.log("AxGraves found, enabling integration.");
+            graveManager = new AxGravesManager(this);
+        }
     }
 
     private void createSchedulers() {
@@ -103,8 +123,12 @@ public class UnitedWar extends JavaPlugin {
         getServer().getPluginManager().registerEvents(warDeclarationManager, this);
         getServer().getPluginManager().registerEvents(siegeManager, this);
         getServer().getPluginManager().registerEvents(griefZoneManager, this);
-        getServer().getPluginManager().registerEvents(new MobilisationManager(this, messageProvider), this);
-        getServer().getPluginManager().registerEvents(new GraveManager(this), this);
+        getServer().getPluginManager().registerEvents(mobilisationManager, this);
+
+        if (graveManager != null) {
+            getServer().getPluginManager().registerEvents((Listener)graveManager, this);
+            Logger.log("Graves manager found, enabling grave control.");
+        }
     }
 
     private void registerCommands() {
