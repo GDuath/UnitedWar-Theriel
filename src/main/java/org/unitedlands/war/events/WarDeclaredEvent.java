@@ -32,6 +32,7 @@ public class WarDeclaredEvent extends Event implements Cancellable {
         this.playerUuid = playerUuid;
         this.declaringTownId = declaringTownId;
         this.targetTownId = targetTownUuid;
+        this.nationWar = nationWar;
     }
 
     public UUID getPlayerUuid() {

@@ -97,6 +97,8 @@ public class TownWarDeclareCommandHandler extends BaseCommandHandler<UnitedWar> 
             case CONQUEST:
                 nationWar = true;
                 break;
+            default:
+                break;
         }
 
         var event = new WarDeclaredEvent(player.getUniqueId(), declaringTown.getUUID(), targetTown.getUUID(), nationWar);
