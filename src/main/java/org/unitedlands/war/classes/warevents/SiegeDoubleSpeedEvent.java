@@ -1,0 +1,20 @@
+package org.unitedlands.war.classes.warevents;
+
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.unitedlands.war.events.SiegeChunkHealthChangeEvent;
+
+public class SiegeDoubleSpeedEvent extends BaseWarEvent {
+
+    public SiegeDoubleSpeedEvent() {
+        super();
+    }
+    
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onScoreEvent(SiegeChunkHealthChangeEvent event) {
+        if (!isActive())
+            return;
+
+        event.setHealthChange(event.getHealthChange() * 2);
+    }
+}

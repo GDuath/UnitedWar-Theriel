@@ -1,0 +1,108 @@
+package org.unitedlands.war.commands;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.unitedlands.interfaces.ICommandHandler;
+import org.unitedlands.interfaces.IMessageProvider;
+import org.unitedlands.utils.Messenger;
+import org.unitedlands.war.UnitedWar;
+import org.unitedlands.war.commands.handlers.command.town.TownWarBookCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarCallAcceptCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarCallAllyCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarDeclareCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarEventCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarInfoCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarMercenaryAcceptInviteCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarMercenaryAddCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarMercenaryRemoveCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarParticipantsCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarPlayersCommandHandler;
+import org.unitedlands.war.commands.handlers.command.town.TownWarSurrenderCommandHandler;
+import org.unitedlands.utils.Formatter;
+
+import com.palmergames.bukkit.towny.TownyCommandAddonAPI;
+import com.palmergames.bukkit.towny.TownyCommandAddonAPI.CommandType;
+import com.palmergames.bukkit.towny.object.AddonCommand;
+
+public class TownWarCommands implements CommandExecutor, TabCompleter {
+
+    private final UnitedWar plugin;
+    private final IMessageProvider messageProvider;
+    private final Map<String, ICommandHandler> handlers = new HashMap<>();
+
+    public TownWarCommands(UnitedWar plugin, IMessageProvider messageProvider) {
+        this.plugin = plugin;
+        this.messageProvider = messageProvider;
+        TownyCommandAddonAPI.addSubCommand(new AddonCommand(CommandType.TOWN, "war", this));
+
+        registerHandlers();
+    }
+
+    private void registerHandlers() {
+        handlers.put("event", new TownWarEventCommandHandler(plugin, messageProvider));
+        handlers.put("book", new TownWarBookCommandHandler(plugin, messageProvider));
+        handlers.put("declare", new TownWarDeclareCommandHandler(plugin, messageProvider));
+        handlers.put("info", new TownWarInfoCommandHandler(plugin, messageProvider));
+        handlers.put("participants", new TownWarParticipantsCommandHandler(plugin, messageProvider));
+        handlers.put("players", new TownWarPlayersCommandHandler(plugin, messageProvider));
+        handlers.put("callally", new TownWarCallAllyCommandHandler(plugin, messageProvider));
+        handlers.put("acceptcall", new TownWarCallAcceptCommandHandler(plugin, messageProvider));
+        handlers.put("addmercenary", new TownWarMercenaryAddCommandHandler(plugin, messageProvider));
+        handlers.put("removemercenary", new TownWarMercenaryRemoveCommandHandler(plugin, messageProvider));
+        handlers.put("acceptinvite", new TownWarMercenaryAcceptInviteCommandHandler(plugin, messageProvider));
+        handlers.put("surrender", new TownWarSurrenderCommandHandler(plugin, messageProvider));
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, String alias,
+            String[] args) {
+
+        if (args.length == 0)
+            return null;
+
+        List<String> options = null;
+        String input = args[args.length - 1];
+
+        if (args.length == 1) {
+            options = new ArrayList<>(handlers.keySet());
+        } else {
+            String subcommand = args[0].toLowerCase();
+            ICommandHandler handler = handlers.get(subcommand);
+
+            if (handler != null) {
+                options = handler.handleTab(sender, Arrays.copyOfRange(args, 1, args.length));
+            }
+        }
+
+        return Formatter.getSortedCompletions(input, options);
+    }
+
+    @Override
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
+            String[] args) {
+
+        if (args.length == 0)
+            return false;
+
+        String subcommand = args[0].toLowerCase();
+        ICommandHandler handler = handlers.get(subcommand);
+
+        if (handler == null) {
+            Messenger.sendMessage(sender, messageProvider.get("messages.invalid-command"), null, messageProvider.get("messages.prefix"));
+            return false;
+        }
+
+        handler.handleCommand(sender, Arrays.copyOfRange(args, 1, args.length));
+        return true;
+    }
+
+}

@@ -1,6 +1,6 @@
 name: UnitedWar
 version: '${project.version}'
-main: org.unitedlands.UnitedWar
+main: org.unitedlands.war.UnitedWar
 api-version: 1.21
 description: A custom war plugin for United Lands.
 authors: [ Litning11, Theriel_]
