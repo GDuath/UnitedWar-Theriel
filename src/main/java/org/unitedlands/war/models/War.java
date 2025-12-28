@@ -320,13 +320,13 @@ public class War implements Identifiable {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("war-name", getCleanTitle());
         replacements.put("war-description", getDescription());
-        replacements.put("war-active", getIs_active() ? "§cACTIVE" : getIs_ended() ? "§8ENDED" : "§eWARMUP");
+        replacements.put("war-active", getIs_active() ? "<red>ACTIVE</red>" : getIs_ended() ? "<dark_gray>ENDED</dark_gray>" : "<yellow>WARMUP</yellow>");
         replacements.put("attacker", getDeclaring_town_name());
         replacements.put("defender", getTarget_town_name());
         replacements.put("attacker-nation",
-                getDeclaring_nation_name() != null ? "(" + getDeclaring_nation_name() + ")" : null);
+                getDeclaring_nation_name() != null ? "(" + getDeclaring_nation_name() + ")" : "");
         replacements.put("defender-nation",
-                getTarget_nation_name() != null ? "(" + getTarget_nation_name() + ")" : null);
+                getTarget_nation_name() != null ? "(" + getTarget_nation_name() + ")" : "");
         replacements.put("war-goal", war_goal.getDisplayName());
         replacements.put("attacker-score", getAttacker_score().toString());
         replacements.put("attacker-score-cap", getAttacker_score_cap().toString());
